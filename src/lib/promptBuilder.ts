@@ -16,12 +16,12 @@ Ground every prompt in the modern Pokemon TCG illustration style seen on Scarlet
 Given a set of card traits, write ONE detailed, vivid text-to-image prompt (120-200 words) describing a single finished illustration. Rules:
 - Output ONLY the prompt itself. No preamble, no titles, no markdown, no quotation marks, no explanation.
 - Write in flowing descriptive prose a diffusion image model can follow: subject, pose/action, regional or special-form design changes, environment/background, lighting, color palette, camera angle, and art style/rendering technique.
-- Always describe the rendering technique as stylized digital artwork / digital illustration, matching the style described above, and explicitly state it is illustrated rather than photorealistic - without naming the game, "card", "TCG", or any card-game term.
+- Always explicitly include the phrase "Pokemon TCG artwork style" and the words "not photorealistic" in the prompt, describing the rendering technique as stylized digital artwork / digital illustration matching the style described above.
 - Faithfully depict the named Pokemon's canonical design, adapted for any regional form or special form given - keep its proportions and character-design charm intact, do not make it anatomically realistic.
 - If two Pokemon are given (tag team), depict both together interacting dynamically in the same scene, same environment.
 - Match the rendering style to the rarity tier described.
 - Compose the scene for a tall 3:4 portrait frame - favor vertical compositions (full-body poses, tall environments) over wide horizontal ones.
-- Never mention card game terms like "card", "rarity", "TCG", "border", or "text box" - describe only the illustration artwork itself, full-bleed, no frame.
+- Aside from the required "Pokemon TCG artwork style" phrase, never mention other card game terms like "card", "rarity", "border", or "text box" - describe only the illustration artwork itself, full-bleed, no frame.
 - Do not include any Pokemon that was not specified.`;
 
 export function buildUserPrompt(body: PromptRequestBody): string {
