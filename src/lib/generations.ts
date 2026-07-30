@@ -1,4 +1,4 @@
-import type { Generation, PokemonRef } from "./types";
+import type { Generation, PokemonPick, PokemonRef } from "./types";
 
 export const GENERATIONS: Generation[] = [
   { id: 1, roman: "I", label: "Gen I", region: "Kanto" },
@@ -88,4 +88,13 @@ export function pickRandomPokemon(pool: PokemonRef[], exclude: number[] = []): P
   const available = pool.filter((p) => !exclude.includes(p.id));
   const candidates = available.length > 0 ? available : pool;
   return candidates[Math.floor(Math.random() * candidates.length)];
+}
+
+export function toPokemonPick(p: PokemonRef): PokemonPick {
+  return {
+    id: p.id,
+    name: p.name,
+    displayName: prettifyPokemonName(p.name),
+    artworkUrl: officialArtworkUrl(p.id),
+  };
 }

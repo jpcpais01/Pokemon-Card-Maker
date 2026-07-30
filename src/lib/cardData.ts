@@ -1,16 +1,22 @@
 import type { ArtType, Region, SpecialForm, WeightedOption } from "./types";
 
-/** Picks one option at random, respecting relative weights. */
+/**
+ * Picks one option at random, respecting relative weights. Pass `exclude` to
+ * guarantee a different result than the current one (used for rerolls).
+ */
 export function pickWeighted<T extends string>(
-  options: WeightedOption<T>[]
+  options: WeightedOption<T>[],
+  exclude?: T
 ): WeightedOption<T> {
-  const total = options.reduce((sum, o) => sum + o.weight, 0);
+  const candidates = exclude ? options.filter((o) => o.value !== exclude) : options;
+  const pool = candidates.length > 0 ? candidates : options;
+  const total = pool.reduce((sum, o) => sum + o.weight, 0);
   let roll = Math.random() * total;
-  for (const option of options) {
+  for (const option of pool) {
     roll -= option.weight;
     if (roll <= 0) return option;
   }
-  return options[options.length - 1];
+  return pool[pool.length - 1];
 }
 
 export const ART_TYPES: WeightedOption<ArtType>[] = [

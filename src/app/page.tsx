@@ -2,15 +2,17 @@
 
 import { useMemo, useState } from "react";
 import GenSelector from "@/components/GenSelector";
-import RevealScreen, { type RevealData, type RevealFlags } from "@/components/RevealScreen";
+import RevealScreen, { type CardKey, type RevealData, type RevealFlags } from "@/components/RevealScreen";
 import LoadingScreen from "@/components/LoadingScreen";
 import ErrorScreen from "@/components/ErrorScreen";
 import ResultScreen from "@/components/ResultScreen";
 import { ART_TYPES, REGIONS, SPECIAL_FORMS, pickWeighted } from "@/lib/cardData";
-import { GENERATIONS, fetchPokemonForGenerations, officialArtworkUrl, pickRandomPokemon, prettifyPokemonName } from "@/lib/generations";
-import type { PokemonPick } from "@/lib/types";
+import { GENERATIONS, fetchPokemonForGenerations, pickRandomPokemon, toPokemonPick } from "@/lib/generations";
+import type { PokemonRef } from "@/lib/types";
 
 type Stage = "setup" | "reveal" | "prompt" | "image" | "result" | "error";
+
+const TOTAL_REROLLS = 5;
 
 async function postJson<T>(url: string, body: unknown): Promise<T> {
   const res = await fetch(url, {
@@ -29,8 +31,10 @@ export default function Home() {
   const [poolLoading, setPoolLoading] = useState(false);
   const [poolError, setPoolError] = useState<string | null>(null);
 
+  const [pool, setPool] = useState<PokemonRef[]>([]);
   const [revealData, setRevealData] = useState<RevealData | null>(null);
   const [flags, setFlags] = useState<RevealFlags | null>(null);
+  const [rerollsLeft, setRerollsLeft] = useState(TOTAL_REROLLS);
 
   const [promptText, setPromptText] = useState("");
   const [image, setImage] = useState("");
@@ -47,8 +51,8 @@ export default function Home() {
     setPoolError(null);
     setPoolLoading(true);
     try {
-      const pool = await fetchPokemonForGenerations(gens);
-      if (pool.length === 0) throw new Error("No Pokemon found for the selected generations.");
+      const fetchedPool = await fetchPokemonForGenerations(gens);
+      if (fetchedPool.length === 0) throw new Error("No Pokemon found for the selected generations.");
 
       const artType = pickWeighted(ART_TYPES);
       const specialForm = pickWeighted(SPECIAL_FORMS);
@@ -56,20 +60,17 @@ export default function Home() {
       const count = specialForm.value === "tag-team" ? 2 : 1;
 
       const chosenIds: number[] = [];
-      const pokemons: PokemonPick[] = [];
+      const pokemons = [];
       for (let i = 0; i < count; i++) {
-        const p = pickRandomPokemon(pool, chosenIds);
+        const p = pickRandomPokemon(fetchedPool, chosenIds);
         chosenIds.push(p.id);
-        pokemons.push({
-          id: p.id,
-          name: p.name,
-          displayName: prettifyPokemonName(p.name),
-          artworkUrl: officialArtworkUrl(p.id),
-        });
+        pokemons.push(toPokemonPick(p));
       }
 
+      setPool(fetchedPool);
       setRevealData({ artType, specialForm, region, pokemons });
       setFlags({ artType: false, specialForm: false, region: false, pokemons: pokemons.map(() => false) });
+      setRerollsLeft(TOTAL_REROLLS);
       setStage("reveal");
     } catch (err) {
       setPoolError(err instanceof Error ? err.message : "Failed to load Pokemon data.");
@@ -78,7 +79,7 @@ export default function Home() {
     }
   }
 
-  function handleReveal(key: "artType" | "specialForm" | "region" | number) {
+  function handleReveal(key: CardKey) {
     setFlags((prev) => {
       if (!prev) return prev;
       if (typeof key === "number") {
@@ -92,6 +93,53 @@ export default function Home() {
 
   function handleRevealAll() {
     setFlags((prev) => (prev ? { artType: true, specialForm: true, region: true, pokemons: prev.pokemons.map(() => true) } : prev));
+  }
+
+  function handleReroll(key: CardKey) {
+    if (rerollsLeft <= 0) return;
+    setRerollsLeft((n) => n - 1);
+
+    if (key === "artType") {
+      setRevealData((prev) => (prev ? { ...prev, artType: pickWeighted(ART_TYPES, prev.artType.value) } : prev));
+      return;
+    }
+
+    if (key === "region") {
+      setRevealData((prev) => (prev ? { ...prev, region: pickWeighted(REGIONS, prev.region.value) } : prev));
+      return;
+    }
+
+    if (key === "specialForm") {
+      setRevealData((prev) => {
+        if (!prev) return prev;
+        const specialForm = pickWeighted(SPECIAL_FORMS, prev.specialForm.value);
+        const wasTagTeam = prev.specialForm.value === "tag-team";
+        const isTagTeam = specialForm.value === "tag-team";
+
+        let pokemons = prev.pokemons;
+        if (isTagTeam && !wasTagTeam) {
+          const extra = pickRandomPokemon(pool, prev.pokemons.map((p) => p.id));
+          pokemons = [...prev.pokemons, toPokemonPick(extra)];
+          setFlags((f) => (f ? { ...f, pokemons: [...f.pokemons, true] } : f));
+        } else if (!isTagTeam && wasTagTeam) {
+          pokemons = prev.pokemons.slice(0, 1);
+          setFlags((f) => (f ? { ...f, pokemons: f.pokemons.slice(0, 1) } : f));
+        }
+
+        return { ...prev, specialForm, pokemons };
+      });
+      return;
+    }
+
+    // Pokemon slot reroll: pick a fresh one, never duplicating the other tag-team slot.
+    setRevealData((prev) => {
+      if (!prev) return prev;
+      const excludeIds = prev.pokemons.map((p) => p.id);
+      const fresh = pickRandomPokemon(pool, excludeIds);
+      const pokemons = [...prev.pokemons];
+      pokemons[key] = toPokemonPick(fresh);
+      return { ...prev, pokemons };
+    });
   }
 
   async function runGeneration(data: RevealData) {
@@ -179,6 +227,8 @@ export default function Home() {
         onRevealAll={handleRevealAll}
         onGenerate={handleGenerate}
         onBack={handleStartOver}
+        rerollsLeft={rerollsLeft}
+        onReroll={handleReroll}
       />
     );
   }

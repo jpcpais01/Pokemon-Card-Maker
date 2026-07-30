@@ -18,17 +18,31 @@ export interface RevealFlags {
   pokemons: boolean[];
 }
 
+export type CardKey = "artType" | "specialForm" | "region" | number;
+
 interface Props {
   data: RevealData;
   flags: RevealFlags;
-  onReveal: (key: "artType" | "specialForm" | "region" | number) => void;
+  onReveal: (key: CardKey) => void;
   allRevealed: boolean;
   onRevealAll: () => void;
   onGenerate: () => void;
   onBack: () => void;
+  rerollsLeft: number;
+  onReroll: (key: CardKey) => void;
 }
 
-export default function RevealScreen({ data, flags, onReveal, allRevealed, onRevealAll, onGenerate, onBack }: Props) {
+export default function RevealScreen({
+  data,
+  flags,
+  onReveal,
+  allRevealed,
+  onRevealAll,
+  onGenerate,
+  onBack,
+  rerollsLeft,
+  onReroll,
+}: Props) {
   const cards = [
     {
       key: "artType" as const,
@@ -104,6 +118,10 @@ export default function RevealScreen({ data, flags, onReveal, allRevealed, onRev
           </button>
         </div>
 
+        <p className="mb-4 text-center text-xs font-semibold text-slate-400">
+          <span className="text-amber-300">↻ {rerollsLeft}</span> reroll{rerollsLeft === 1 ? "" : "s"} left
+        </p>
+
         <div className="flex flex-wrap justify-center gap-4">
           {cards.map((card) => (
             <div key={card.key} className="w-[calc(50%-0.5rem)]">
@@ -112,6 +130,8 @@ export default function RevealScreen({ data, flags, onReveal, allRevealed, onRev
                 revealed={card.revealed}
                 onReveal={() => onReveal(card.key)}
                 front={card.front}
+                rerollsLeft={rerollsLeft}
+                onReroll={() => onReroll(card.key)}
               />
             </div>
           ))}

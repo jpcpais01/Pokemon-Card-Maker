@@ -7,6 +7,8 @@ interface Props {
   revealed: boolean;
   onReveal: () => void;
   front: ReactNode;
+  rerollsLeft?: number;
+  onReroll?: () => void;
 }
 
 /**
@@ -14,32 +16,47 @@ interface Props {
  * `revealed` prop - no local timers or 3D transforms, which flicker on some
  * mobile browsers when combined with backdrop-filter/blend-mode.
  */
-export default function FlipCard({ label, revealed, onReveal, front }: Props) {
+export default function FlipCard({ label, revealed, onReveal, front, rerollsLeft, onReroll }: Props) {
   return (
-    <button
-      type="button"
-      onClick={() => !revealed && onReveal()}
-      disabled={revealed}
-      aria-label={revealed ? label : `Reveal ${label}`}
-      className="relative block aspect-[5/7] w-full disabled:cursor-default"
-    >
-      <div
-        className={`absolute inset-0 overflow-hidden rounded-3xl border border-white/15 shadow-xl shadow-black/30 transition-all duration-300 ease-out ${
-          revealed ? "scale-90 opacity-0" : "scale-100 opacity-100"
+    <div className="relative aspect-[5/7] w-full">
+      <button
+        type="button"
+        onClick={() => !revealed && onReveal()}
+        disabled={revealed}
+        aria-label={`Reveal ${label}`}
+        aria-hidden={revealed}
+        tabIndex={revealed ? -1 : 0}
+        className={`absolute inset-0 overflow-hidden rounded-3xl border border-white/15 shadow-xl shadow-black/30 transition-all duration-300 ease-out disabled:cursor-default ${
+          revealed ? "pointer-events-none scale-90 opacity-0" : "scale-100 opacity-100"
         }`}
       >
         <CardBack label={label} />
-      </div>
+      </button>
 
       <div
         className={`absolute inset-0 overflow-hidden rounded-3xl border border-white/15 shadow-xl shadow-black/30 transition-all duration-300 ease-out ${
-          revealed ? "scale-100 opacity-100" : "scale-90 opacity-0"
+          revealed ? "scale-100 opacity-100" : "pointer-events-none scale-90 opacity-0"
         }`}
       >
         {front}
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-tr from-white/0 via-white/10 to-white/0" />
+
+        {revealed && onReroll && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onReroll();
+            }}
+            disabled={!rerollsLeft}
+            aria-label={`Reroll ${label}`}
+            className="absolute right-1.5 top-1.5 flex h-7 w-7 items-center justify-center rounded-full border border-white/20 bg-black/55 text-sm text-white transition-transform active:scale-90 disabled:pointer-events-none disabled:opacity-30"
+          >
+            ↻
+          </button>
+        )}
       </div>
-    </button>
+    </div>
   );
 }
 
