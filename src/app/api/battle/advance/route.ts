@@ -48,6 +48,9 @@ export async function POST(request: Request) {
     }
 
     if (currentRound.status === "prompting") {
+      // Persist after EACH player's draft, not just once at the end - if this request gets cut
+      // off mid-flight (e.g. a platform execution-time limit), whichever player already finished
+      // stays done instead of being silently lost and redone on the next attempt.
       await Promise.all(
         Object.values(currentRound.players).map(async (state) => {
           if (state.promptStatus !== "pending") return;
@@ -64,14 +67,18 @@ export async function POST(request: Request) {
           } catch {
             state.promptStatus = "error";
           }
+          await saveRoom(room);
         })
       );
-      currentRound.status = "imaging";
+      if (Object.values(currentRound.players).every((p) => p.promptStatus !== "pending")) {
+        currentRound.status = "imaging";
+      }
     } else if (currentRound.status === "imaging") {
       await Promise.all(
         Object.entries(currentRound.players).map(async ([pid, state]) => {
           if (state.promptStatus === "error") {
             state.imageStatus = "error";
+            await saveRoom(room);
             return;
           }
           if (state.imageStatus !== "pending" || !state.prompt) return;
@@ -82,9 +89,12 @@ export async function POST(request: Request) {
           } catch {
             state.imageStatus = "error";
           }
+          await saveRoom(room);
         })
       );
-      currentRound.status = "judging";
+      if (Object.values(currentRound.players).every((p) => p.imageStatus !== "pending")) {
+        currentRound.status = "judging";
+      }
     } else if (currentRound.status === "judging") {
       const [pidA, pidB] = room.players;
       const stateA = currentRound.players[pidA];

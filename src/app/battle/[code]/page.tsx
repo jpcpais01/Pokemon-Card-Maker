@@ -25,6 +25,8 @@ import type { BattleRoom, RoundStatus } from "@/lib/battle/types";
 import type { CardKey } from "@/lib/cardFaces";
 
 const POLL_MS = 1500;
+const POLL_FAILURE_THRESHOLD = 4;
+const STUCK_ROUND_MS = 45_000;
 
 const GENERATING_MESSAGES: Partial<Record<RoundStatus, string>> = {
   prompting: "Studying both trainers' traits and drafting the art direction...",
@@ -40,12 +42,14 @@ export default function BattleRoomPage() {
   const [playerId, setPlayerId] = useState<string | null>(null);
   const [room, setRoom] = useState<BattleRoom | null>(null);
   const [fatalError, setFatalError] = useState<string | null>(null);
+  const [pollFailureCount, setPollFailureCount] = useState(0);
   const [actionBusy, setActionBusy] = useState(false);
 
   const [joining, setJoining] = useState(false);
   const [joinError, setJoinError] = useState<string | null>(null);
 
   const [images, setImages] = useState<Record<string, string>>({});
+  const [isStuck, setIsStuck] = useState(false);
   const advancingRef = useRef(false);
 
   useEffect(() => {
@@ -63,8 +67,10 @@ export default function BattleRoomPage() {
       const { room } = await fetchRoomState(code, playerId);
       setRoom(room);
       setFatalError(null);
+      setPollFailureCount(0);
     } catch (err) {
       setFatalError(err instanceof Error ? err.message : "Lost connection to the match.");
+      setPollFailureCount((n) => n + 1);
     }
   }, [code, playerId]);
 
@@ -87,7 +93,10 @@ export default function BattleRoomPage() {
 
     advancingRef.current = true;
     advanceRound(code, playerId)
-      .then(({ room }) => setRoom(room))
+      .then(({ room }) => {
+        setRoom(room);
+        setPollFailureCount(0);
+      })
       .catch(() => {})
       .finally(() => {
         advancingRef.current = false;
@@ -109,6 +118,25 @@ export default function BattleRoomPage() {
         .catch(() => {});
     }
   }, [code, playerId, room, images]);
+
+  const roomRounds = room?.rounds ?? [];
+  const currentRoundStatus = roomRounds.length > 0 ? roomRounds[roomRounds.length - 1].status : null;
+  const isGenerating = currentRoundStatus !== null && currentRoundStatus in GENERATING_MESSAGES;
+
+  // Flags a genuinely stuck round (still generating after STUCK_ROUND_MS) so the UI can offer a
+  // manual retry instead of an indefinite spinner. The timer resets whenever we (re)enter a
+  // generating phase and is cleared the moment it ends, so only a true stall trips it.
+  useEffect(() => {
+    const resetTimeout = window.setTimeout(() => setIsStuck(false), 0);
+    if (!isGenerating) {
+      return () => window.clearTimeout(resetTimeout);
+    }
+    const stuckTimer = window.setTimeout(() => setIsStuck(true), STUCK_ROUND_MS);
+    return () => {
+      window.clearTimeout(resetTimeout);
+      window.clearTimeout(stuckTimer);
+    };
+  }, [isGenerating, room?.round]);
 
   async function handleJoinHere() {
     setJoining(true);
@@ -163,6 +191,22 @@ export default function BattleRoomPage() {
     }
   }
 
+  async function handleForceAdvance() {
+    if (!playerId) return;
+    setActionBusy(true);
+    try {
+      const { room } = await advanceRound(code, playerId);
+      setRoom(room);
+      setPollFailureCount(0);
+      setFatalError(null);
+    } catch (err) {
+      setFatalError(err instanceof Error ? err.message : "Lost connection to the match.");
+      setPollFailureCount((n) => n + 1);
+    } finally {
+      setActionBusy(false);
+    }
+  }
+
   if (!storageChecked) {
     return <LoadingScreen message="Loading match..." />;
   }
@@ -199,8 +243,14 @@ export default function BattleRoomPage() {
     );
   }
 
-  if (fatalError && !room) {
-    return <ErrorScreen message={fatalError} onRetry={refresh} onStartOver={() => window.location.assign("/battle")} />;
+  if (fatalError && (pollFailureCount >= POLL_FAILURE_THRESHOLD || !room)) {
+    return (
+      <ErrorScreen
+        message={room ? `${fatalError} (still trying to reconnect...)` : fatalError}
+        onRetry={refresh}
+        onStartOver={() => window.location.assign("/battle")}
+      />
+    );
   }
 
   if (!room) {
@@ -241,7 +291,7 @@ export default function BattleRoomPage() {
           </>
         )}
 
-        {round.status in GENERATING_MESSAGES && (
+        {isGenerating && (
           <div className="glass flex flex-col items-center gap-5 rounded-[2rem] px-8 py-12 text-center">
             <div className="h-2 w-full overflow-hidden rounded-full bg-white/10">
               <div
@@ -250,6 +300,23 @@ export default function BattleRoomPage() {
               />
             </div>
             <p className="text-sm font-medium text-slate-200">{GENERATING_MESSAGES[round.status]}</p>
+
+            {isStuck && (
+              <div className="mt-2 flex w-full flex-col items-center gap-3 border-t border-white/10 pt-5">
+                <p className="text-xs text-amber-300">This is taking longer than expected.</p>
+                <button
+                  type="button"
+                  onClick={handleForceAdvance}
+                  disabled={actionBusy}
+                  className="w-full rounded-xl bg-gradient-to-r from-amber-400 to-orange-500 py-3 text-sm font-bold text-slate-900 transition-transform active:scale-[0.98] disabled:opacity-50"
+                >
+                  Try Again
+                </button>
+                <Link href="/battle" className="text-xs font-semibold text-slate-400 active:text-white">
+                  Leave Match
+                </Link>
+              </div>
+            )}
           </div>
         )}
 

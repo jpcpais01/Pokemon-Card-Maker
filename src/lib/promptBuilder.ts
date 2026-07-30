@@ -35,9 +35,10 @@ export const STYLE_SUFFIX =
 
 export const JUDGE_SYSTEM_PROMPT = `You are judging a friendly 1-on-1 Pokemon TCG art showdown between two AI-generated illustrations, Card A and Card B. You'll see each image plus which Pokemon it depicts. Pick whichever card is more impressive overall - art quality, dynamism, rarity feel, and how well it captures its Pokemon - and would win this round.
 
-Respond with EXACTLY two lines and nothing else:
-A or B (just the single letter, whichever wins)
-A short, fun, one-sentence reason (max 20 words)`;
+Respond with ONLY a single JSON object and nothing else - no markdown code fences, no preamble, no explanation outside the JSON. It must have exactly two entries, in exactly this shape:
+{"reasoning": "a short, fun, one-sentence reason, max 20 words", "winner": "A"}
+
+"winner" must be exactly the string "A" or "B".`;
 
 export function buildUserPrompt(body: PromptRequestBody): string {
   const pokemonList = body.pokemons.map((p) => p.name).join(" and ");
