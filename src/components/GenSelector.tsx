@@ -23,7 +23,7 @@ export default function GenSelector({
   onStart,
   loading,
   error,
-  eyebrow = "Pokemon Card Generator",
+  eyebrow = "PokeGen",
   title = "Open a Pack",
   subtitle = "Choose which generations can appear, then open your pack for four random traits.",
   buttonLabel = "Open Pack",

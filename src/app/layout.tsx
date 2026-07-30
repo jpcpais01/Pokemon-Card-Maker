@@ -7,9 +7,29 @@ const geistSans = Geist({
   subsets: ["latin"],
 });
 
+const siteUrl =
+  process.env.NEXT_PUBLIC_SITE_URL ??
+  (process.env.VERCEL_PROJECT_PRODUCTION_URL && `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`) ??
+  (process.env.VERCEL_URL && `https://${process.env.VERCEL_URL}`) ??
+  "http://localhost:3000";
+
+const description = "Open a pack of random traits and get a one-of-a-kind AI-generated Pokemon TCG illustration.";
+
 export const metadata: Metadata = {
-  title: "Pokemon Card Generator",
-  description: "Open a pack of random traits and get a one-of-a-kind AI-generated Pokemon TCG illustration.",
+  metadataBase: new URL(siteUrl),
+  title: "PokeGen",
+  description,
+  openGraph: {
+    title: "PokeGen",
+    description,
+    siteName: "PokeGen",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "PokeGen",
+    description,
+  },
 };
 
 export const viewport: Viewport = {

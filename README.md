@@ -1,4 +1,4 @@
-# Pokemon Card Generator
+# PokeGen
 
 A mobile-first web app that opens a random "pack" of four traits — art rarity,
 special form, regional form, and a Pokemon pulled live from the Pokedex — then
@@ -97,3 +97,5 @@ instances). Add a Redis database before relying on battle mode in production.
 - `src/app/api/battle/*` — battle mode endpoints (create/join/state/reroll/lock/advance/ready/image).
 - `src/app/battle/`, `src/components/battle/` — battle mode UI (lobby, waiting room, pick panel, round/match results).
 - `src/components/` — shared pack-opening UI (generation picker, flip cards, loading/result/error screens).
+- `src/app/icon.tsx`, `apple-icon.tsx`, `icon-192/`, `icon-512/`, `manifest.ts` — generated favicon/app icons and the PWA manifest (via `next/og`, no static image files needed).
+- `src/app/opengraph-image.tsx` — the social preview card shown when a link is shared (WhatsApp, iMessage, Slack, Discord, etc.).

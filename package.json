@@ -1,5 +1,5 @@
 {
-  "name": "pokemon-card-generator",
+  "name": "pokegen",
   "version": "0.1.0",
   "private": true,
   "scripts": {

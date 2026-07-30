@@ -15,8 +15,8 @@ async function callOpenRouter(body: Record<string, unknown>) {
     headers: {
       Authorization: `Bearer ${apiKey()}`,
       "Content-Type": "application/json",
-      "HTTP-Referer": "https://pokemon-card-generator.vercel.app",
-      "X-Title": "Pokemon Card Generator",
+      "HTTP-Referer": "https://pokegen.vercel.app",
+      "X-Title": "PokeGen",
     },
     body: JSON.stringify(body),
   });
