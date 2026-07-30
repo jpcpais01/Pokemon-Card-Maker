@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import GenSelector from "@/components/GenSelector";
 import RevealScreen, { type CardKey, type RevealData, type RevealFlags } from "@/components/RevealScreen";
 import LoadingScreen from "@/components/LoadingScreen";
@@ -214,7 +215,23 @@ export default function Home() {
   }
 
   if (stage === "setup") {
-    return <GenSelector selected={gens} onChange={setGens} onStart={handleOpenPack} loading={poolLoading} error={poolError} />;
+    return (
+      <GenSelector
+        selected={gens}
+        onChange={setGens}
+        onStart={handleOpenPack}
+        loading={poolLoading}
+        error={poolError}
+        footer={
+          <Link
+            href="/battle"
+            className="mt-4 block text-center text-sm font-semibold text-slate-400 active:text-amber-300"
+          >
+            ⚔️ Battle a friend
+          </Link>
+        }
+      />
+    );
   }
 
   if (stage === "reveal" && revealData && flags) {

@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { GENERATIONS } from "@/lib/generations";
 
 interface Props {
@@ -8,9 +9,27 @@ interface Props {
   onStart: () => void;
   loading: boolean;
   error: string | null;
+  eyebrow?: string;
+  title?: string;
+  subtitle?: string;
+  buttonLabel?: string;
+  loadingLabel?: string;
+  footer?: ReactNode;
 }
 
-export default function GenSelector({ selected, onChange, onStart, loading, error }: Props) {
+export default function GenSelector({
+  selected,
+  onChange,
+  onStart,
+  loading,
+  error,
+  eyebrow = "Pokemon Card Generator",
+  title = "Open a Pack",
+  subtitle = "Choose which generations can appear, then open your pack for four random traits.",
+  buttonLabel = "Open Pack",
+  loadingLabel = "Loading Pokedex...",
+  footer,
+}: Props) {
   const allSelected = selected.length === GENERATIONS.length;
 
   function toggle(id: number) {
@@ -30,13 +49,9 @@ export default function GenSelector({ selected, onChange, onStart, loading, erro
     <div className="flex min-h-dvh flex-col items-center justify-center px-5 py-10">
       <div className="glass w-full max-w-sm rounded-[2rem] p-6 shadow-2xl shadow-black/40">
         <div className="mb-7 text-center">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.35em] text-amber-300/90">
-            Pokemon Card Generator
-          </p>
-          <h1 className="mt-2 text-3xl font-black tracking-tight text-white">Open a Pack</h1>
-          <p className="mt-2 text-sm leading-relaxed text-slate-400">
-            Choose which generations can appear, then open your pack for four random traits.
-          </p>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.35em] text-amber-300/90">{eyebrow}</p>
+          <h1 className="mt-2 text-3xl font-black tracking-tight text-white">{title}</h1>
+          <p className="mt-2 text-sm leading-relaxed text-slate-400">{subtitle}</p>
         </div>
 
         <div className="grid grid-cols-3 gap-2.5">
@@ -81,8 +96,10 @@ export default function GenSelector({ selected, onChange, onStart, loading, erro
           disabled={loading || selected.length === 0}
           className="mt-7 w-full rounded-2xl bg-gradient-to-r from-amber-400 to-orange-500 py-4 text-base font-bold text-slate-900 shadow-lg shadow-amber-500/25 transition-transform active:scale-[0.98] disabled:opacity-50"
         >
-          {loading ? "Loading Pokedex..." : "Open Pack"}
+          {loading ? loadingLabel : buttonLabel}
         </button>
+
+        {footer}
       </div>
     </div>
   );

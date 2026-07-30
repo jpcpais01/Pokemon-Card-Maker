@@ -1,0 +1,58 @@
+import type { CardKey } from "@/lib/cardFaces";
+import type { BattleRoom } from "./types";
+
+async function postJson<T>(url: string, body: unknown): Promise<T> {
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data?.error || "Something went wrong.");
+  return data as T;
+}
+
+async function getJson<T>(url: string): Promise<T> {
+  const res = await fetch(url);
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data?.error || "Something went wrong.");
+  return data as T;
+}
+
+export function createRoom(gens: number[]) {
+  return postJson<{ code: string; playerId: string }>("/api/battle/create", { gens });
+}
+
+export function joinRoom(code: string) {
+  return postJson<{ code: string; playerId: string }>("/api/battle/join", { code });
+}
+
+export function fetchRoomState(code: string, playerId: string) {
+  return getJson<{ room: BattleRoom }>(
+    `/api/battle/state?code=${encodeURIComponent(code)}&playerId=${encodeURIComponent(playerId)}`
+  );
+}
+
+export function rerollCard(code: string, playerId: string, cardKey: CardKey) {
+  return postJson<{ room: BattleRoom }>("/api/battle/reroll", { code, playerId, cardKey });
+}
+
+export function lockPicks(code: string, playerId: string) {
+  return postJson<{ room: BattleRoom }>("/api/battle/lock", { code, playerId });
+}
+
+export function advanceRound(code: string, playerId: string) {
+  return postJson<{ room: BattleRoom }>("/api/battle/advance", { code, playerId });
+}
+
+export function readyForNext(code: string, playerId: string) {
+  return postJson<{ room: BattleRoom }>("/api/battle/ready", { code, playerId });
+}
+
+export function fetchBattleImage(code: string, round: number, playerId: string, requesterId: string) {
+  return getJson<{ image: string }>(
+    `/api/battle/image?code=${encodeURIComponent(code)}&round=${round}&playerId=${encodeURIComponent(
+      playerId
+    )}&requesterId=${encodeURIComponent(requesterId)}`
+  );
+}

@@ -32,6 +32,12 @@ Given a set of card traits, write ONE detailed, vivid text-to-image prompt (120-
 export const STYLE_SUFFIX =
   " Rendered in modern Pokemon TCG artwork style: smooth, glossy, semi-stylized creature design with soft airbrushed shading and crisp clean edges, set against a richly detailed painted background, vibrant saturated colors, professional official video-game-splash-art finish. Not photorealistic, not a photograph, not realistic fur/skin/feather texture, not a 3D render, not a generic fantasy illustration. Borderless, full-bleed artwork only - no card frame, no UI elements, no text, no logos, no watermarks. Make the scene, action, interaction, and camera angle unique and imaginative each time rather than a generic repeated pose - always nice and different.";
 
+export const JUDGE_SYSTEM_PROMPT = `You are judging a friendly 1-on-1 Pokemon TCG art showdown between two AI-generated illustrations, Card A and Card B. You'll see each image plus which Pokemon it depicts. Pick whichever card is more impressive overall - art quality, dynamism, rarity feel, and how well it captures its Pokemon - and would win this round.
+
+Respond with EXACTLY two lines and nothing else:
+A or B (just the single letter, whichever wins)
+A short, fun, one-sentence reason (max 20 words)`;
+
 export function buildUserPrompt(body: PromptRequestBody): string {
   const pokemonList = body.pokemons.map((p) => p.name).join(" and ");
   const lines = [

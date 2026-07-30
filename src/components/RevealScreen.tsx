@@ -1,7 +1,7 @@
 "use client";
 
 import FlipCard from "./FlipCard";
-import { ART_TYPE_ICONS, REGION_ICONS, SPECIAL_FORM_ICONS } from "@/lib/icons";
+import { buildCardFaces, type CardKey } from "@/lib/cardFaces";
 import type { ArtType, PokemonPick, Region, SpecialForm, WeightedOption } from "@/lib/types";
 
 export interface RevealData {
@@ -18,7 +18,7 @@ export interface RevealFlags {
   pokemons: boolean[];
 }
 
-export type CardKey = "artType" | "specialForm" | "region" | number;
+export type { CardKey };
 
 interface Props {
   data: RevealData;
@@ -43,63 +43,11 @@ export default function RevealScreen({
   rerollsLeft,
   onReroll,
 }: Props) {
-  const cards = [
-    {
-      key: "artType" as const,
-      label: "Art Type",
-      revealed: flags.artType,
-      front: (
-        <div className="flex h-full flex-col items-center justify-center gap-2 bg-gradient-to-br from-amber-300 via-amber-500 to-orange-600 p-3 text-center text-slate-900">
-          <span className="text-4xl drop-shadow-sm">{ART_TYPE_ICONS[data.artType.value]}</span>
-          <span className="text-lg font-black leading-tight">{data.artType.label}</span>
-        </div>
-      ),
-    },
-    {
-      key: "specialForm" as const,
-      label: "Special Form",
-      revealed: flags.specialForm,
-      front: (
-        <div className="flex h-full flex-col items-center justify-center gap-2 bg-gradient-to-br from-violet-400 via-purple-500 to-indigo-700 p-3 text-center text-white">
-          <span className="text-4xl drop-shadow-sm">{SPECIAL_FORM_ICONS[data.specialForm.value]}</span>
-          <span className="text-lg font-black leading-tight">{data.specialForm.label}</span>
-        </div>
-      ),
-    },
-    {
-      key: "region" as const,
-      label: "Regional Form",
-      revealed: flags.region,
-      front: (
-        <div className="flex h-full flex-col items-center justify-center gap-2 bg-gradient-to-br from-teal-300 via-emerald-500 to-cyan-700 p-3 text-center text-slate-900">
-          <span className="text-4xl drop-shadow-sm">{REGION_ICONS[data.region.value]}</span>
-          <span className="text-lg font-black leading-tight">{data.region.label}</span>
-        </div>
-      ),
-    },
-    ...data.pokemons.map((p, i) => ({
-      key: i,
-      label: data.pokemons.length > 1 ? `Pokemon ${i + 1}` : "Pokemon",
-      revealed: flags.pokemons[i],
-      front: (
-        <div className="relative flex h-full flex-col items-center justify-end bg-gradient-to-b from-slate-50 to-white">
-          <span className="absolute left-2 top-1.5 text-[10px] font-bold text-slate-400">
-            #{String(p.id).padStart(3, "0")}
-          </span>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={p.artworkUrl}
-            alt={p.displayName}
-            className="h-[75%] w-full object-contain p-1"
-            loading="lazy"
-          />
-          <div className="w-full bg-slate-900/95 py-1.5 text-center text-sm font-bold text-white backdrop-blur">
-            {p.displayName}
-          </div>
-        </div>
-      ),
-    })),
-  ];
+  const faces = buildCardFaces(data.artType, data.specialForm, data.region, data.pokemons);
+  const cards = faces.map((face) => ({
+    ...face,
+    revealed: typeof face.key === "number" ? flags.pokemons[face.key] : flags[face.key],
+  }));
 
   return (
     <div className="flex min-h-dvh flex-col px-5 py-8">

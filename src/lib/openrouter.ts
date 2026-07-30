@@ -62,3 +62,51 @@ export async function generateImage(prompt: string): Promise<string> {
   }
   return url;
 }
+
+export interface BattleJudgement {
+  winner: "A" | "B";
+  reason: string;
+}
+
+export async function judgeBattle(
+  systemPrompt: string,
+  imageA: string,
+  namesA: string,
+  imageB: string,
+  namesB: string
+): Promise<BattleJudgement> {
+  const data = await callOpenRouter({
+    model: TEXT_MODEL,
+    messages: [
+      { role: "system", content: systemPrompt },
+      {
+        role: "user",
+        content: [
+          { type: "text", text: `Card A - ${namesA}` },
+          { type: "image_url", image_url: { url: imageA } },
+          { type: "text", text: `Card B - ${namesB}` },
+          { type: "image_url", image_url: { url: imageB } },
+        ],
+      },
+    ],
+    temperature: 0.7,
+    max_tokens: 120,
+  });
+
+  const content = data?.choices?.[0]?.message?.content;
+  if (!content || typeof content !== "string") {
+    throw new Error("The judge model returned an empty response.");
+  }
+
+  const lines = content
+    .trim()
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  const letter = lines[0]?.toUpperCase().replace(/[^AB]/g, "");
+  const winner: "A" | "B" = letter === "A" || letter === "B" ? letter : Math.random() < 0.5 ? "A" : "B";
+  const reason = lines[1] || "A closely fought round!";
+
+  return { winner, reason };
+}

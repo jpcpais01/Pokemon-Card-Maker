@@ -1,0 +1,58 @@
+"use client";
+
+import { useState } from "react";
+import FlipCard from "@/components/FlipCard";
+import { buildCardFaces, type CardKey } from "@/lib/cardFaces";
+import type { BattlePlayerPick } from "@/lib/battle/types";
+
+interface Props {
+  pick: BattlePlayerPick;
+  rerollsLeft: number;
+  locked: boolean;
+  busy: boolean;
+  onReroll: (key: CardKey) => void;
+  onLock: () => void;
+}
+
+/**
+ * The local player's own pick panel for a battle round. Remount this with a
+ * `key` on the round number so its reveal state resets fresh each round.
+ */
+export default function BattlePickPanel({ pick, rerollsLeft, locked, busy, onReroll, onLock }: Props) {
+  const faces = buildCardFaces(pick.artType, pick.specialForm, pick.region, pick.pokemons);
+  const [revealed, setRevealed] = useState<Record<string, boolean>>({});
+
+  const allRevealed = faces.every((face) => revealed[String(face.key)]);
+
+  return (
+    <div>
+      <p className="mb-4 text-center text-xs font-semibold text-slate-400">
+        <span className="text-amber-300">↻ {rerollsLeft}</span> reroll{rerollsLeft === 1 ? "" : "s"} left
+      </p>
+
+      <div className="flex flex-wrap justify-center gap-4">
+        {faces.map((face) => (
+          <div key={face.key} className="w-[calc(50%-0.5rem)]">
+            <FlipCard
+              label={face.label}
+              revealed={locked || !!revealed[String(face.key)]}
+              onReveal={() => setRevealed((prev) => ({ ...prev, [String(face.key)]: true }))}
+              front={face.front}
+              rerollsLeft={rerollsLeft}
+              onReroll={() => onReroll(face.key)}
+            />
+          </div>
+        ))}
+      </div>
+
+      <button
+        type="button"
+        onClick={onLock}
+        disabled={!allRevealed || locked || busy}
+        className="mt-8 w-full rounded-2xl bg-gradient-to-r from-amber-400 to-orange-500 py-4 text-base font-bold text-slate-900 shadow-lg shadow-amber-500/25 transition-all active:scale-[0.98] disabled:opacity-50"
+      >
+        {locked ? "Waiting for opponent..." : "Lock In"}
+      </button>
+    </div>
+  );
+}
