@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import ImageLightbox from "./ImageLightbox";
 import type { RevealData } from "./RevealScreen";
 
 interface Props {
@@ -14,6 +15,7 @@ interface Props {
 
 export default function ResultScreen({ image, prompt, data, onRegenerateImage, onStartOver, regenerating }: Props) {
   const [showPrompt, setShowPrompt] = useState(false);
+  const [fullView, setFullView] = useState(false);
 
   const title = data.pokemons.map((p) => p.displayName).join(" & ");
 
@@ -48,8 +50,11 @@ export default function ResultScreen({ image, prompt, data, onRegenerateImage, o
           )}
         </div>
 
-        <div
-          className={`relative mt-5 aspect-[3/4] overflow-hidden rounded-2xl border border-amber-300/40 bg-black/20 shadow-xl shadow-black/40 transition-opacity ${
+        <button
+          type="button"
+          onClick={() => !regenerating && setFullView(true)}
+          aria-label="View full size"
+          className={`group relative mt-5 aspect-[3/4] w-full overflow-hidden rounded-2xl border border-amber-300/40 bg-black/20 shadow-xl shadow-black/40 transition-opacity ${
             regenerating ? "opacity-40" : "opacity-100"
           }`}
         >
@@ -60,7 +65,12 @@ export default function ResultScreen({ image, prompt, data, onRegenerateImage, o
               <span className="h-8 w-8 animate-spin rounded-full border-4 border-white/30 border-t-white" />
             </div>
           )}
-        </div>
+          {!regenerating && (
+            <span className="glass absolute bottom-2.5 right-2.5 flex h-8 w-8 items-center justify-center rounded-full text-sm text-white opacity-90 transition-opacity group-active:opacity-100">
+              ⤢
+            </span>
+          )}
+        </button>
 
         <button
           type="button"
@@ -98,6 +108,10 @@ export default function ResultScreen({ image, prompt, data, onRegenerateImage, o
           </button>
         </div>
       </div>
+
+      {fullView && (
+        <ImageLightbox src={image} alt={`${title} illustration`} onClose={() => setFullView(false)} />
+      )}
     </div>
   );
 }

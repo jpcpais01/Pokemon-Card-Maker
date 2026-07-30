@@ -104,31 +104,17 @@ export default function RevealScreen({ data, flags, onReveal, allRevealed, onRev
           </button>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          {cards.map((card) =>
-            typeof card.key === "number" && data.pokemons.length % 2 === 1 && card.key === data.pokemons.length - 1 && cards.length % 2 === 1 ? (
-              <div key={card.key} className="col-span-2 flex justify-center">
-                <div className="w-[calc(50%-0.5rem)]">
-                  <FlipCard
-                    label={card.label}
-                    revealed={card.revealed}
-                    ready
-                    onReveal={() => onReveal(card.key)}
-                    front={card.front}
-                  />
-                </div>
-              </div>
-            ) : (
+        <div className="flex flex-wrap justify-center gap-4">
+          {cards.map((card) => (
+            <div key={card.key} className="w-[calc(50%-0.5rem)]">
               <FlipCard
-                key={card.key}
                 label={card.label}
                 revealed={card.revealed}
-                ready
                 onReveal={() => onReveal(card.key)}
                 front={card.front}
               />
-            )
-          )}
+            </div>
+          ))}
         </div>
       </div>
 

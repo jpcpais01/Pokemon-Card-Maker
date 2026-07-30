@@ -52,18 +52,3 @@ body {
   animation: blob-float 22s ease-in-out infinite;
   will-change: transform;
 }
-
-/* Diagonal holo-foil sheen for card faces. */
-.card-sheen {
-  position: relative;
-  overflow: hidden;
-}
-
-.card-sheen::before {
-  content: "";
-  position: absolute;
-  inset: -20%;
-  background: linear-gradient(115deg, transparent 25%, rgb(255 255 255 / 22%) 42%, transparent 58%);
-  mix-blend-mode: overlay;
-  pointer-events: none;
-}
