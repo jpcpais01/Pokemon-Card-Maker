@@ -19,8 +19,13 @@ interface Props {
  * `key` on the round number so its reveal state resets fresh each round.
  */
 export default function BattlePickPanel({ pick, rerollsLeft, locked, busy, onReroll, onLock }: Props) {
-  const faces = buildCardFaces(pick.artType, pick.specialForm, pick.region, pick.pokemons);
   const [revealed, setRevealed] = useState<Record<string, boolean>>({});
+
+  // The 2nd Tag Team card only appears once Special Form has actually been revealed as such -
+  // otherwise its mere presence would spoil the surprise before the player taps that card.
+  const specialFormRevealed = locked || !!revealed.specialForm;
+  const visiblePokemons = specialFormRevealed ? pick.pokemons : pick.pokemons.slice(0, 1);
+  const faces = buildCardFaces(pick.artType, pick.specialForm, pick.region, visiblePokemons);
 
   const allRevealed = faces.every((face) => revealed[String(face.key)]);
 

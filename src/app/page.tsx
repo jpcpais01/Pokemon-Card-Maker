@@ -7,7 +7,7 @@ import RevealScreen, { type CardKey, type RevealData, type RevealFlags } from "@
 import LoadingScreen from "@/components/LoadingScreen";
 import ErrorScreen from "@/components/ErrorScreen";
 import ResultScreen from "@/components/ResultScreen";
-import { ART_TYPES, REGIONS, SPECIAL_FORMS, pickWeighted } from "@/lib/cardData";
+import { ART_TYPES, REGIONS, pickSpecialForm, pickWeighted } from "@/lib/cardData";
 import { GENERATIONS, fetchPokemonForGenerations, pickRandomPokemon, toPokemonPick } from "@/lib/generations";
 import type { PokemonRef } from "@/lib/types";
 
@@ -56,7 +56,7 @@ export default function Home() {
       if (fetchedPool.length === 0) throw new Error("No Pokemon found for the selected generations.");
 
       const artType = pickWeighted(ART_TYPES);
-      const specialForm = pickWeighted(SPECIAL_FORMS);
+      const specialForm = pickSpecialForm(fetchedPool.length);
       const region = pickWeighted(REGIONS);
       const count = specialForm.value === "tag-team" ? 2 : 1;
 
@@ -113,7 +113,7 @@ export default function Home() {
     if (key === "specialForm") {
       setRevealData((prev) => {
         if (!prev) return prev;
-        const specialForm = pickWeighted(SPECIAL_FORMS, prev.specialForm.value);
+        const specialForm = pickSpecialForm(pool.length, prev.specialForm.value);
         const wasTagTeam = prev.specialForm.value === "tag-team";
         const isTagTeam = specialForm.value === "tag-team";
 

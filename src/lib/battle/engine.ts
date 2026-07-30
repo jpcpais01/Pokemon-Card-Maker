@@ -1,4 +1,4 @@
-import { ART_TYPES, REGIONS, SPECIAL_FORMS, pickWeighted } from "@/lib/cardData";
+import { ART_TYPES, REGIONS, SPECIAL_FORMS, pickSpecialForm, pickWeighted } from "@/lib/cardData";
 import type { CardKey } from "@/lib/cardFaces";
 import { pickRandomPokemon, toPokemonPick } from "@/lib/generations";
 import type { PokemonRef } from "@/lib/types";
@@ -6,7 +6,7 @@ import type { BattlePlayerPick, BattleRoom, BattleRound, BattleRoundPlayerState 
 
 function rollPlayerPick(pool: PokemonRef[]): BattlePlayerPick {
   const artType = pickWeighted(ART_TYPES);
-  const specialForm = pickWeighted(SPECIAL_FORMS);
+  const specialForm = pickSpecialForm(pool.length);
   const region = pickWeighted(REGIONS);
   const count = specialForm.value === "tag-team" ? 2 : 1;
 
@@ -47,7 +47,7 @@ export function rerollPlayerCard(
     return { ...state, region: pickWeighted(REGIONS, state.region.value) };
   }
   if (key === "specialForm") {
-    const specialForm = pickWeighted(SPECIAL_FORMS, state.specialForm.value);
+    const specialForm = pickSpecialForm(pool.length, state.specialForm.value);
     const wasTagTeam = state.specialForm.value === "tag-team";
     const isTagTeam = specialForm.value === "tag-team";
 

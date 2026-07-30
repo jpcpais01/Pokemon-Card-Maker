@@ -63,6 +63,16 @@ export const SPECIAL_FORMS: WeightedOption<SpecialForm>[] = [
   },
 ];
 
+/**
+ * Picks a special form, excluding Tag Team when the Pokemon pool is too small
+ * to guarantee two distinct Pokemon (otherwise tag-team could roll the same
+ * Pokemon twice).
+ */
+export function pickSpecialForm(poolSize: number, exclude?: SpecialForm): WeightedOption<SpecialForm> {
+  const candidates = poolSize < 2 ? SPECIAL_FORMS.filter((f) => f.value !== "tag-team") : SPECIAL_FORMS;
+  return pickWeighted(candidates, exclude);
+}
+
 export const REGIONS: WeightedOption<Region>[] = [
   { value: "default", label: "Default", weight: 62, blurb: "Standard, original regional form." },
   { value: "alolan", label: "Alolan", weight: 15, blurb: "Alolan regional form, tropical island styling." },
