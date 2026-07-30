@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { generateText } from "@/lib/openrouter";
-import { SYSTEM_PROMPT, buildUserPrompt, type PromptRequestBody } from "@/lib/promptBuilder";
+import { SYSTEM_PROMPT, STYLE_SUFFIX, buildUserPrompt, type PromptRequestBody } from "@/lib/promptBuilder";
 
 export async function POST(request: Request) {
   let body: PromptRequestBody;
@@ -22,7 +22,8 @@ export async function POST(request: Request) {
 
   try {
     const userPrompt = buildUserPrompt(body);
-    const prompt = await generateText(SYSTEM_PROMPT, userPrompt);
+    const draftedPrompt = await generateText(SYSTEM_PROMPT, userPrompt);
+    const prompt = `${draftedPrompt}${STYLE_SUFFIX}`;
     return NextResponse.json({ prompt });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Failed to generate prompt.";
