@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createRound, sanitizeRoomForPlayer } from "@/lib/battle/engine";
 import { normalizeRoomCode } from "@/lib/battle/roomCode";
 import { getRoom, saveRoom } from "@/lib/battle/rooms";
-import { BATTLE_ROUNDS } from "@/lib/battle/types";
+import { BATTLE_ROUNDS, BATTLE_REROLLS_PER_ROUND } from "@/lib/battle/types";
 import { fetchPokemonForGenerations } from "@/lib/generations";
 
 export async function POST(request: Request) {
@@ -39,6 +39,10 @@ export async function POST(request: Request) {
       const pool = await fetchPokemonForGenerations(room.gens);
       room.round += 1;
       room.rounds.push(createRound(room.players, pool));
+      // Unused rerolls carry over - each new round just adds a fresh base allotment on top.
+      for (const pid of room.players) {
+        room.rerolls[pid] = (room.rerolls[pid] ?? 0) + BATTLE_REROLLS_PER_ROUND;
+      }
     }
   }
 

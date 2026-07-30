@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { createRound } from "@/lib/battle/engine";
 import { normalizeRoomCode } from "@/lib/battle/roomCode";
 import { getRoom, saveRoom } from "@/lib/battle/rooms";
-import { BATTLE_TOTAL_REROLLS } from "@/lib/battle/types";
+import { BATTLE_REROLLS_PER_ROUND } from "@/lib/battle/types";
 import { fetchPokemonForGenerations } from "@/lib/generations";
 
 export async function POST(request: Request) {
@@ -30,7 +30,7 @@ export async function POST(request: Request) {
   const playerId = randomUUID();
   room.players.push(playerId);
   room.scores[playerId] = 0;
-  room.rerolls[playerId] = BATTLE_TOTAL_REROLLS;
+  room.rerolls[playerId] = BATTLE_REROLLS_PER_ROUND;
   room.status = "playing";
   room.round = 1;
 

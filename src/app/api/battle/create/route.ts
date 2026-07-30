@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import { generateRoomCode } from "@/lib/battle/roomCode";
 import { getRoom, saveRoom } from "@/lib/battle/rooms";
-import { BATTLE_TOTAL_REROLLS } from "@/lib/battle/types";
+import { BATTLE_REROLLS_PER_ROUND } from "@/lib/battle/types";
 import type { BattleRoom } from "@/lib/battle/types";
 
 export async function POST(request: Request) {
@@ -30,7 +30,7 @@ export async function POST(request: Request) {
     gens: body.gens,
     players: [playerId],
     scores: { [playerId]: 0 },
-    rerolls: { [playerId]: BATTLE_TOTAL_REROLLS },
+    rerolls: { [playerId]: BATTLE_REROLLS_PER_ROUND },
     round: 0,
     rounds: [],
   };

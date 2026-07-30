@@ -1,7 +1,8 @@
 import type { ArtType, PokemonPick, Region, SpecialForm, WeightedOption } from "@/lib/types";
 
 export const BATTLE_ROUNDS = 5;
-export const BATTLE_TOTAL_REROLLS = 5;
+/** Granted at the start of every round, on top of whatever's left unused from the previous round. */
+export const BATTLE_REROLLS_PER_ROUND = 5;
 
 export type RoundStatus = "picking" | "prompting" | "imaging" | "judging" | "done";
 export type RoomStatus = "waiting" | "playing" | "finished";
