@@ -52,6 +52,7 @@ export async function generateImage(prompt: string): Promise<string> {
     model: IMAGE_MODEL,
     messages: [{ role: "user", content: prompt }],
     modalities: ["image", "text"],
+    image_config: { aspect_ratio: "3:4" },
   });
 
   const images = data?.choices?.[0]?.message?.images;

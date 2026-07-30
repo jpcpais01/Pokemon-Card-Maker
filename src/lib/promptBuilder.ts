@@ -17,6 +17,7 @@ Given a set of card traits, write ONE detailed, vivid text-to-image prompt (120-
 - Faithfully depict the named Pokemon's canonical design, adapted for any regional form or special form given.
 - If two Pokemon are given (tag team), depict both together interacting dynamically in the same scene, same environment.
 - Match the rendering style to the rarity tier described.
+- Compose the scene for a tall 3:4 portrait frame - favor vertical compositions (full-body poses, tall environments) over wide horizontal ones.
 - Never mention card game terms like "card", "rarity", "TCG", "border", or "text box" - describe only the illustration artwork itself, full-bleed, no frame.
 - Do not include any Pokemon that was not specified.`;
 

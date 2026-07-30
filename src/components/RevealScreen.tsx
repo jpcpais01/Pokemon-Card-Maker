@@ -36,7 +36,7 @@ export default function RevealScreen({ data, flags, onReveal, allRevealed, onRev
       revealed: flags.artType,
       front: (
         <div className="flex h-full flex-col items-center justify-center gap-2 bg-gradient-to-br from-amber-300 via-amber-500 to-orange-600 p-3 text-center text-slate-900">
-          <span className="text-4xl">{ART_TYPE_ICONS[data.artType.value]}</span>
+          <span className="text-4xl drop-shadow-sm">{ART_TYPE_ICONS[data.artType.value]}</span>
           <span className="text-lg font-black leading-tight">{data.artType.label}</span>
         </div>
       ),
@@ -47,7 +47,7 @@ export default function RevealScreen({ data, flags, onReveal, allRevealed, onRev
       revealed: flags.specialForm,
       front: (
         <div className="flex h-full flex-col items-center justify-center gap-2 bg-gradient-to-br from-violet-400 via-purple-500 to-indigo-700 p-3 text-center text-white">
-          <span className="text-4xl">{SPECIAL_FORM_ICONS[data.specialForm.value]}</span>
+          <span className="text-4xl drop-shadow-sm">{SPECIAL_FORM_ICONS[data.specialForm.value]}</span>
           <span className="text-lg font-black leading-tight">{data.specialForm.label}</span>
         </div>
       ),
@@ -58,7 +58,7 @@ export default function RevealScreen({ data, flags, onReveal, allRevealed, onRev
       revealed: flags.region,
       front: (
         <div className="flex h-full flex-col items-center justify-center gap-2 bg-gradient-to-br from-teal-300 via-emerald-500 to-cyan-700 p-3 text-center text-slate-900">
-          <span className="text-4xl">{REGION_ICONS[data.region.value]}</span>
+          <span className="text-4xl drop-shadow-sm">{REGION_ICONS[data.region.value]}</span>
           <span className="text-lg font-black leading-tight">{data.region.label}</span>
         </div>
       ),
@@ -68,7 +68,7 @@ export default function RevealScreen({ data, flags, onReveal, allRevealed, onRev
       label: data.pokemons.length > 1 ? `Pokemon ${i + 1}` : "Pokemon",
       revealed: flags.pokemons[i],
       front: (
-        <div className="relative flex h-full flex-col items-center justify-end bg-gradient-to-b from-slate-100 to-white">
+        <div className="relative flex h-full flex-col items-center justify-end bg-gradient-to-b from-slate-50 to-white">
           <span className="absolute left-2 top-1.5 text-[10px] font-bold text-slate-400">
             #{String(p.id).padStart(3, "0")}
           </span>
@@ -79,7 +79,7 @@ export default function RevealScreen({ data, flags, onReveal, allRevealed, onRev
             className="h-[75%] w-full object-contain p-1"
             loading="lazy"
           />
-          <div className="w-full bg-slate-900 py-1.5 text-center text-sm font-bold text-white">
+          <div className="w-full bg-slate-900/95 py-1.5 text-center text-sm font-bold text-white backdrop-blur">
             {p.displayName}
           </div>
         </div>
@@ -90,15 +90,15 @@ export default function RevealScreen({ data, flags, onReveal, allRevealed, onRev
   return (
     <div className="flex min-h-dvh flex-col px-5 py-8">
       <div className="mx-auto w-full max-w-sm flex-1">
-        <div className="mb-6 flex items-center justify-between">
-          <button onClick={onBack} className="text-sm font-semibold text-slate-400 active:text-slate-200">
+        <div className="glass mb-6 flex items-center justify-between rounded-2xl px-4 py-3">
+          <button onClick={onBack} className="text-sm font-semibold text-slate-300 active:text-white">
             ← Gens
           </button>
-          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-amber-400">Your Pack</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.25em] text-amber-300">Your Pack</p>
           <button
             onClick={onRevealAll}
             disabled={allRevealed}
-            className="text-sm font-semibold text-amber-400 active:text-amber-200 disabled:opacity-0"
+            className="text-sm font-semibold text-amber-300 active:text-amber-100 disabled:opacity-0"
           >
             Reveal all
           </button>
@@ -137,7 +137,7 @@ export default function RevealScreen({ data, flags, onReveal, allRevealed, onRev
           type="button"
           onClick={onGenerate}
           disabled={!allRevealed}
-          className="w-full rounded-xl bg-gradient-to-r from-amber-400 to-orange-500 py-4 text-base font-bold text-slate-900 shadow-lg shadow-amber-500/20 transition-all active:scale-[0.98] disabled:pointer-events-none disabled:opacity-0"
+          className="w-full rounded-2xl bg-gradient-to-r from-amber-400 to-orange-500 py-4 text-base font-bold text-slate-900 shadow-lg shadow-amber-500/25 transition-all active:scale-[0.98] disabled:pointer-events-none disabled:opacity-0"
         >
           Generate Card Artwork
         </button>

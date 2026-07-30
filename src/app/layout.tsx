@@ -17,7 +17,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   viewportFit: "cover",
-  themeColor: "#0f172a",
+  themeColor: "#05060f",
 };
 
 export default function RootLayout({
@@ -27,7 +27,14 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${geistSans.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col bg-slate-950 text-slate-100">{children}</body>
+      <body className="min-h-full flex flex-col bg-[#05060f] text-slate-100">
+        <div aria-hidden className="pointer-events-none fixed inset-0 overflow-hidden">
+          <div className="blob h-72 w-72 bg-amber-500/30" style={{ top: "-4rem", left: "-3rem" }} />
+          <div className="blob h-80 w-80 bg-violet-600/25" style={{ top: "20%", right: "-5rem", animationDelay: "-7s" }} />
+          <div className="blob h-72 w-72 bg-teal-500/20" style={{ bottom: "-3rem", left: "10%", animationDelay: "-14s" }} />
+        </div>
+        <div className="relative z-10 flex flex-1 flex-col">{children}</div>
+      </body>
     </html>
   );
 }

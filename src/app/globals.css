@@ -11,10 +11,59 @@ html {
 
 body {
   font-family: var(--font-sans), system-ui, sans-serif;
-  background-image: radial-gradient(circle at 50% 0%, rgba(251, 191, 36, 0.08), transparent 60%);
-  background-attachment: fixed;
+  background-color: #05060f;
 }
 
 * {
   -webkit-tap-highlight-color: transparent;
+}
+
+/* Glass surface used across cards, panels and buttons. */
+@utility glass {
+  background-color: rgb(255 255 255 / 6%);
+  backdrop-filter: blur(24px) saturate(140%);
+  -webkit-backdrop-filter: blur(24px) saturate(140%);
+  border: 1px solid rgb(255 255 255 / 12%);
+}
+
+@utility glass-strong {
+  background-color: rgb(255 255 255 / 10%);
+  backdrop-filter: blur(28px) saturate(150%);
+  -webkit-backdrop-filter: blur(28px) saturate(150%);
+  border: 1px solid rgb(255 255 255 / 16%);
+}
+
+@keyframes blob-float {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(3%, 4%) scale(1.08);
+  }
+  66% {
+    transform: translate(-3%, -2%) scale(0.96);
+  }
+}
+
+.blob {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(80px);
+  animation: blob-float 22s ease-in-out infinite;
+  will-change: transform;
+}
+
+/* Diagonal holo-foil sheen for card faces. */
+.card-sheen {
+  position: relative;
+  overflow: hidden;
+}
+
+.card-sheen::before {
+  content: "";
+  position: absolute;
+  inset: -20%;
+  background: linear-gradient(115deg, transparent 25%, rgb(255 255 255 / 22%) 42%, transparent 58%);
+  mix-blend-mode: overlay;
+  pointer-events: none;
 }
