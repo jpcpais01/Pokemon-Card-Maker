@@ -66,24 +66,30 @@ it locally in one browser/tab pair).
 | Variable                     | Required for      | Description                                                                                                     |
 | ----------------------------- | ------------------ | ----------------------------------------------------------------------------------------------------------------- |
 | `OPENROUTER_API_KEY`          | Everything          | Server-side only API key from [openrouter.ai/keys](https://openrouter.ai/keys). Never exposed to the client.      |
-| `UPSTASH_REDIS_REST_URL`      | Battle mode (prod)  | REST URL from a free [Upstash](https://upstash.com) Redis database (or Vercel's Upstash marketplace integration). |
-| `UPSTASH_REDIS_REST_TOKEN`    | Battle mode (prod)  | REST token for the same database.                                                                                  |
+| `UPSTASH_REDIS_REST_URL`      | Battle mode (prod)  | REST URL from a free [Upstash](https://upstash.com) Redis database. |
+| `UPSTASH_REDIS_REST_TOKEN`    | Battle mode (prod)  | REST token for the same database. |
 
-Without the Upstash variables, battle mode still runs using an in-memory
-store — fine for local development, but **it will not work correctly once
-deployed to Vercel** (serverless functions don't share memory across
-instances). Add a Redis database before relying on battle mode in production.
+If you instead connect a database via **Vercel's Storage tab** (the Upstash
+marketplace integration), it names these `KV_REST_API_URL` / `KV_REST_API_TOKEN`
+- the app checks for either naming automatically, so no need to add both or
+rename anything.
+
+Without either set, battle mode still runs using an in-memory store — fine
+for local development, but **it will not work correctly once deployed to
+Vercel** (serverless functions don't share memory across instances). Add a
+Redis database before relying on battle mode in production.
 
 ## Deploying to Vercel
 
 1. Push this repo to GitHub.
 2. Import it in [Vercel](https://vercel.com/new).
 3. Add the `OPENROUTER_API_KEY` environment variable in the project settings.
-4. For battle mode, also add a Redis database (Vercel's Storage tab → connect
-   an Upstash for Redis integration, or create one directly at
-   [upstash.com](https://upstash.com)) and set `UPSTASH_REDIS_REST_URL` /
-   `UPSTASH_REDIS_REST_TOKEN`.
-5. Deploy.
+4. For battle mode, also add a Redis database: Storage tab → connect an
+   Upstash for Redis integration (this sets `KV_REST_API_URL` /
+   `KV_REST_API_TOKEN` automatically), or create one directly at
+   [upstash.com](https://upstash.com) and set `UPSTASH_REDIS_REST_URL` /
+   `UPSTASH_REDIS_REST_TOKEN` yourself.
+5. Deploy (or redeploy, if the database was added after the first deploy).
 
 ## Project structure
 

@@ -1,13 +1,15 @@
 import { Redis } from "@upstash/redis";
 
-const url = process.env.UPSTASH_REDIS_REST_URL;
-const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+// Accepts either a plain Upstash account's env var names, or Vercel's Upstash
+// marketplace integration, which names them KV_REST_API_URL / KV_REST_API_TOKEN.
+const url = process.env.UPSTASH_REDIS_REST_URL ?? process.env.KV_REST_API_URL;
+const token = process.env.UPSTASH_REDIS_REST_TOKEN ?? process.env.KV_REST_API_TOKEN;
 const redis = url && token ? new Redis({ url, token }) : null;
 
 if (!redis && process.env.NODE_ENV === "production") {
   console.warn(
-    "UPSTASH_REDIS_REST_URL / UPSTASH_REDIS_REST_TOKEN are not set - battle mode is using an in-memory " +
-      "store that will NOT work correctly across multiple serverless instances. Add a Redis database for production."
+    "No Redis env vars found (checked UPSTASH_REDIS_REST_URL/TOKEN and KV_REST_API_URL/TOKEN) - battle mode " +
+      "is using an in-memory store that will NOT work correctly across multiple serverless instances. Add a Redis database for production."
   );
 }
 
