@@ -52,3 +52,19 @@ body {
   animation: blob-float 22s ease-in-out infinite;
   will-change: transform;
 }
+
+@keyframes progress-fill {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+/* Fills over 20s and holds at full via animation-fill-mode - the caller
+   never has to know or care whether the request actually finished by then. */
+.progress-fill {
+  transform-origin: left;
+  animation: progress-fill 20s cubic-bezier(0.45, 0, 0.55, 1) forwards;
+}

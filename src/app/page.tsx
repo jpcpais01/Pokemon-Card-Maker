@@ -184,11 +184,11 @@ export default function Home() {
   }
 
   if (stage === "prompt") {
-    return <LoadingScreen message="Studying your traits and drafting the art direction..." />;
+    return <LoadingScreen key="prompt" message="Studying your traits and drafting the art direction..." />;
   }
 
   if (stage === "image") {
-    return <LoadingScreen message="Painting the final illustration... this can take a moment." />;
+    return <LoadingScreen key="image" message="Painting the final illustration..." />;
   }
 
   if (stage === "error") {
