@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import GenSelector from "@/components/GenSelector";
+import PlayerCountPicker from "@/components/battle/PlayerCountPicker";
 import RevealScreen, { type CardKey, type RevealData, type RevealFlags } from "@/components/RevealScreen";
 import LoadingScreen from "@/components/LoadingScreen";
 import ErrorScreen from "@/components/ErrorScreen";
@@ -38,6 +39,7 @@ export default function Home() {
 
   const [startingBot, setStartingBot] = useState(false);
   const [botError, setBotError] = useState<string | null>(null);
+  const [botPlayers, setBotPlayers] = useState(2);
 
   const [pool, setPool] = useState<PokemonRef[]>([]);
   const [revealData, setRevealData] = useState<RevealData | null>(null);
@@ -218,7 +220,7 @@ export default function Home() {
     setBotError(null);
     setStartingBot(true);
     try {
-      const { code, playerId } = await createRoom(gens, true);
+      const { code, playerId } = await createRoom(gens, true, botPlayers);
       storePlayerId(code, playerId);
       router.push(`/battle/${code}`);
     } catch (err) {
@@ -241,11 +243,12 @@ export default function Home() {
             <Link href="/battle" className="block text-center text-sm font-semibold text-slate-400 active:text-amber-300">
               Battle a friend
             </Link>
+            <PlayerCountPicker value={botPlayers} onChange={setBotPlayers} label="Bot match players" />
             <button
               type="button"
               onClick={handleBattleBot}
               disabled={startingBot}
-              className="block text-center text-sm font-semibold text-slate-400 active:text-amber-300 disabled:opacity-50"
+              className="mt-1 block text-center text-sm font-semibold text-slate-400 active:text-amber-300 disabled:opacity-50"
             >
               {startingBot ? "Starting match..." : "Play vs Bot"}
             </button>

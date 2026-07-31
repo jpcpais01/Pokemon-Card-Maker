@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import GenSelector from "@/components/GenSelector";
+import PlayerCountPicker from "@/components/battle/PlayerCountPicker";
 import { createRoom, joinRoom } from "@/lib/battle/api";
 import { storePlayerId } from "@/lib/battle/session";
 import { GENERATIONS } from "@/lib/generations";
@@ -15,6 +16,7 @@ export default function BattleLobby() {
   const [mode, setMode] = useState<Mode>("menu");
 
   const [gens, setGens] = useState<number[]>(GENERATIONS.map((g) => g.id));
+  const [maxPlayers, setMaxPlayers] = useState(2);
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
 
@@ -26,7 +28,7 @@ export default function BattleLobby() {
     setCreateError(null);
     setCreating(true);
     try {
-      const { code, playerId } = await createRoom(gens);
+      const { code, playerId } = await createRoom(gens, false, maxPlayers);
       storePlayerId(code, playerId);
       router.push(`/battle/${code}`);
     } catch (err) {
@@ -61,11 +63,12 @@ export default function BattleLobby() {
         onStart={handleCreate}
         loading={creating}
         error={createError}
-        eyebrow="1v1 Battle"
+        eyebrow="Battle"
         title="Create a Room"
-        subtitle="Pick which generations both of you can pull from, then share the room code with a friend."
+        subtitle="Pick which generations everyone can pull from and how many players, then share the room code."
         buttonLabel="Create Room"
         loadingLabel="Creating room..."
+        extraTop={<PlayerCountPicker value={maxPlayers} onChange={setMaxPlayers} />}
         footer={
           <button
             type="button"
@@ -84,7 +87,7 @@ export default function BattleLobby() {
       <div className="flex min-h-dvh flex-col items-center justify-center px-5 py-10">
         <form onSubmit={handleJoin} className="glass w-full max-w-sm rounded-[2rem] p-6 shadow-2xl shadow-black/40">
           <div className="mb-7 text-center">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.35em] text-amber-300/90">1v1 Battle</p>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.35em] text-amber-300/90">Battle</p>
             <h1 className="mt-2 text-3xl font-black tracking-tight text-white">Join a Room</h1>
             <p className="mt-2 text-sm leading-relaxed text-slate-400">
               Enter the 6-character code your friend shared with you.
@@ -131,10 +134,11 @@ export default function BattleLobby() {
     <div className="flex min-h-dvh flex-col items-center justify-center px-5 py-10">
       <div className="glass w-full max-w-sm rounded-[2rem] p-6 shadow-2xl shadow-black/40">
         <div className="mb-8 text-center">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.35em] text-amber-300/90">1v1 Battle</p>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.35em] text-amber-300/90">Battle</p>
           <h1 className="mt-2 text-3xl font-black tracking-tight text-white">Card Showdown</h1>
           <p className="mt-2 text-sm leading-relaxed text-slate-400">
-            Open packs against a friend. Five rounds, an AI judge picks the better card each round, most points wins.
+            Open packs against 1-3 friends. Five rounds, an AI judge picks the better card each round, most points
+            wins.
           </p>
         </div>
 

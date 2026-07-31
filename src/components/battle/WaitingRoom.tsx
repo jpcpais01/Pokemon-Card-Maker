@@ -4,9 +4,11 @@ import { useState } from "react";
 
 interface Props {
   code: string;
+  playersJoined: number;
+  maxPlayers: number;
 }
 
-export default function WaitingRoom({ code }: Props) {
+export default function WaitingRoom({ code, playersJoined, maxPlayers }: Props) {
   const [copied, setCopied] = useState(false);
 
   async function copyLink() {
@@ -23,8 +25,12 @@ export default function WaitingRoom({ code }: Props) {
   return (
     <div className="flex min-h-dvh flex-col items-center justify-center px-5 py-10">
       <div className="glass w-full max-w-sm rounded-[2rem] p-6 text-center shadow-2xl shadow-black/40">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.35em] text-amber-300/90">1v1 Battle</p>
-        <h1 className="mt-2 text-2xl font-black tracking-tight text-white">Waiting for opponent...</h1>
+        <p className="text-[11px] font-semibold uppercase tracking-[0.35em] text-amber-300/90">
+          {maxPlayers > 2 ? `${maxPlayers}-Player Battle` : "1v1 Battle"}
+        </p>
+        <h1 className="mt-2 text-2xl font-black tracking-tight text-white">
+          {playersJoined} of {maxPlayers} joined...
+        </h1>
 
         <div className="mt-6 rounded-2xl border border-amber-300/30 bg-amber-400/10 py-6">
           <p className="text-[11px] font-semibold uppercase tracking-wider text-amber-300/80">Room Code</p>

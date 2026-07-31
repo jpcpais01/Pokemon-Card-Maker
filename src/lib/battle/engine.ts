@@ -21,16 +21,16 @@ function rollPlayerPick(pool: PokemonRef[]): BattlePlayerPick {
 }
 
 /**
- * Creates a fresh round with a randomized pick for each player. When `botId` is given, that
- * player's pick is locked in immediately - the bot never rerolls, it just gets a randomized pick
- * with the exact same odds as anyone else and waits for the human to lock in.
+ * Creates a fresh round with a randomized pick for each player. Any player id listed in `botIds`
+ * has their pick locked in immediately - a bot never rerolls, it just gets a randomized pick with
+ * the exact same odds as anyone else and waits for the humans to lock in.
  */
-export function createRound(playerIds: string[], pool: PokemonRef[], botId?: string): BattleRound {
+export function createRound(playerIds: string[], pool: PokemonRef[], botIds: readonly string[] = []): BattleRound {
   const players: BattleRound["players"] = {};
   for (const pid of playerIds) {
     players[pid] = {
       ...rollPlayerPick(pool),
-      locked: pid === botId,
+      locked: botIds.includes(pid),
       promptStatus: "pending",
       imageStatus: "pending",
       readyForNext: false,

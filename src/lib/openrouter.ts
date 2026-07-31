@@ -70,11 +70,18 @@ export interface CardRatings {
   rarity: number;
 }
 
-export interface BattleJudgement {
-  winner: "A" | "B";
+export interface JudgeCardInput {
+  /** "A" | "B" | "C" | "D" - one per card being judged, 2 to 4 cards. */
+  letter: string;
+  image: string;
+  names: string;
+}
+
+export interface MultiBattleJudgement {
+  winnerLetter: string;
   reason: string;
-  card1Ratings: CardRatings;
-  card2Ratings: CardRatings;
+  /** Keyed by the same letters passed in via JudgeCardInput. */
+  ratings: Record<string, CardRatings>;
 }
 
 /**
@@ -176,46 +183,61 @@ const RATING_SCHEMA = {
   additionalProperties: false,
 };
 
-const JUDGE_RESPONSE_FORMAT = {
-  type: "json_schema",
-  json_schema: {
-    name: "battle_judgement",
-    strict: true,
-    schema: {
-      type: "object",
-      properties: {
-        reasoning: {
-          type: "string",
-          description: "A punchy, card-specific final-battle phrase, max 10 words. Never a generic stock line.",
-        },
-        winner: { type: "string", enum: ["A", "B"], description: "Whichever card's ratings add up higher." },
-        card1Ratings: RATING_SCHEMA,
-        card2Ratings: RATING_SCHEMA,
-      },
-      required: ["reasoning", "winner", "card1Ratings", "card2Ratings"],
-      additionalProperties: false,
-    },
-  },
-};
+const ratingsKey = (letter: string) => `card${letter}Ratings`;
 
-export async function judgeBattle(
-  systemPrompt: string,
-  imageA: string,
-  namesA: string,
-  imageB: string,
-  namesB: string
-): Promise<BattleJudgement> {
+/** Builds a schema requiring exactly one ratings object per card being judged (2-4 of them). */
+function buildJudgeResponseFormat(letters: string[]) {
+  const properties: Record<string, unknown> = {
+    reasoning: {
+      type: "string",
+      description: "A punchy, card-specific final-battle phrase, max 10 words. Never a generic stock line.",
+    },
+    winner: { type: "string", enum: letters, description: "Whichever card's ratings add up highest." },
+  };
+  const required = ["reasoning", "winner"];
+  for (const letter of letters) {
+    properties[ratingsKey(letter)] = RATING_SCHEMA;
+    required.push(ratingsKey(letter));
+  }
+
+  return {
+    type: "json_schema",
+    json_schema: {
+      name: "battle_judgement",
+      strict: true,
+      schema: { type: "object", properties, required, additionalProperties: false },
+    },
+  };
+}
+
+/** Picks whichever letter has the highest ratings total; ties split randomly among the leaders. */
+function pickWinnerByTotals(ratings: Record<string, CardRatings>, fallbackLetter?: string): string {
+  const entries = Object.entries(ratings).map(([letter, r]) => [letter, ratingsTotal(r)] as const);
+  const maxTotal = Math.max(...entries.map(([, total]) => total));
+  const leaders = entries.filter(([, total]) => total === maxTotal).map(([letter]) => letter);
+  if (leaders.length === 1) return leaders[0];
+  if (fallbackLetter && leaders.includes(fallbackLetter)) return fallbackLetter;
+  return leaders[Math.floor(Math.random() * leaders.length)];
+}
+
+/**
+ * Judges 2 to 4 cards at once (1v1, or the 3-/4-player free-for-all variants) and returns
+ * per-card ratings plus a single round winner, derived from whichever card's ratings add up
+ * highest (the model's own stated "winner" only breaks an exact tie).
+ */
+export async function judgeMultiBattle(systemPrompt: string, cards: JudgeCardInput[]): Promise<MultiBattleJudgement> {
+  if (cards.length < 2 || cards.length > 4) {
+    throw new Error(`judgeMultiBattle expects 2-4 cards, got ${cards.length}.`);
+  }
+  const letters = cards.map((c) => c.letter);
+
+  const userContent = cards.flatMap((c) => [
+    { type: "text", text: `Card ${c.letter} - ${c.names}` },
+    { type: "image_url", image_url: { url: c.image } },
+  ]);
   const messages = [
     { role: "system", content: systemPrompt },
-    {
-      role: "user",
-      content: [
-        { type: "text", text: `Card A - ${namesA}` },
-        { type: "image_url", image_url: { url: imageA } },
-        { type: "text", text: `Card B - ${namesB}` },
-        { type: "image_url", image_url: { url: imageB } },
-      ],
-    },
+    { role: "user", content: userContent },
   ];
 
   const baseBody = {
@@ -225,8 +247,8 @@ export async function judgeBattle(
     // Generous headroom above what the compact JSON payload itself needs - some models spend a
     // chunk of the budget on hidden reasoning before writing the actual answer, and a tight cap
     // here was silently truncating the JSON mid-object, which made every round fall back to the
-    // generic response below.
-    max_tokens: 1000,
+    // generic response below. Scales with card count since more cards means more ratings fields.
+    max_tokens: 500 + cards.length * 250,
     // The same model id can be served by several backing providers on OpenRouter, and only some
     // of them actually enforce every parameter in the request - one that silently ignores
     // response_format is indistinguishable from a working one until the response comes back
@@ -235,13 +257,15 @@ export async function judgeBattle(
     provider: { require_parameters: true },
   };
 
+  const responseFormat = buildJudgeResponseFormat(letters);
+
   let data: unknown;
   try {
     // Strict structured output: the model is constrained to this exact schema, so it can't
     // silently omit a rating field the way loose "return JSON" prompting sometimes does.
-    data = await callOpenRouter({ ...baseBody, response_format: JUDGE_RESPONSE_FORMAT });
+    data = await callOpenRouter({ ...baseBody, response_format: responseFormat });
   } catch (err) {
-    console.error("judgeBattle: structured-output request failed, retrying without a schema", err);
+    console.error("judgeMultiBattle: structured-output request failed, retrying without a schema", err);
     data = await callOpenRouter({ ...baseBody, response_format: { type: "json_object" } });
   }
 
@@ -251,59 +275,55 @@ export async function judgeBattle(
   }
 
   try {
-    const parsed = JSON.parse(extractJson(content)) as {
-      winner?: unknown;
-      reasoning?: unknown;
-      card1Ratings?: unknown;
-      card2Ratings?: unknown;
-    };
+    const parsed = JSON.parse(extractJson(content)) as Record<string, unknown>;
 
-    const card1Ratings = parseRatingsStrict(parsed.card1Ratings, "Card A");
-    const card2Ratings = parseRatingsStrict(parsed.card2Ratings, "Card B");
-    const total1 = ratingsTotal(card1Ratings);
-    const total2 = ratingsTotal(card2Ratings);
-
-    // The ratings are the authoritative source of truth for fairness/consistency - the model's
-    // own "winner" claim is only used to break an exact tie in the totals.
-    let winner: "A" | "B";
-    if (total1 !== total2) {
-      winner = total1 > total2 ? "A" : "B";
-    } else {
-      const letter = typeof parsed.winner === "string" ? parsed.winner.trim().toUpperCase() : "";
-      winner = letter === "A" || letter === "B" ? letter : Math.random() < 0.5 ? "A" : "B";
+    const ratings: Record<string, CardRatings> = {};
+    for (const letter of letters) {
+      ratings[letter] = parseRatingsStrict(parsed[ratingsKey(letter)], `Card ${letter}`);
     }
+
+    const statedWinner = typeof parsed.winner === "string" ? parsed.winner.trim().toUpperCase() : "";
+    const winnerLetter = pickWinnerByTotals(ratings, letters.includes(statedWinner) ? statedWinner : undefined);
 
     const reason =
       typeof parsed.reasoning === "string" && parsed.reasoning.trim()
         ? parsed.reasoning.trim()
         : "A closely fought round!";
 
-    return { winner, reason, card1Ratings, card2Ratings };
+    return { winnerLetter, reason, ratings };
   } catch (err) {
     // JSON.parse can fail on a response that's 99% correct - a stray unescaped quote inside
     // "reasoning" or a trailing comma breaks the whole document even though the actual rating
     // numbers are sitting right there in the text. Try to recover them directly before giving up.
-    const card1Ratings = regexExtractRatings(content, "card1Ratings");
-    const card2Ratings = regexExtractRatings(content, "card2Ratings");
-    if (card1Ratings && card2Ratings) {
-      console.error("judgeBattle: JSON.parse failed, recovered ratings via regex fallback", err, content);
-      const total1 = ratingsTotal(card1Ratings);
-      const total2 = ratingsTotal(card2Ratings);
-      const winner = total1 !== total2 ? (total1 > total2 ? "A" : "B") : Math.random() < 0.5 ? "A" : "B";
+    const recovered: Record<string, CardRatings> = {};
+    let allRecovered = true;
+    for (const letter of letters) {
+      const r = regexExtractRatings(content, ratingsKey(letter));
+      if (!r) {
+        allRecovered = false;
+        break;
+      }
+      recovered[letter] = r;
+    }
+
+    if (allRecovered) {
+      console.error("judgeMultiBattle: JSON.parse failed, recovered ratings via regex fallback", err, content);
+      const winnerLetter = pickWinnerByTotals(recovered);
       const reason = regexExtractReason(content) ?? "A hard-fought round with a narrow edge.";
-      return { winner, reason, card1Ratings, card2Ratings };
+      return { winnerLetter, reason, ratings: recovered };
     }
 
     // Should be rare now that the response is schema-constrained, but keep a safety net so one
     // truly broken response can't crash the round - and log the raw content so a recurring
     // failure is actually diagnosable instead of silently masked by a fake-looking flat fallback.
-    console.error("judgeBattle: failed to parse judge response", err, content);
+    console.error("judgeMultiBattle: failed to parse judge response", err, content);
     const fallback: CardRatings = { art: 5, fame: 5, chase: 5, rarity: 5 };
+    const fallbackRatings: Record<string, CardRatings> = {};
+    for (const letter of letters) fallbackRatings[letter] = fallback;
     return {
-      winner: Math.random() < 0.5 ? "A" : "B",
+      winnerLetter: letters[Math.floor(Math.random() * letters.length)],
       reason: "The judge's notes got lost in the shuffle - too close to call!",
-      card1Ratings: fallback,
-      card2Ratings: fallback,
+      ratings: fallbackRatings,
     };
   }
 }

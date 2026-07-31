@@ -1,33 +1,47 @@
 import Link from "next/link";
 
-interface Props {
-  myScore: number;
-  opponentScore: number;
-  opponentLabel?: string;
+export interface MatchResultPlayer {
+  id: string;
+  label: string;
+  score: number;
+  isMe: boolean;
 }
 
-export default function MatchResult({ myScore, opponentScore, opponentLabel = "Opponent" }: Props) {
-  const tie = myScore === opponentScore;
-  const won = myScore > opponentScore;
+interface Props {
+  players: MatchResultPlayer[];
+}
+
+export default function MatchResult({ players }: Props) {
+  const sorted = [...players].sort((a, b) => b.score - a.score);
+  const topScore = sorted[0]?.score ?? 0;
+  const winners = sorted.filter((p) => p.score === topScore);
+  const tied = winners.length > 1;
+  const iAmTiedLeader = tied && winners.some((p) => p.isMe);
+  const iWon = !tied && winners.some((p) => p.isMe);
+
+  const title = tied ? (iAmTiedLeader ? "It's a Tie!" : "You Lose") : iWon ? "You Win! 🏆" : "You Lose";
 
   return (
     <div className="flex min-h-dvh flex-col items-center justify-center px-5 py-10">
       <div className="glass w-full max-w-sm rounded-[2rem] p-6 text-center shadow-2xl shadow-black/40">
         <p className="text-[11px] font-semibold uppercase tracking-[0.35em] text-amber-300/90">Match Complete</p>
-        <h1 className="mt-2 text-3xl font-black tracking-tight text-white">
-          {tie ? "It's a Tie!" : won ? "You Win! 🏆" : "You Lose"}
-        </h1>
+        <h1 className="mt-2 text-3xl font-black tracking-tight text-white">{title}</h1>
 
-        <div className="mt-6 flex items-center justify-center gap-6">
-          <div>
-            <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">You</p>
-            <p className="text-4xl font-black text-amber-300">{myScore}</p>
-          </div>
-          <p className="text-2xl font-black text-slate-600">-</p>
-          <div>
-            <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">{opponentLabel}</p>
-            <p className="text-4xl font-black text-slate-200">{opponentScore}</p>
-          </div>
+        <div className="mt-6 flex flex-col gap-2.5">
+          {sorted.map((p, i) => (
+            <div
+              key={p.id}
+              className={`flex items-center justify-between rounded-2xl px-4 py-3 ${
+                p.isMe ? "border border-amber-300/40 bg-amber-400/10" : "glass"
+              }`}
+            >
+              <div className="flex items-center gap-2.5">
+                <span className="text-xs font-black text-slate-500">#{i + 1}</span>
+                <span className="text-sm font-bold text-white">{p.isMe ? "You" : p.label}</span>
+              </div>
+              <span className={`text-xl font-black ${p.isMe ? "text-amber-300" : "text-slate-200"}`}>{p.score}</span>
+            </div>
+          ))}
         </div>
 
         <Link

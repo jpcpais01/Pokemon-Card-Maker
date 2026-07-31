@@ -4,8 +4,10 @@ import { normalizeRoomCode } from "@/lib/battle/roomCode";
 import { getImage, getRoom, lockKey, saveImage, saveRoom } from "@/lib/battle/rooms";
 import { acquireLock, releaseLock } from "@/lib/battle/store";
 import type { BattleRound } from "@/lib/battle/types";
-import { generateImage, generateText, judgeBattle } from "@/lib/openrouter";
-import { JUDGE_SYSTEM_PROMPT, SYSTEM_PROMPT, buildStyleSuffix, buildUserPrompt } from "@/lib/promptBuilder";
+import { generateImage, generateText, judgeMultiBattle, type JudgeCardInput } from "@/lib/openrouter";
+import { SYSTEM_PROMPT, buildJudgeSystemPrompt, buildStyleSuffix, buildUserPrompt } from "@/lib/promptBuilder";
+
+const LETTERS = ["A", "B", "C", "D"];
 
 export const maxDuration = 60;
 
@@ -100,44 +102,42 @@ export async function POST(request: Request) {
         currentRound.status = "judging";
       }
     } else if (currentRound.status === "judging") {
-      const [pidA, pidB] = room.players;
-      const stateA = currentRound.players[pidA];
-      const stateB = currentRound.players[pidB];
+      const pids = room.players;
+      const states = pids.map((pid) => currentRound.players[pid]);
+      const readyPids = pids.filter((_, i) => states[i].imageStatus === "ready");
 
       let winnerId: string;
       let verdict: string;
       let ratings: BattleRound["ratings"];
 
-      if (stateA.imageStatus === "ready" && stateB.imageStatus === "ready") {
-        const [imageA, imageB] = await Promise.all([
-          getImage(room.code, room.round, pidA),
-          getImage(room.code, room.round, pidB),
-        ]);
-        const namesA = stateA.pokemons.map((p) => p.displayName).join(" & ");
-        const namesB = stateB.pokemons.map((p) => p.displayName).join(" & ");
+      if (readyPids.length === pids.length) {
+        const images = await Promise.all(pids.map((pid) => getImage(room.code, room.round, pid)));
         try {
-          if (!imageA || !imageB) throw new Error("Missing stored image.");
-          const judged = await judgeBattle(JUDGE_SYSTEM_PROMPT, imageA, namesA, imageB, namesB);
-          winnerId = judged.winner === "A" ? pidA : pidB;
+          if (images.some((img) => !img)) throw new Error("Missing stored image.");
+          const letters = pids.map((_, i) => LETTERS[i]);
+          const cards: JudgeCardInput[] = pids.map((pid, i) => ({
+            letter: letters[i],
+            image: images[i]!,
+            names: states[i].pokemons.map((p) => p.displayName).join(" & "),
+          }));
+          const judged = await judgeMultiBattle(buildJudgeSystemPrompt(letters), cards);
+          const winnerIndex = letters.indexOf(judged.winnerLetter);
+          winnerId = pids[winnerIndex];
           verdict = judged.reason;
-          ratings = { [pidA]: judged.card1Ratings, [pidB]: judged.card2Ratings };
+          ratings = {};
+          pids.forEach((pid, i) => {
+            ratings![pid] = judged.ratings[letters[i]];
+          });
         } catch {
-          winnerId = Math.random() < 0.5 ? pidA : pidB;
+          winnerId = pids[Math.floor(Math.random() * pids.length)];
           verdict = "The judge was speechless - too close to call, so the coin decided!";
         }
+      } else if (readyPids.length > 0) {
+        winnerId = readyPids[Math.floor(Math.random() * readyPids.length)];
+        verdict = "Not everyone's artwork could be generated this round - default win.";
       } else {
-        const aOk = stateA.imageStatus === "ready";
-        const bOk = stateB.imageStatus === "ready";
-        if (aOk && !bOk) {
-          winnerId = pidA;
-          verdict = "The opponent's artwork couldn't be generated this round - default win.";
-        } else if (bOk && !aOk) {
-          winnerId = pidB;
-          verdict = "The opponent's artwork couldn't be generated this round - default win.";
-        } else {
-          winnerId = Math.random() < 0.5 ? pidA : pidB;
-          verdict = "Neither artwork could be generated this round - the coin decided!";
-        }
+        winnerId = pids[Math.floor(Math.random() * pids.length)];
+        verdict = "Nobody's artwork could be generated this round - the coin decided!";
       }
 
       currentRound.winnerId = winnerId;

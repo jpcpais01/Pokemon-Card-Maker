@@ -45,9 +45,24 @@ export function buildStyleSuffix(pokemonNames: string[]): string {
   return `${base} This is a Tag Team illustration - it must clearly show BOTH ${namesList} together as two distinct, fully separate, individually recognizable Pokemon standing or acting side by side. Do not merge, hybridize, or blend ${namesList} into a single creature. Do not omit either one, and do not substitute a different species for either one. Both ${namesList} must be fully visible in the final image, each exactly matching its own official design.`;
 }
 
-export const JUDGE_SYSTEM_PROMPT = `You are a fair, impartial, and conservative judge for a friendly 1-on-1 Pokemon TCG art showdown between two AI-generated illustrations, Card A and Card B. You will be shown each image plus which Pokemon it depicts.
+/**
+ * Builds the judge's system prompt for a showdown between `letters.length` cards (2 for a 1v1, up
+ * to 4 for the free-for-all variants) - the rubric and output-format rules are identical either
+ * way, just the number of cards/ratings-keys and the winner enum scale with the letters given.
+ */
+export function buildJudgeSystemPrompt(letters: string[]): string {
+  const n = letters.length;
+  const cardList = letters.map((l) => `Card ${l}`).join(", ").replace(/, ([^,]*)$/, n > 2 ? ", and $1" : " and $1");
+  const ratingsKeyList = letters.map((l) => `"card${l}Ratings"`).join(", ");
+  const exampleRatingsList = letters
+    .map((l, i) => `"card${l}Ratings": {"art": ${8 - i}, "fame": ${7 - i}, "chase": ${6 - i}, "rarity": ${7 - i}}`)
+    .join(", ");
 
-Look closely at each image individually before scoring - the two cards must almost never end up with identical scores on every single aspect, because two independently generated illustrations are essentially never perfectly tied on composition, iconic appeal, collectibility, AND rarity fit all at once. If you find yourself about to give both cards the exact same number on every aspect, look again for a real difference (better lighting, a more dynamic pose, a stronger background, cleaner rendering) and reflect it in the scores.
+  const modeDescription = n === 2 ? "1-on-1" : `${n}-way free-for-all`;
+
+  return `You are a fair, impartial, and conservative judge for a friendly ${modeDescription} Pokemon TCG art showdown between ${n} AI-generated illustrations, ${cardList}. You will be shown each image plus which Pokemon it depicts.
+
+Look closely at each image individually before scoring - the ${n} cards must almost never end up with identical scores on every single aspect, because independently generated illustrations are essentially never perfectly tied on composition, iconic appeal, collectibility, AND rarity fit all at once. If you find yourself about to give two or more cards the exact same number on every aspect, look again for a real difference (better lighting, a more dynamic pose, a stronger background, cleaner rendering) and reflect it in the scores.
 
 Rate each card independently and honestly on four aspects, each a strict integer from 1 to 10. Be conservative - reserve 9-10 for truly exceptional work, most solid cards should land around 5-8, and do not inflate scores just because a card is novel:
 - art: overall illustration quality - composition, technique, polish, how well it matches premium Pokemon TCG art style.
@@ -59,16 +74,16 @@ Rate each card independently and honestly on four aspects, each a strict integer
 
 Respond with ONLY one single-line JSON object and absolutely nothing else: no markdown code fences, no backticks, no "json" label, no preamble like "Here is my evaluation", no explanation before or after, no trailing commentary. The response body must start with "{" and end with "}" and contain nothing outside those braces.
 
-The object must contain EXACTLY these four top-level keys, no more and no fewer: "reasoning", "winner", "card1Ratings", "card2Ratings".
+The object must contain EXACTLY these ${n + 2} top-level keys, no more and no fewer: "reasoning", "winner", ${ratingsKeyList}.
 - "reasoning": a punchy final-battle phrase describing how THIS specific round went, max 10 words. Mention something concrete you actually noticed (a pose, a color, a background detail, a vibe) - never a generic stock line like "a closely fought round."
-- "winner": exactly the string "A" or the string "B" - nothing else.
-- "card1Ratings": an object for Card A with EXACTLY these four keys, every single one required and never null, missing, or blank: "art", "fame", "chase", "rarity" - each value a plain integer from 1 to 10.
-- "card2Ratings": an object for Card B with the exact same four required keys ("art", "fame", "chase", "rarity"), each a plain integer from 1 to 10.
+- "winner": exactly one of these strings: ${letters.map((l) => `"${l}"`).join(", ")} - nothing else.
+${letters.map((l) => `- "card${l}Ratings": an object for Card ${l} with EXACTLY these four keys, every single one required and never null, missing, or blank: "art", "fame", "chase", "rarity" - each value a plain integer from 1 to 10.`).join("\n")}
 
 Example of the exact shape required (values are illustrative only, not a default to copy):
-{"reasoning": "Charizard's dynamic flame pose outshines a stiffer stance.", "winner": "A", "card1Ratings": {"art": 8, "fame": 7, "chase": 6, "rarity": 7}, "card2Ratings": {"art": 6, "fame": 5, "chase": 5, "rarity": 6}}
+{"reasoning": "Charizard's dynamic flame pose outshines the rest.", "winner": "${letters[0]}", ${exampleRatingsList}}
 
-Never omit a key, never leave a rating blank/null/0, and never wrap the object in another object or array. "winner" must be consistent with whichever card's four ratings add up to a higher total - be fair and just, let the ratings drive the decision rather than a gut feeling.`;
+Never omit a key, never leave a rating blank/null/0, and never wrap the object in another object or array. "winner" must be consistent with whichever card's four ratings add up to the highest total among all ${n} cards - be fair and just, let the ratings drive the decision rather than a gut feeling.`;
+}
 
 export function buildUserPrompt(body: PromptRequestBody): string {
   const pokemonList = body.pokemons.map((p) => p.name).join(" and ");

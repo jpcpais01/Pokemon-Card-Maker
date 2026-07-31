@@ -5,130 +5,115 @@ import ImageLightbox from "@/components/ImageLightbox";
 import { ratingsTier, ratingsTotal, tierForTotal } from "@/lib/battle/tier";
 import type { BattleRound, BattleRoundPlayerState, CardRatings } from "@/lib/battle/types";
 
-type Phase = "card1" | "card2" | "compare" | "victory" | "summary";
-
 const CARD_SPOTLIGHT_MS = 3000;
 const COMPARE_MS = 15000;
 const VICTORY_SPOTLIGHT_MS = 4000;
 
+export interface RoundResultPlayerInfo {
+  id: string;
+  /** "You" is handled by the caller via isMe - this is only used for non-self players. */
+  label: string;
+  image: string | null;
+  pick: BattleRoundPlayerState;
+  ratings?: CardRatings;
+  isMe: boolean;
+}
+
 interface Props {
   round: BattleRound;
-  myId: string;
-  opponentId: string;
-  myImage: string | null;
-  opponentImage: string | null;
+  /** Ordered with "me" first, then every other player in a stable order. 2 to 4 entries. */
+  players: RoundResultPlayerInfo[];
   isLastRound: boolean;
   myReady: boolean;
-  opponentReady: boolean;
+  allOthersReady: boolean;
   readyBusy: boolean;
   onReady: () => void;
-  opponentLabel?: string;
 }
 
 export default function RoundResult({
   round,
-  myId,
-  opponentId,
-  myImage,
-  opponentImage,
+  players,
   isLastRound,
   myReady,
-  opponentReady,
+  allOthersReady,
   readyBusy,
   onReady,
-  opponentLabel = "Opponent",
 }: Props) {
-  const [phase, setPhase] = useState<Phase>("card1");
+  const [phaseIndex, setPhaseIndex] = useState(0);
   const [fullViewSrc, setFullViewSrc] = useState<string | null>(null);
 
-  const iWon = round.winnerId === myId;
-  const myPick = round.players[myId];
-  const opponentPick = round.players[opponentId];
-  const bothImagesReady = !!myImage && !!opponentImage;
+  const n = players.length;
+  const COMPARE_PHASE = n;
+  const VICTORY_PHASE = n + 1;
+  const SUMMARY_PHASE = n + 2;
 
+  const allImagesReady = players.every((p) => !!p.image);
   // Only worth a dedicated bars-comparison beat when the judge actually produced ratings -
   // a coin-flip/default-win round has none, so it skips straight to the victory spotlight.
   const hasRatings = !!round.ratings;
 
   const advancePhase = useCallback(() => {
-    setPhase((p) => {
-      if (p === "card1") return "card2";
-      if (p === "card2") return hasRatings ? "compare" : "victory";
-      if (p === "compare") return "victory";
-      return "summary";
+    setPhaseIndex((p) => {
+      if (p < n - 1) return p + 1;
+      if (p === n - 1) return hasRatings ? COMPARE_PHASE : VICTORY_PHASE;
+      if (p === COMPARE_PHASE) return VICTORY_PHASE;
+      return SUMMARY_PHASE;
     });
-  }, [hasRatings]);
+  }, [n, hasRatings, COMPARE_PHASE, VICTORY_PHASE, SUMMARY_PHASE]);
 
   useEffect(() => {
-    if (phase === "summary" || !bothImagesReady) return;
-    const duration = phase === "victory" ? VICTORY_SPOTLIGHT_MS : phase === "compare" ? COMPARE_MS : CARD_SPOTLIGHT_MS;
+    if (phaseIndex === SUMMARY_PHASE || !allImagesReady) return;
+    const duration =
+      phaseIndex === VICTORY_PHASE ? VICTORY_SPOTLIGHT_MS : phaseIndex === COMPARE_PHASE ? COMPARE_MS : CARD_SPOTLIGHT_MS;
     const timer = window.setTimeout(advancePhase, duration);
     return () => window.clearTimeout(timer);
-  }, [phase, bothImagesReady, advancePhase]);
+  }, [phaseIndex, allImagesReady, advancePhase, SUMMARY_PHASE, VICTORY_PHASE, COMPARE_PHASE]);
 
-  if (phase === "compare") {
-    return (
-      <RatingsBattle
-        myLabel="You"
-        myImage={myImage}
-        myRatings={round.ratings?.[myId]}
-        opponentLabel={opponentLabel}
-        opponentImage={opponentImage}
-        opponentRatings={round.ratings?.[opponentId]}
-        onSkip={advancePhase}
-      />
-    );
+  if (phaseIndex === COMPARE_PHASE) {
+    return <RatingsBattle players={players} onSkip={advancePhase} />;
   }
 
-  if (phase !== "summary") {
-    const spotlight =
-      phase === "card1"
-        ? { label: "You", pick: myPick, image: myImage }
-        : phase === "card2"
-          ? { label: opponentLabel, pick: opponentPick, image: opponentImage }
-          : {
-              label: iWon ? "You" : opponentLabel,
-              pick: iWon ? myPick : opponentPick,
-              image: iWon ? myImage : opponentImage,
-            };
+  const winnerPlayer = players.find((p) => p.id === round.winnerId);
+
+  if (phaseIndex < SUMMARY_PHASE) {
+    const isVictory = phaseIndex === VICTORY_PHASE;
+    const spotlightPlayer = isVictory ? (winnerPlayer ?? players[0]) : players[phaseIndex];
 
     return (
       <CardSpotlight
-        phase={phase}
-        label={spotlight.label}
-        pick={spotlight.pick}
-        image={spotlight.image}
-        loading={!bothImagesReady}
+        phaseKey={phaseIndex}
+        isVictory={isVictory}
+        label={spotlightPlayer.isMe ? "You" : spotlightPlayer.label}
+        pick={spotlightPlayer.pick}
+        image={spotlightPlayer.image}
+        loading={!allImagesReady}
         verdict={round.verdict}
-        ratings={phase === "victory" ? round.ratings?.[iWon ? myId : opponentId] : undefined}
+        ratings={isVictory ? spotlightPlayer.ratings : undefined}
         onSkip={advancePhase}
       />
     );
   }
+
+  const iWon = winnerPlayer?.isMe ?? false;
 
   return (
     <div>
       <p className="text-center text-sm font-bold text-amber-300">
-        {iWon ? "🏆 You won this round!" : "This round goes to your opponent."}
+        {iWon ? "🏆 You won this round!" : `This round goes to ${winnerPlayer?.label ?? "someone else"}.`}
       </p>
 
-      <div className="mt-4 grid grid-cols-2 gap-3">
-        <ResultCard
-          label="You"
-          pick={myPick}
-          image={myImage}
-          winner={iWon}
-          ratings={round.ratings?.[myId]}
-          onOpenFullView={setFullViewSrc}
-        />
-        <ResultCard
-          label={opponentLabel}
-          pick={opponentPick}
-          image={opponentImage}
-          winner={!iWon}
-          ratings={round.ratings?.[opponentId]}
-          onOpenFullView={setFullViewSrc}
-        />
+      <div className={`mt-4 grid gap-3 ${players.length === 3 ? "grid-cols-3" : "grid-cols-2"}`}>
+        {players.map((p) => (
+          <ResultCard
+            key={p.id}
+            label={p.isMe ? "You" : p.label}
+            pick={p.pick}
+            image={p.image}
+            winner={p.id === round.winnerId}
+            ratings={p.ratings}
+            onOpenFullView={setFullViewSrc}
+          />
+        ))}
       </div>
 
       {round.verdict && (
@@ -144,9 +129,9 @@ export default function RoundResult({
         className="mt-6 w-full rounded-2xl bg-gradient-to-r from-amber-400 to-orange-500 py-4 text-base font-bold text-slate-900 shadow-lg shadow-amber-500/25 transition-all active:scale-[0.98] disabled:opacity-50"
       >
         {myReady
-          ? opponentReady
+          ? allOthersReady
             ? "Continuing..."
-            : "Waiting for opponent..."
+            : "Waiting for others..."
           : isLastRound
             ? "See Final Results"
             : "Next Round"}
@@ -160,7 +145,8 @@ export default function RoundResult({
 }
 
 function CardSpotlight({
-  phase,
+  phaseKey,
+  isVictory,
   label,
   pick,
   image,
@@ -169,7 +155,8 @@ function CardSpotlight({
   ratings,
   onSkip,
 }: {
-  phase: Phase;
+  phaseKey: number;
+  isVictory: boolean;
   label: string;
   pick: BattleRoundPlayerState;
   image: string | null;
@@ -179,14 +166,13 @@ function CardSpotlight({
   onSkip: () => void;
 }) {
   const name = pick.pokemons.map((p) => p.displayName).join(" & ");
-  const isVictory = phase === "victory";
 
   return (
     <div
       onClick={onSkip}
       className="fixed inset-0 z-40 flex cursor-pointer flex-col items-center justify-center gap-5 bg-[#05060f] px-6 py-10"
     >
-      <div key={phase} className="spotlight-in flex w-full flex-col items-center gap-5">
+      <div key={phaseKey} className="spotlight-in flex w-full flex-col items-center gap-5">
         {isVictory ? (
           <p className="text-lg font-black text-amber-300">🏆 Winner!</p>
         ) : (
@@ -241,85 +227,89 @@ function CardSpotlight({
   );
 }
 
-// Reference duration for growing from 0 to the theoretical max total (4 categories x 10) - both
-// bars share this exact rate, so they rise together and whichever total is lower simply stops
-// first while the other keeps climbing until it reaches its own value.
+// Reference duration for growing from 0 to the theoretical max total (4 categories x 10) - every
+// bar shares this exact rate, so they rise together and whichever total is lower simply stops
+// first while the others keep climbing until they reach their own value.
 const MAX_RATINGS_TOTAL = 40;
 const BAR_GROW_MS = 13200;
 const BAR_GROW_START_DELAY = 200;
 const POST_SETTLE_PAUSE_MS = 1000;
 
-function RatingsBattle({
-  myLabel,
-  myImage,
-  myRatings,
-  opponentLabel,
-  opponentImage,
-  opponentRatings,
-  onSkip,
-}: {
-  myLabel: string;
-  myImage: string | null;
-  myRatings?: CardRatings;
-  opponentLabel: string;
-  opponentImage: string | null;
-  opponentRatings?: CardRatings;
-  onSkip: () => void;
-}) {
+interface BarAccent {
+  grad: string;
+  border: string;
+  text: string;
+  glow: string;
+}
+
+/** Up to 4 distinct accents, one per player column. */
+const BAR_ACCENTS: BarAccent[] = [
+  { grad: "from-amber-600 via-amber-400 to-yellow-200", border: "border-amber-300", text: "text-amber-300", glow: "rgba(251,191,36,0.75)" },
+  { grad: "from-violet-700 via-fuchsia-500 to-cyan-300", border: "border-fuchsia-300", text: "text-fuchsia-300", glow: "rgba(217,70,239,0.75)" },
+  { grad: "from-emerald-700 via-emerald-400 to-teal-200", border: "border-emerald-300", text: "text-emerald-300", glow: "rgba(16,185,129,0.75)" },
+  { grad: "from-sky-700 via-sky-400 to-blue-200", border: "border-sky-300", text: "text-sky-300", glow: "rgba(56,189,248,0.75)" },
+];
+
+function RatingsBattle({ players, onSkip }: { players: RoundResultPlayerInfo[]; onSkip: () => void }) {
   const [grown, setGrown] = useState(false);
-  const [mySettled, setMySettled] = useState(false);
-  const [opponentSettled, setOpponentSettled] = useState(false);
+  const [settled, setSettled] = useState<boolean[]>(() => players.map(() => false));
+  const isDuo = players.length === 2;
 
   useEffect(() => {
     const growTimer = window.setTimeout(() => setGrown(true), BAR_GROW_START_DELAY);
     return () => window.clearTimeout(growTimer);
   }, []);
 
-  const handleMySettled = useCallback(() => setMySettled(true), []);
-  const handleOpponentSettled = useCallback(() => setOpponentSettled(true), []);
+  const handleSettled = useCallback((index: number) => {
+    setSettled((prev) => {
+      if (prev[index]) return prev;
+      const next = [...prev];
+      next[index] = true;
+      return next;
+    });
+  }, []);
 
-  const myTotal = myRatings ? ratingsTotal(myRatings) : 0;
-  const opponentTotal = opponentRatings ? ratingsTotal(opponentRatings) : 0;
-  const revealed = mySettled && opponentSettled;
-  const myAhead = revealed && myTotal > opponentTotal;
-  const opponentAhead = revealed && opponentTotal > myTotal;
+  const totals = players.map((p) => (p.ratings ? ratingsTotal(p.ratings) : 0));
+  const maxTotal = Math.max(...totals);
+  const leaderCount = totals.filter((t) => t === maxTotal).length;
+  const revealed = settled.length > 0 && settled.every(Boolean);
 
-  // Advance shortly after both bars actually finish (rather than always waiting out the fixed
+  // Advance shortly after every bar actually finishes (rather than always waiting out the fixed
   // COMPARE_MS ceiling sized for a worst-case max-total round) - most rounds settle well before
-  // that, so this is what keeps the pause after the bars stop feeling proportionate instead of
-  // always dragging on regardless of how far either bar actually had to climb.
+  // that, so the pause after the bars stop feels proportionate instead of always dragging on.
   useEffect(() => {
     if (!revealed) return;
     const timer = window.setTimeout(onSkip, POST_SETTLE_PAUSE_MS);
     return () => window.clearTimeout(timer);
   }, [revealed, onSkip]);
 
+  const columns = players.map((p, i) => (
+    <RatingBar
+      key={p.id}
+      label={p.isMe ? "You" : p.label}
+      image={p.image}
+      total={totals[i]}
+      grown={grown}
+      isDuo={isDuo}
+      accent={BAR_ACCENTS[i % BAR_ACCENTS.length]}
+      ahead={revealed && totals[i] === maxTotal && leaderCount === 1}
+      onSettled={() => handleSettled(i)}
+    />
+  ));
+  if (isDuo) {
+    columns.splice(1, 0, (
+      <span key="vs" className="mb-40 text-2xl font-black text-slate-500">
+        VS
+      </span>
+    ));
+  }
+
   return (
     <div
       onClick={onSkip}
       className="fixed inset-0 z-40 flex cursor-pointer flex-col items-center justify-center gap-10 bg-[#05060f] px-6 py-10"
     >
-      <div className="flex w-full max-w-sm items-end justify-center gap-6">
-        <RatingBar
-          label={myLabel}
-          image={myImage}
-          total={myTotal}
-          grown={grown}
-          accent="amber"
-          ahead={myAhead}
-          onSettled={handleMySettled}
-        />
-        <span className="mb-40 text-2xl font-black text-slate-500">VS</span>
-        <RatingBar
-          label={opponentLabel}
-          image={opponentImage}
-          total={opponentTotal}
-          grown={grown}
-          accent="violet"
-          ahead={opponentAhead}
-          onSettled={handleOpponentSettled}
-        />
-      </div>
+      <div className={`flex w-full max-w-sm items-end justify-center ${isDuo ? "gap-6" : "gap-3"}`}>{columns}</div>
 
       <p className="text-xs font-semibold text-slate-600">Tap to skip →</p>
     </div>
@@ -333,22 +323,23 @@ function RatingBar({
   grown,
   accent,
   ahead,
+  isDuo,
   onSettled,
 }: {
   label: string;
   image: string | null;
   total: number;
   grown: boolean;
-  accent: "amber" | "violet";
+  accent: BarAccent;
   ahead: boolean;
+  isDuo: boolean;
   onSettled: () => void;
 }) {
   const [currentTotal, setCurrentTotal] = useState(0);
-  const isAmber = accent === "amber";
 
-  // Both bars run the exact same elapsed-time -> total curve (independent of this bar's own
-  // total), so their instantaneous speed is identical - a bar only stops early because it clamps
-  // at its own total, not because it was ever moving slower than the other one.
+  // Every bar runs the exact same elapsed-time -> total curve (independent of its own total), so
+  // their instantaneous speed is identical - a bar only stops early because it clamps at its own
+  // total, not because it was ever moving slower than the others.
   useEffect(() => {
     if (!grown) return;
     let rafId = 0;
@@ -373,36 +364,32 @@ function RatingBar({
   const pct = grown ? Math.max(6, (currentTotal / MAX_RATINGS_TOTAL) * 100) : 0;
   const currentTier = grown ? tierForTotal(Math.round(currentTotal)) : "F";
 
-  // Pixel math (matching the h-[26rem]/h-24 Tailwind classes below) so the image marker's own
+  // Pixel math (matching the Tailwind track/image size classes below) so the image marker's own
   // height is accounted for and it never pokes out above the track, even at a near-max total.
-  const trackHeightPx = 416;
-  const imageSizePx = 96;
+  const trackHeightPx = isDuo ? 416 : 256;
+  const imageSizePx = isDuo ? 96 : 56;
   const imageBottomPx = Math.min((pct / 100) * trackHeightPx, trackHeightPx - imageSizePx);
 
   return (
     <div className="flex flex-col items-center gap-3">
-      <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400">{label}</p>
+      <p className={`font-bold uppercase tracking-[0.2em] text-slate-400 ${isDuo ? "text-xs" : "text-[10px]"}`}>
+        {label}
+      </p>
 
-      <div className="relative h-[26rem] w-32">
+      <div className={`relative ${isDuo ? "h-[26rem] w-32" : "h-64 w-20"}`}>
         <div className="absolute inset-0 overflow-hidden rounded-3xl border border-white/15 bg-white/5">
           <div
-            className={`absolute inset-x-0 bottom-0 rounded-t-2xl bg-gradient-to-t ${
-              isAmber ? "from-amber-600 via-amber-400 to-yellow-200" : "from-violet-700 via-fuchsia-500 to-cyan-300"
-            } ${ahead ? "victory-pulse" : ""}`}
+            className={`absolute inset-x-0 bottom-0 rounded-t-2xl bg-gradient-to-t ${accent.grad} ${ahead ? "victory-pulse" : ""}`}
             style={{
               height: `${pct}%`,
-              boxShadow: grown
-                ? isAmber
-                  ? "0 0 40px -4px rgba(251,191,36,0.75)"
-                  : "0 0 40px -4px rgba(217,70,239,0.75)"
-                : "none",
+              boxShadow: grown ? `0 0 40px -4px ${accent.glow}` : "none",
             }}
           />
         </div>
 
         <div
-          className={`absolute left-1/2 h-24 w-24 -translate-x-1/2 overflow-hidden rounded-2xl border-2 bg-black/40 shadow-lg ${
-            isAmber ? "border-amber-300" : "border-fuchsia-300"
+          className={`absolute left-1/2 -translate-x-1/2 overflow-hidden rounded-2xl border-2 bg-black/40 shadow-lg ${accent.border} ${
+            isDuo ? "h-24 w-24" : "h-14 w-14"
           }`}
           style={{ bottom: `${imageBottomPx}px` }}
         >
@@ -414,8 +401,8 @@ function RatingBar({
       </div>
 
       <p
-        className={`text-4xl font-black transition-opacity duration-300 ${grown ? "opacity-100" : "opacity-0"} ${
-          isAmber ? "text-amber-300" : "text-fuchsia-300"
+        className={`font-black transition-opacity duration-300 ${grown ? "opacity-100" : "opacity-0"} ${accent.text} ${
+          isDuo ? "text-4xl" : "text-2xl"
         }`}
       >
         {currentTier}

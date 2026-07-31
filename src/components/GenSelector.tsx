@@ -15,6 +15,8 @@ interface Props {
   buttonLabel?: string;
   loadingLabel?: string;
   footer?: ReactNode;
+  /** Rendered after the gen grid/select-all, before the error/start button - e.g. a player-count picker. */
+  extraTop?: ReactNode;
 }
 
 export default function GenSelector({
@@ -29,6 +31,7 @@ export default function GenSelector({
   buttonLabel = "Open Pack",
   loadingLabel = "Loading Pokedex...",
   footer,
+  extraTop,
 }: Props) {
   const allSelected = selected.length === GENERATIONS.length;
 
@@ -83,6 +86,8 @@ export default function GenSelector({
         >
           {allSelected ? "Deselect all" : "Select all generations"}
         </button>
+
+        {extraTop}
 
         {error && (
           <p className="mt-4 rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2 text-center text-sm text-red-300">

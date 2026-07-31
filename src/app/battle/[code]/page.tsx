@@ -29,10 +29,19 @@ const POLL_FAILURE_THRESHOLD = 4;
 const STUCK_ROUND_MS = 45_000;
 
 const GENERATING_MESSAGES: Partial<Record<RoundStatus, string>> = {
-  prompting: "Studying both trainers' traits and drafting the art direction...",
-  imaging: "Painting both illustrations... this can take a moment.",
-  judging: "The judge is comparing both artworks...",
+  prompting: "Studying everyone's traits and drafting the art direction...",
+  imaging: "Painting everyone's illustrations... this can take a moment.",
+  judging: "The judge is comparing every artwork...",
 };
+
+/** Ordered: every non-self player, in room order. Bot rooms number bots; friend rooms number
+ *  opponents - but a single opponent/bot keeps the plain "Bot"/"Opponent" label unnumbered. */
+function getOtherPlayers(players: string[], myId: string, vsBot: boolean | undefined) {
+  const others = players.filter((pid) => pid !== myId);
+  const baseLabel = vsBot ? "Bot" : "Opponent";
+  if (others.length <= 1) return others.map((id) => ({ id, label: baseLabel }));
+  return others.map((id, i) => ({ id, label: `${baseLabel} ${i + 1}` }));
+}
 
 export default function BattleRoomPage() {
   const params = useParams<{ code: string }>();
@@ -258,31 +267,33 @@ export default function BattleRoomPage() {
   }
 
   if (room.status === "waiting") {
-    return <WaitingRoom code={code} />;
+    return <WaitingRoom code={code} playersJoined={room.players.length} maxPlayers={room.maxPlayers} />;
   }
 
-  const opponentLabel = room.vsBot ? "Bot" : "Opponent";
+  const otherPlayers = getOtherPlayers(room.players, playerId, room.vsBot);
 
   if (room.status === "finished") {
-    const opponentId = room.players.find((p) => p !== playerId) ?? "";
     return (
       <MatchResult
-        myScore={room.scores[playerId] ?? 0}
-        opponentScore={room.scores[opponentId] ?? 0}
-        opponentLabel={opponentLabel}
+        players={[
+          { id: playerId, label: "You", score: room.scores[playerId] ?? 0, isMe: true },
+          ...otherPlayers.map((p) => ({ id: p.id, label: p.label, score: room.scores[p.id] ?? 0, isMe: false })),
+        ]}
       />
     );
   }
 
   const round = room.rounds[room.rounds.length - 1];
-  const opponentId = room.players.find((p) => p !== playerId) ?? "";
   const myScore = room.scores[playerId] ?? 0;
-  const opponentScore = room.scores[opponentId] ?? 0;
 
   return (
     <div className="flex min-h-dvh flex-col px-5 py-8">
       <div className="mx-auto w-full max-w-sm flex-1">
-        <BattleHeader round={room.round} myScore={myScore} opponentScore={opponentScore} opponentLabel={opponentLabel} />
+        <BattleHeader
+          round={room.round}
+          myScore={myScore}
+          others={otherPlayers.map((p) => ({ id: p.id, label: p.label, score: room.scores[p.id] ?? 0 }))}
+        />
 
         {round.status === "picking" && (
           <>
@@ -297,8 +308,11 @@ export default function BattleRoomPage() {
             />
             <OpponentStatus
               roundStatus={round.status}
-              opponentLocked={round.players[opponentId]?.locked ?? false}
-              opponentLabel={opponentLabel}
+              players={otherPlayers.map((p) => ({
+                id: p.id,
+                label: p.label,
+                locked: round.players[p.id]?.locked ?? false,
+              }))}
             />
           </>
         )}
@@ -336,16 +350,29 @@ export default function BattleRoomPage() {
           <RoundResult
             key={room.round}
             round={round}
-            myId={playerId}
-            opponentId={opponentId}
-            myImage={images[`${room.round}:${playerId}`] ?? null}
-            opponentImage={images[`${room.round}:${opponentId}`] ?? null}
+            players={[
+              {
+                id: playerId,
+                label: "You",
+                image: images[`${room.round}:${playerId}`] ?? null,
+                pick: round.players[playerId],
+                ratings: round.ratings?.[playerId],
+                isMe: true,
+              },
+              ...otherPlayers.map((p) => ({
+                id: p.id,
+                label: p.label,
+                image: images[`${room.round}:${p.id}`] ?? null,
+                pick: round.players[p.id],
+                ratings: round.ratings?.[p.id],
+                isMe: false,
+              })),
+            ]}
             isLastRound={room.round >= 5}
             myReady={round.players[playerId]?.readyForNext ?? false}
-            opponentReady={round.players[opponentId]?.readyForNext ?? false}
+            allOthersReady={otherPlayers.every((p) => round.players[p.id]?.readyForNext ?? false)}
             readyBusy={actionBusy}
             onReady={handleReady}
-            opponentLabel={opponentLabel}
           />
         )}
       </div>
