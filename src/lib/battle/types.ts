@@ -6,6 +6,8 @@ export type { CardRatings };
 export const BATTLE_ROUNDS = 5;
 /** Granted at the start of every round, on top of whatever's left unused from the previous round. */
 export const BATTLE_REROLLS_PER_ROUND = 5;
+/** Fixed player id standing in for the CPU opponent in a vs-bot match. */
+export const BOT_PLAYER_ID = "bot";
 
 export type RoundStatus = "picking" | "prompting" | "imaging" | "judging" | "done";
 export type RoomStatus = "waiting" | "playing" | "finished";
@@ -48,4 +50,6 @@ export interface BattleRoom {
   /** 1-indexed; 0 before the match starts. */
   round: number;
   rounds: BattleRound[];
+  /** True when the 2nd player is the CPU (BOT_PLAYER_ID) rather than a real invited player. */
+  vsBot?: boolean;
 }

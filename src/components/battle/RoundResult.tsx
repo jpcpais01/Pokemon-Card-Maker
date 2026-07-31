@@ -20,6 +20,7 @@ interface Props {
   opponentReady: boolean;
   readyBusy: boolean;
   onReady: () => void;
+  opponentLabel?: string;
 }
 
 export default function RoundResult({
@@ -33,6 +34,7 @@ export default function RoundResult({
   opponentReady,
   readyBusy,
   onReady,
+  opponentLabel = "Opponent",
 }: Props) {
   const [phase, setPhase] = useState<Phase>("card1");
   const [fullViewSrc, setFullViewSrc] = useState<string | null>(null);
@@ -58,9 +60,9 @@ export default function RoundResult({
       phase === "card1"
         ? { label: "You", pick: myPick, image: myImage }
         : phase === "card2"
-          ? { label: "Opponent", pick: opponentPick, image: opponentImage }
+          ? { label: opponentLabel, pick: opponentPick, image: opponentImage }
           : {
-              label: iWon ? "You" : "Opponent",
+              label: iWon ? "You" : opponentLabel,
               pick: iWon ? myPick : opponentPick,
               image: iWon ? myImage : opponentImage,
             };
@@ -95,7 +97,7 @@ export default function RoundResult({
           onOpenFullView={setFullViewSrc}
         />
         <ResultCard
-          label="Opponent"
+          label={opponentLabel}
           pick={opponentPick}
           image={opponentImage}
           winner={!iWon}

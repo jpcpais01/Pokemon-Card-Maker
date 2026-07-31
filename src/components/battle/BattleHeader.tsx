@@ -4,9 +4,10 @@ interface Props {
   round: number;
   myScore: number;
   opponentScore: number;
+  opponentLabel?: string;
 }
 
-export default function BattleHeader({ round, myScore, opponentScore }: Props) {
+export default function BattleHeader({ round, myScore, opponentScore, opponentLabel = "Opponent" }: Props) {
   return (
     <div className="glass mb-6 flex items-center justify-between rounded-2xl px-4 py-3">
       <div className="text-center">
@@ -17,7 +18,7 @@ export default function BattleHeader({ round, myScore, opponentScore }: Props) {
         Round {round} / {BATTLE_ROUNDS}
       </p>
       <div className="text-center">
-        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Opponent</p>
+        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{opponentLabel}</p>
         <p className="text-xl font-black text-slate-200">{opponentScore}</p>
       </div>
     </div>

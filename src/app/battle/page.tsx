@@ -8,7 +8,7 @@ import { createRoom, joinRoom } from "@/lib/battle/api";
 import { storePlayerId } from "@/lib/battle/session";
 import { GENERATIONS } from "@/lib/generations";
 
-type Mode = "menu" | "create" | "join";
+type Mode = "menu" | "create" | "join" | "bot";
 
 export default function BattleLobby() {
   const router = useRouter();
@@ -17,6 +17,10 @@ export default function BattleLobby() {
   const [gens, setGens] = useState<number[]>(GENERATIONS.map((g) => g.id));
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
+
+  const [botGens, setBotGens] = useState<number[]>(GENERATIONS.map((g) => g.id));
+  const [startingBot, setStartingBot] = useState(false);
+  const [botError, setBotError] = useState<string | null>(null);
 
   const [code, setCode] = useState("");
   const [joining, setJoining] = useState(false);
@@ -36,6 +40,20 @@ export default function BattleLobby() {
     }
   }
 
+  async function handleStartBotMatch() {
+    setBotError(null);
+    setStartingBot(true);
+    try {
+      const { code, playerId } = await createRoom(botGens, true);
+      storePlayerId(code, playerId);
+      router.push(`/battle/${code}`);
+    } catch (err) {
+      setBotError(err instanceof Error ? err.message : "Failed to start match.");
+    } finally {
+      setStartingBot(false);
+    }
+  }
+
   async function handleJoin(e: React.FormEvent) {
     e.preventDefault();
     setJoinError(null);
@@ -51,6 +69,32 @@ export default function BattleLobby() {
     } finally {
       setJoining(false);
     }
+  }
+
+  if (mode === "bot") {
+    return (
+      <GenSelector
+        selected={botGens}
+        onChange={setBotGens}
+        onStart={handleStartBotMatch}
+        loading={startingBot}
+        error={botError}
+        eyebrow="1v1 Battle"
+        title="Battle a Bot"
+        subtitle="Pick which generations can appear. The bot opens its own pack and never rerolls - same odds as you, no mercy."
+        buttonLabel="Start Match"
+        loadingLabel="Starting match..."
+        footer={
+          <button
+            type="button"
+            onClick={() => setMode("menu")}
+            className="mt-4 block w-full text-center text-sm font-semibold text-slate-400 active:text-white"
+          >
+            ← Back
+          </button>
+        }
+      />
+    );
   }
 
   if (mode === "create") {
@@ -134,7 +178,8 @@ export default function BattleLobby() {
           <p className="text-[11px] font-semibold uppercase tracking-[0.35em] text-amber-300/90">1v1 Battle</p>
           <h1 className="mt-2 text-3xl font-black tracking-tight text-white">Card Showdown</h1>
           <p className="mt-2 text-sm leading-relaxed text-slate-400">
-            Open packs against a friend. Five rounds, an AI judge picks the better card each round, most points wins.
+            Open packs against a friend or a bot. Five rounds, an AI judge picks the better card each round, most
+            points wins.
           </p>
         </div>
 
@@ -152,6 +197,13 @@ export default function BattleLobby() {
             className="glass w-full rounded-2xl py-4 text-base font-bold text-white transition-colors active:bg-white/10"
           >
             Join Room
+          </button>
+          <button
+            type="button"
+            onClick={() => setMode("bot")}
+            className="glass w-full rounded-2xl py-4 text-base font-bold text-white transition-colors active:bg-white/10"
+          >
+            Battle a Bot
           </button>
         </div>
 

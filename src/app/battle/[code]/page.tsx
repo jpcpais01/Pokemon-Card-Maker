@@ -261,9 +261,17 @@ export default function BattleRoomPage() {
     return <WaitingRoom code={code} />;
   }
 
+  const opponentLabel = room.vsBot ? "Bot" : "Opponent";
+
   if (room.status === "finished") {
     const opponentId = room.players.find((p) => p !== playerId) ?? "";
-    return <MatchResult myScore={room.scores[playerId] ?? 0} opponentScore={room.scores[opponentId] ?? 0} />;
+    return (
+      <MatchResult
+        myScore={room.scores[playerId] ?? 0}
+        opponentScore={room.scores[opponentId] ?? 0}
+        opponentLabel={opponentLabel}
+      />
+    );
   }
 
   const round = room.rounds[room.rounds.length - 1];
@@ -274,7 +282,7 @@ export default function BattleRoomPage() {
   return (
     <div className="flex min-h-dvh flex-col px-5 py-8">
       <div className="mx-auto w-full max-w-sm flex-1">
-        <BattleHeader round={room.round} myScore={myScore} opponentScore={opponentScore} />
+        <BattleHeader round={room.round} myScore={myScore} opponentScore={opponentScore} opponentLabel={opponentLabel} />
 
         {round.status === "picking" && (
           <>
@@ -287,7 +295,11 @@ export default function BattleRoomPage() {
               onReroll={handleReroll}
               onLock={handleLock}
             />
-            <OpponentStatus roundStatus={round.status} opponentLocked={round.players[opponentId]?.locked ?? false} />
+            <OpponentStatus
+              roundStatus={round.status}
+              opponentLocked={round.players[opponentId]?.locked ?? false}
+              opponentLabel={opponentLabel}
+            />
           </>
         )}
 
@@ -333,6 +345,7 @@ export default function BattleRoomPage() {
             opponentReady={round.players[opponentId]?.readyForNext ?? false}
             readyBusy={actionBusy}
             onReady={handleReady}
+            opponentLabel={opponentLabel}
           />
         )}
       </div>

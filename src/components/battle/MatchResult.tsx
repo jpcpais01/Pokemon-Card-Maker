@@ -3,9 +3,10 @@ import Link from "next/link";
 interface Props {
   myScore: number;
   opponentScore: number;
+  opponentLabel?: string;
 }
 
-export default function MatchResult({ myScore, opponentScore }: Props) {
+export default function MatchResult({ myScore, opponentScore, opponentLabel = "Opponent" }: Props) {
   const tie = myScore === opponentScore;
   const won = myScore > opponentScore;
 
@@ -24,7 +25,7 @@ export default function MatchResult({ myScore, opponentScore }: Props) {
           </div>
           <p className="text-2xl font-black text-slate-600">-</p>
           <div>
-            <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Opponent</p>
+            <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">{opponentLabel}</p>
             <p className="text-4xl font-black text-slate-200">{opponentScore}</p>
           </div>
         </div>

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createRound, sanitizeRoomForPlayer } from "@/lib/battle/engine";
 import { normalizeRoomCode } from "@/lib/battle/roomCode";
 import { getRoom, saveRoom } from "@/lib/battle/rooms";
-import { BATTLE_ROUNDS, BATTLE_REROLLS_PER_ROUND } from "@/lib/battle/types";
+import { BATTLE_ROUNDS, BATTLE_REROLLS_PER_ROUND, BOT_PLAYER_ID } from "@/lib/battle/types";
 import { fetchPokemonForGenerations } from "@/lib/generations";
 
 export async function POST(request: Request) {
@@ -31,6 +31,8 @@ export async function POST(request: Request) {
   }
 
   round.players[playerId].readyForNext = true;
+  // The bot has no client polling to click "next round" for itself - it's always ready.
+  if (room.vsBot) round.players[BOT_PLAYER_ID].readyForNext = true;
 
   if (Object.values(round.players).every((p) => p.readyForNext)) {
     if (room.round >= BATTLE_ROUNDS) {
@@ -38,7 +40,7 @@ export async function POST(request: Request) {
     } else {
       const pool = await fetchPokemonForGenerations(room.gens);
       room.round += 1;
-      room.rounds.push(createRound(room.players, pool));
+      room.rounds.push(createRound(room.players, pool, room.vsBot ? BOT_PLAYER_ID : undefined));
       // Unused rerolls carry over - each new round just adds a fresh base allotment on top.
       for (const pid of room.players) {
         room.rerolls[pid] = (room.rerolls[pid] ?? 0) + BATTLE_REROLLS_PER_ROUND;
