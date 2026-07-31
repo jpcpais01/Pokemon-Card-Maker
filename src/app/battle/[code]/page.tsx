@@ -398,24 +398,19 @@ export default function BattleRoomPage() {
           <RoundResult
             key={room.round}
             round={round}
-            players={[
-              {
-                id: playerId,
-                label: "You",
-                image: images[`${room.round}:${playerId}`] ?? null,
-                pick: round.players[playerId],
-                ratings: round.ratings?.[playerId],
-                isMe: true,
-              },
-              ...otherPlayers.map((p) => ({
-                id: p.id,
-                label: p.label,
-                image: images[`${room.round}:${p.id}`] ?? null,
-                pick: round.players[p.id],
-                ratings: round.ratings?.[p.id],
-                isMe: false,
-              })),
-            ]}
+            // Fixed room.players order rather than "me first" - so the spotlight sequence and
+            // summary grid land in the same order for every viewer, not just your own view of it.
+            players={room.players.map((pid) => {
+              const isMe = pid === playerId;
+              return {
+                id: pid,
+                label: isMe ? "You" : (otherPlayers.find((p) => p.id === pid)?.label ?? "Opponent"),
+                image: images[`${room.round}:${pid}`] ?? null,
+                pick: round.players[pid],
+                ratings: round.ratings?.[pid],
+                isMe,
+              };
+            })}
             isLastRound={room.round >= 5}
             myReady={round.players[playerId]?.readyForNext ?? false}
             allOthersReady={otherPlayers.every((p) => round.players[p.id]?.readyForNext ?? false)}
