@@ -19,7 +19,7 @@ Given a set of card traits, write ONE detailed, vivid text-to-image prompt (120-
 - Always explicitly include the phrase "Pokemon TCG artwork style" plus the qualifiers "not photorealistic", "not a photograph", and "not a generic fantasy illustration" somewhere in the prompt. Describe the Pokemon's surfaces as smooth and glossy with soft airbrushed shading - never realistic fur, skin, or feather texture.
 - Describe the named Pokemon's physical appearance in specific visual detail - body shape, coloring, markings, textures, and distinguishing features - rather than just naming it. Keep its exact simplified, game-accurate proportions, do not make it anatomically realistic.
 - If a regional form or special form is given, use your own knowledge of how that Pokemon canonically looks in that variant (e.g. Alolan Vulpix's icy-blue fur and crystalline tail, Mega Charizard X's black scales and blue flame, Galarian Ponyta's pastel mane) and describe those exact visual changes - color palette shifts, added/altered features, silhouette or texture changes. If no official design exists for that combination, invent a plausible, consistent one in the same visual spirit as real regional/special forms and describe that invented look in the same concrete detail.
-- If two Pokemon are given (tag team), depict both together interacting dynamically in the same scene, same environment.
+- If TWO Pokemon are given (a Tag Team pairing), you MUST describe BOTH of them individually and explicitly by name, each with its own physical description, before describing their shared action or interaction. Both must appear as two complete, fully distinct, individually recognizable creatures in the same scene - never merge, hybridize, blend, or fuse their features into a single creature, and never omit either one.
 - Match the rendering style to the rarity tier described.
 - Compose the scene for a tall 3:4 portrait frame - favor vertical compositions (full-body poses, tall environments) over wide horizontal ones.
 - Aside from the required "Pokemon TCG artwork style" phrase, never mention other card game terms like "card", "rarity", "border", or "text box" - describe only the illustration artwork itself, full-bleed, no frame.
@@ -28,17 +28,32 @@ Given a set of card traits, write ONE detailed, vivid text-to-image prompt (120-
 /**
  * Appended in code (not left to the drafting model's discretion) so the
  * style lock always reaches the image model, even if the drafted prompt
- * drifts from the system prompt's instructions.
+ * drifts from the system prompt's instructions. When two Pokemon are given,
+ * also re-states both names explicitly as a hard guardrail against the image
+ * model merging them into one creature or dropping one entirely.
  */
-export const STYLE_SUFFIX =
-  " Rendered in modern Pokemon TCG artwork style: smooth, glossy, semi-stylized creature design with soft airbrushed shading and crisp clean edges, set against a richly detailed painted background, vibrant saturated colors, professional official video-game-splash-art finish. Not photorealistic, not a photograph, not realistic fur/skin/feather texture, not a 3D render, not a generic fantasy illustration. Borderless, full-bleed artwork only - no card frame, no UI elements, no text, no logos, no watermarks. Make the scene, action, interaction, and camera angle unique and imaginative each time rather than a generic repeated pose - always nice and different.";
+export function buildStyleSuffix(pokemonNames: string[]): string {
+  const base =
+    " Rendered in modern Pokemon TCG artwork style: smooth, glossy, semi-stylized creature design with soft airbrushed shading and crisp clean edges, set against a richly detailed painted background, vibrant saturated colors, professional official video-game-splash-art finish. Not photorealistic, not a photograph, not realistic fur/skin/feather texture, not a 3D render, not a generic fantasy illustration. Borderless, full-bleed artwork only - no card frame, no UI elements, no text, no logos, no watermarks. Make the scene, action, interaction, and camera angle unique and imaginative each time rather than a generic repeated pose - always nice and different.";
 
-export const JUDGE_SYSTEM_PROMPT = `You are judging a friendly 1-on-1 Pokemon TCG art showdown between two AI-generated illustrations, Card A and Card B. You'll see each image plus which Pokemon it depicts. Pick whichever card is more impressive overall - art quality, dynamism, rarity feel, and how well it captures its Pokemon - and would win this round.
+  if (pokemonNames.length < 2) return base;
 
-Respond with ONLY a single JSON object and nothing else - no markdown code fences, no preamble, no explanation outside the JSON. It must have exactly two entries, in exactly this shape:
-{"reasoning": "a short, fun, one-sentence reason, max 20 words", "winner": "A"}
+  const namesList = pokemonNames.join(" and ");
+  return `${base} This is a Tag Team illustration - it must clearly show BOTH ${namesList} together as two distinct, fully separate, individually recognizable Pokemon standing or acting side by side. Do not merge, hybridize, or blend ${namesList} into a single creature. Do not omit either one. Both ${namesList} must be fully visible in the final image.`;
+}
 
-"winner" must be exactly the string "A" or "B".`;
+export const JUDGE_SYSTEM_PROMPT = `You are a fair, impartial, and conservative judge for a friendly 1-on-1 Pokemon TCG art showdown between two AI-generated illustrations, Card A and Card B. You'll see each image plus which Pokemon it depicts.
+
+Rate each card independently and honestly on four aspects, each a strict integer from 1 to 10. Be conservative - reserve 9-10 for truly exceptional work, most solid cards should land around 5-8, and do not inflate scores just because a card is novel:
+- art: overall illustration quality - composition, technique, polish, how well it matches premium Pokemon TCG art style.
+- fame: how iconic, eye-catching, and memorable the depicted Pokemon and scene are.
+- chase: how much a collector would want to hunt down this specific card - excitement and wow factor.
+- rarity: how well the artwork lives up to its stated rarity tier.
+
+Respond with ONLY a single JSON object and nothing else - no markdown code fences, no preamble, no explanation outside the JSON. It must have exactly these four entries, in exactly this shape:
+{"reasoning": "a short, fun, one-sentence summary, max 20 words", "winner": "A", "card1Ratings": {"art": 7, "fame": 6, "chase": 5, "rarity": 6}, "card2Ratings": {"art": 7, "fame": 6, "chase": 5, "rarity": 6}}
+
+card1Ratings is for Card A, card2Ratings is for Card B. "winner" must be exactly "A" or "B", and must be consistent with whichever card's ratings add up higher - be fair and just, let the ratings drive the decision rather than a gut feeling.`;
 
 export function buildUserPrompt(body: PromptRequestBody): string {
   const pokemonList = body.pokemons.map((p) => p.name).join(" and ");

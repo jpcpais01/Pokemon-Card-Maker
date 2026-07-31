@@ -3,8 +3,9 @@ import { sanitizeRoomForPlayer } from "@/lib/battle/engine";
 import { normalizeRoomCode } from "@/lib/battle/roomCode";
 import { getImage, getRoom, lockKey, saveImage, saveRoom } from "@/lib/battle/rooms";
 import { acquireLock, releaseLock } from "@/lib/battle/store";
+import type { BattleRound } from "@/lib/battle/types";
 import { generateImage, generateText, judgeBattle } from "@/lib/openrouter";
-import { JUDGE_SYSTEM_PROMPT, STYLE_SUFFIX, SYSTEM_PROMPT, buildUserPrompt } from "@/lib/promptBuilder";
+import { JUDGE_SYSTEM_PROMPT, SYSTEM_PROMPT, buildStyleSuffix, buildUserPrompt } from "@/lib/promptBuilder";
 
 export const maxDuration = 60;
 
@@ -62,7 +63,7 @@ export async function POST(request: Request) {
               pokemons: state.pokemons.map((p) => ({ name: p.displayName })),
             });
             const drafted = await generateText(SYSTEM_PROMPT, userPrompt);
-            state.prompt = `${drafted}${STYLE_SUFFIX}`;
+            state.prompt = `${drafted}${buildStyleSuffix(state.pokemons.map((p) => p.displayName))}`;
             state.promptStatus = "ready";
           } catch {
             state.promptStatus = "error";
@@ -102,6 +103,7 @@ export async function POST(request: Request) {
 
       let winnerId: string;
       let verdict: string;
+      let ratings: BattleRound["ratings"];
 
       if (stateA.imageStatus === "ready" && stateB.imageStatus === "ready") {
         const [imageA, imageB] = await Promise.all([
@@ -115,6 +117,7 @@ export async function POST(request: Request) {
           const judged = await judgeBattle(JUDGE_SYSTEM_PROMPT, imageA, namesA, imageB, namesB);
           winnerId = judged.winner === "A" ? pidA : pidB;
           verdict = judged.reason;
+          ratings = { [pidA]: judged.card1Ratings, [pidB]: judged.card2Ratings };
         } catch {
           winnerId = Math.random() < 0.5 ? pidA : pidB;
           verdict = "The judge was speechless - too close to call, so the coin decided!";
@@ -136,6 +139,7 @@ export async function POST(request: Request) {
 
       currentRound.winnerId = winnerId;
       currentRound.verdict = verdict;
+      currentRound.ratings = ratings;
       room.scores[winnerId] = (room.scores[winnerId] ?? 0) + 1;
       currentRound.status = "done";
     }

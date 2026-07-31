@@ -63,9 +63,18 @@ export async function generateImage(prompt: string): Promise<string> {
   return url;
 }
 
+export interface CardRatings {
+  art: number;
+  fame: number;
+  chase: number;
+  rarity: number;
+}
+
 export interface BattleJudgement {
   winner: "A" | "B";
   reason: string;
+  card1Ratings: CardRatings;
+  card2Ratings: CardRatings;
 }
 
 /** Strips ```json fences some models wrap JSON in despite instructions not to. */
@@ -73,6 +82,26 @@ function extractJson(text: string): string {
   const trimmed = text.trim();
   const fenced = trimmed.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
   return fenced ? fenced[1] : trimmed;
+}
+
+function clampRating(value: unknown): number {
+  const n = typeof value === "number" ? value : Number(value);
+  if (!Number.isFinite(n)) return 5;
+  return Math.min(10, Math.max(1, Math.round(n)));
+}
+
+function parseRatings(raw: unknown): CardRatings {
+  const obj = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
+  return {
+    art: clampRating(obj.art),
+    fame: clampRating(obj.fame),
+    chase: clampRating(obj.chase),
+    rarity: clampRating(obj.rarity),
+  };
+}
+
+function ratingsTotal(ratings: CardRatings): number {
+  return ratings.art + ratings.fame + ratings.chase + ratings.rarity;
 }
 
 export async function judgeBattle(
@@ -96,8 +125,8 @@ export async function judgeBattle(
         ],
       },
     ],
-    temperature: 0.7,
-    max_tokens: 150,
+    temperature: 0.6,
+    max_tokens: 300,
   });
 
   const content = data?.choices?.[0]?.message?.content;
@@ -105,17 +134,42 @@ export async function judgeBattle(
     throw new Error("The judge model returned an empty response.");
   }
 
-  let winner: "A" | "B";
-  let reason: string;
   try {
-    const parsed = JSON.parse(extractJson(content)) as { winner?: unknown; reasoning?: unknown };
-    const letter = typeof parsed.winner === "string" ? parsed.winner.trim().toUpperCase() : "";
-    winner = letter === "A" || letter === "B" ? letter : Math.random() < 0.5 ? "A" : "B";
-    reason = typeof parsed.reasoning === "string" && parsed.reasoning.trim() ? parsed.reasoning.trim() : "A closely fought round!";
-  } catch {
-    winner = Math.random() < 0.5 ? "A" : "B";
-    reason = "A closely fought round!";
-  }
+    const parsed = JSON.parse(extractJson(content)) as {
+      winner?: unknown;
+      reasoning?: unknown;
+      card1Ratings?: unknown;
+      card2Ratings?: unknown;
+    };
 
-  return { winner, reason };
+    const card1Ratings = parseRatings(parsed.card1Ratings);
+    const card2Ratings = parseRatings(parsed.card2Ratings);
+    const total1 = ratingsTotal(card1Ratings);
+    const total2 = ratingsTotal(card2Ratings);
+
+    // The ratings are the authoritative source of truth for fairness/consistency - the model's
+    // own "winner" claim is only used to break an exact tie in the totals.
+    let winner: "A" | "B";
+    if (total1 !== total2) {
+      winner = total1 > total2 ? "A" : "B";
+    } else {
+      const letter = typeof parsed.winner === "string" ? parsed.winner.trim().toUpperCase() : "";
+      winner = letter === "A" || letter === "B" ? letter : Math.random() < 0.5 ? "A" : "B";
+    }
+
+    const reason =
+      typeof parsed.reasoning === "string" && parsed.reasoning.trim()
+        ? parsed.reasoning.trim()
+        : "A closely fought round!";
+
+    return { winner, reason, card1Ratings, card2Ratings };
+  } catch {
+    const fallback: CardRatings = { art: 5, fame: 5, chase: 5, rarity: 5 };
+    return {
+      winner: Math.random() < 0.5 ? "A" : "B",
+      reason: "A closely fought round!",
+      card1Ratings: fallback,
+      card2Ratings: fallback,
+    };
+  }
 }

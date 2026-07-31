@@ -322,6 +322,7 @@ export default function BattleRoomPage() {
 
         {round.status === "done" && (
           <RoundResult
+            key={room.round}
             round={round}
             myId={playerId}
             opponentId={opponentId}

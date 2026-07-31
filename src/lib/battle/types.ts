@@ -1,4 +1,7 @@
+import type { CardRatings } from "@/lib/openrouter";
 import type { ArtType, PokemonPick, Region, SpecialForm, WeightedOption } from "@/lib/types";
+
+export type { CardRatings };
 
 export const BATTLE_ROUNDS = 5;
 /** Granted at the start of every round, on top of whatever's left unused from the previous round. */
@@ -29,6 +32,8 @@ export interface BattleRound {
   players: Record<string, BattleRoundPlayerState>;
   winnerId?: string | null;
   verdict?: string;
+  /** Judge's 4-aspect ratings for each player's card, keyed by playerId. */
+  ratings?: Record<string, CardRatings>;
 }
 
 export interface BattleRoom {
