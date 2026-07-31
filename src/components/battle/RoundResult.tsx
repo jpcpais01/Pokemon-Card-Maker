@@ -293,7 +293,8 @@ function RatingsBattle({ players, onSkip }: { players: RoundResultPlayerInfo[]; 
       isDuo={isDuo}
       accent={BAR_ACCENTS[i % BAR_ACCENTS.length]}
       ahead={revealed && totals[i] === maxTotal && leaderCount === 1}
-      onSettled={() => handleSettled(i)}
+      index={i}
+      onSettled={handleSettled}
     />
   ));
   if (isDuo) {
@@ -324,6 +325,7 @@ function RatingBar({
   accent,
   ahead,
   isDuo,
+  index,
   onSettled,
 }: {
   label: string;
@@ -333,7 +335,8 @@ function RatingBar({
   accent: BarAccent;
   ahead: boolean;
   isDuo: boolean;
-  onSettled: () => void;
+  index: number;
+  onSettled: (index: number) => void;
 }) {
   const [currentTotal, setCurrentTotal] = useState(0);
 
@@ -354,12 +357,12 @@ function RatingBar({
       if (next < total && rawFrac < 1) {
         rafId = requestAnimationFrame(tick);
       } else {
-        onSettled();
+        onSettled(index);
       }
     }
     rafId = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(rafId);
-  }, [grown, total, onSettled]);
+  }, [grown, total, onSettled, index]);
 
   const pct = grown ? Math.max(6, (currentTotal / MAX_RATINGS_TOTAL) * 100) : 0;
   const currentTier = grown ? tierForTotal(Math.round(currentTotal)) : "F";
