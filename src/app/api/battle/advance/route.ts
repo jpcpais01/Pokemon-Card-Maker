@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
-import { sanitizeRoomForPlayer } from "@/lib/battle/engine";
+import { buildVoteOrders, sanitizeRoomForPlayer } from "@/lib/battle/engine";
 import { normalizeRoomCode } from "@/lib/battle/roomCode";
 import { getImage, getRoom, lockKey, saveImage, saveRoom } from "@/lib/battle/rooms";
 import { acquireLock, releaseLock } from "@/lib/battle/store";
-import type { BattleRound } from "@/lib/battle/types";
+import { isBotPlayerId, type BattleRound } from "@/lib/battle/types";
 import { generateImage, generateText, judgeMultiBattle, type JudgeCardInput } from "@/lib/openrouter";
 import { SYSTEM_PROMPT, buildJudgeSystemPrompt, buildStyleSuffix, buildUserPrompt } from "@/lib/promptBuilder";
 
@@ -32,7 +32,12 @@ export async function POST(request: Request) {
   }
 
   const initialRound = initialRoom.rounds[initialRoom.rounds.length - 1];
-  if (!initialRound || initialRound.status === "picking" || initialRound.status === "done") {
+  if (
+    !initialRound ||
+    initialRound.status === "picking" ||
+    initialRound.status === "voting" ||
+    initialRound.status === "done"
+  ) {
     return NextResponse.json({ room: sanitizeRoomForPlayer(initialRoom, playerId) });
   }
 
@@ -50,7 +55,12 @@ export async function POST(request: Request) {
     if (!room) return NextResponse.json({ error: "Room not found." }, { status: 404 });
 
     const currentRound = room.rounds[room.rounds.length - 1];
-    if (!currentRound || currentRound.status === "picking" || currentRound.status === "done") {
+    if (
+      !currentRound ||
+      currentRound.status === "picking" ||
+      currentRound.status === "voting" ||
+      currentRound.status === "done"
+    ) {
       return NextResponse.json({ room: sanitizeRoomForPlayer(room, playerId) });
     }
 
@@ -99,7 +109,37 @@ export async function POST(request: Request) {
         })
       );
       if (Object.values(currentRound.players).every((p) => p.imageStatus !== "pending")) {
-        currentRound.status = "judging";
+        if (room.judgeMode === "vote") {
+          const pids = room.players;
+          const readyPids = pids.filter((pid) => currentRound.players[pid].imageStatus === "ready");
+
+          if (readyPids.length <= 1) {
+            // Not enough valid artwork to vote on at all - resolve immediately, same as the
+            // AI-judge fallback below for this exact situation.
+            const winnerId = readyPids[0] ?? pids[Math.floor(Math.random() * pids.length)];
+            currentRound.winnerId = winnerId;
+            currentRound.verdict =
+              readyPids.length === 1
+                ? "Everyone else's artwork failed to generate - default win!"
+                : "Nobody's artwork could be generated this round - the coin decided!";
+            room.scores[winnerId] = (room.scores[winnerId] ?? 0) + 1;
+            currentRound.status = "done";
+          } else {
+            const order = buildVoteOrders(pids, readyPids);
+            const votes: Record<string, string> = {};
+            // Bots have no client polling to cast a vote for themselves - they vote at random,
+            // the instant the ballot opens, same spirit as their instant pick-lock.
+            for (const pid of pids) {
+              if (isBotPlayerId(pid) && order[pid]?.length) {
+                votes[pid] = order[pid][Math.floor(Math.random() * order[pid].length)];
+              }
+            }
+            currentRound.vote = { order, votes };
+            currentRound.status = "voting";
+          }
+        } else {
+          currentRound.status = "judging";
+        }
       }
     } else if (currentRound.status === "judging") {
       const pids = room.players;

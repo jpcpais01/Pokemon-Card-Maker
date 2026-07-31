@@ -16,8 +16,11 @@ export function isBotPlayerId(id: string): boolean {
   return (BOT_PLAYER_IDS as readonly string[]).includes(id);
 }
 
-export type RoundStatus = "picking" | "prompting" | "imaging" | "judging" | "done";
+export type RoundStatus = "picking" | "prompting" | "imaging" | "voting" | "judging" | "done";
 export type RoomStatus = "waiting" | "playing" | "finished";
+export type JudgeMode = "ai" | "vote";
+/** Player-vote mode only makes sense with at least 2 candidates besides your own card. */
+export const MIN_VOTE_PLAYERS = 3;
 
 export interface BattlePlayerPick {
   artType: WeightedOption<ArtType>;
@@ -35,13 +38,37 @@ export interface BattleRoundPlayerState extends BattlePlayerPick {
   hidden?: boolean;
 }
 
+/** Raw per-round voting state - server/internal only, always stripped before reaching a client. */
+export interface BattleRoundVoteState {
+  /** voterId -> shuffled list of candidate player ids (excludes their own), stable for the round. */
+  order: Record<string, string[]>;
+  /** voterId -> the target player id they voted for. */
+  votes: Record<string, string>;
+}
+
+/** Client-safe view of the current player's own voting status - built by sanitizeRoomForPlayer. */
+export interface VoteStatusView {
+  /** How many anonymous candidate slots this voter has to choose among. */
+  slotCount: number;
+  /** Slot index this voter chose, or null if they haven't voted yet. */
+  myVote: number | null;
+  votedCount: number;
+  totalVoters: number;
+}
+
 export interface BattleRound {
   status: RoundStatus;
   players: Record<string, BattleRoundPlayerState>;
   winnerId?: string | null;
   verdict?: string;
-  /** Judge's 4-aspect ratings for each player's card, keyed by playerId. */
+  /** Judge's 4-aspect ratings for each player's card, keyed by playerId. Only used in "ai" judge mode. */
   ratings?: Record<string, CardRatings>;
+  /** Final vote tally per playerId, revealed once the round is done. Only used in "vote" judge mode. */
+  voteCounts?: Record<string, number>;
+  /** Raw voting state - never sent to a client; see sanitizeRoomForPlayer. */
+  vote?: BattleRoundVoteState;
+  /** Client-facing voting status - populated only by sanitizeRoomForPlayer, only while voting. */
+  voteStatus?: VoteStatusView;
 }
 
 export interface BattleRoom {
@@ -59,4 +86,6 @@ export interface BattleRoom {
   rounds: BattleRound[];
   /** True when every non-host slot (BOT_PLAYER_IDS) is filled by the CPU rather than real players. */
   vsBot?: boolean;
+  /** "ai" (default) has an LLM judge each round; "vote" has every player vote anonymously instead. */
+  judgeMode?: JudgeMode;
 }

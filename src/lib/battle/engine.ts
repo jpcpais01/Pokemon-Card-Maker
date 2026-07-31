@@ -72,6 +72,28 @@ export function rerollPlayerCard(
   return { ...state, pokemons };
 }
 
+function shuffle<T>(items: T[]): T[] {
+  const copy = [...items];
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
+}
+
+/**
+ * Builds each player's personal, independently-shuffled voting order over the candidate cards
+ * (everyone with a ready image, excluding their own) - so no player ever sees their own card, and
+ * a given card doesn't land in the same slot for every voter or from one round to the next.
+ */
+export function buildVoteOrders(pids: string[], candidatePids: string[]): Record<string, string[]> {
+  const order: Record<string, string[]> = {};
+  for (const pid of pids) {
+    order[pid] = shuffle(candidatePids.filter((cid) => cid !== pid));
+  }
+  return order;
+}
+
 /** Innocuous placeholder shown in place of the opponent's still-hidden picks. */
 const HIDDEN_PICK: BattlePlayerPick = {
   artType: ART_TYPES[0],
@@ -79,13 +101,46 @@ const HIDDEN_PICK: BattlePlayerPick = {
   pokemons: [{ id: 0, name: "unknown", displayName: "???", artworkUrl: "" }],
 };
 
-/** Redacts the opponent's in-progress picks for the current round so nobody can peek before it's revealed. */
+/**
+ * Builds the requesting player's own view of the round's voting state - never the raw order/votes
+ * maps (those would leak who voted for whom, and every voter's real card identities, to any
+ * client that received them), just what that one player needs to render their ballot.
+ */
+function buildVoteStatusView(
+  vote: BattleRound["vote"],
+  playerId: string,
+  totalVoters: number
+): BattleRound["voteStatus"] {
+  if (!vote) return undefined;
+  const myOrder = vote.order[playerId] ?? [];
+  const myTarget = vote.votes[playerId];
+  return {
+    slotCount: myOrder.length,
+    myVote: myTarget ? myOrder.indexOf(myTarget) : null,
+    votedCount: Object.keys(vote.votes).length,
+    totalVoters,
+  };
+}
+
+/**
+ * Redacts the opponent's in-progress picks for the current round so nobody can peek before it's
+ * revealed, and always strips the raw voting order/votes maps down to this player's own ballot -
+ * in every round status, including "done", since who-voted-for-whom stays private forever even
+ * after the round's picks themselves are revealed.
+ */
 export function sanitizeRoomForPlayer(room: BattleRoom, playerId: string): BattleRoom {
   if (room.rounds.length === 0) return room;
 
   const lastIndex = room.rounds.length - 1;
   const lastRound = room.rounds[lastIndex];
-  if (lastRound.status === "done") return room;
+  const voteStatus = buildVoteStatusView(lastRound.vote, playerId, room.players.length);
+
+  if (lastRound.status === "done") {
+    if (!lastRound.vote) return room;
+    const rounds = [...room.rounds];
+    rounds[lastIndex] = { ...lastRound, vote: undefined, voteStatus };
+    return { ...room, rounds };
+  }
 
   const players: BattleRound["players"] = {};
   for (const [pid, state] of Object.entries(lastRound.players)) {
@@ -103,6 +158,6 @@ export function sanitizeRoomForPlayer(room: BattleRoom, playerId: string): Battl
   }
 
   const rounds = [...room.rounds];
-  rounds[lastIndex] = { ...lastRound, players };
+  rounds[lastIndex] = { ...lastRound, players, vote: undefined, voteStatus };
   return { ...room, rounds };
 }

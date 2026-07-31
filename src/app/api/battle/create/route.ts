@@ -3,12 +3,18 @@ import { NextResponse } from "next/server";
 import { createRound } from "@/lib/battle/engine";
 import { generateRoomCode } from "@/lib/battle/roomCode";
 import { getRoom, saveRoom } from "@/lib/battle/rooms";
-import { BATTLE_REROLLS_PER_ROUND, BOT_PLAYER_IDS, MAX_PLAYERS, MIN_PLAYERS } from "@/lib/battle/types";
-import type { BattleRoom } from "@/lib/battle/types";
+import {
+  BATTLE_REROLLS_PER_ROUND,
+  BOT_PLAYER_IDS,
+  MAX_PLAYERS,
+  MIN_PLAYERS,
+  MIN_VOTE_PLAYERS,
+} from "@/lib/battle/types";
+import type { BattleRoom, JudgeMode } from "@/lib/battle/types";
 import { fetchPokemonForGenerations } from "@/lib/generations";
 
 export async function POST(request: Request) {
-  let body: { gens?: number[]; vsBot?: boolean; maxPlayers?: number };
+  let body: { gens?: number[]; vsBot?: boolean; maxPlayers?: number; judgeMode?: string };
   try {
     body = await request.json();
   } catch {
@@ -22,6 +28,11 @@ export async function POST(request: Request) {
   const maxPlayers = Number.isInteger(body.maxPlayers) ? (body.maxPlayers as number) : MIN_PLAYERS;
   if (maxPlayers < MIN_PLAYERS || maxPlayers > MAX_PLAYERS) {
     return NextResponse.json({ error: `Player count must be between ${MIN_PLAYERS} and ${MAX_PLAYERS}.` }, { status: 400 });
+  }
+
+  const judgeMode: JudgeMode = body.judgeMode === "vote" ? "vote" : "ai";
+  if (judgeMode === "vote" && maxPlayers < MIN_VOTE_PLAYERS) {
+    return NextResponse.json({ error: `Player vote mode needs at least ${MIN_VOTE_PLAYERS} players.` }, { status: 400 });
   }
 
   let code = generateRoomCode();
@@ -46,6 +57,7 @@ export async function POST(request: Request) {
     round: vsBot ? 1 : 0,
     rounds: [],
     vsBot,
+    judgeMode,
   };
 
   if (vsBot) {

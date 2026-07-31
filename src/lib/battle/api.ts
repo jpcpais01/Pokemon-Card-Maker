@@ -1,5 +1,5 @@
 import type { CardKey } from "@/lib/cardFaces";
-import type { BattleRoom } from "./types";
+import type { BattleRoom, JudgeMode } from "./types";
 
 async function postJson<T>(url: string, body: unknown): Promise<T> {
   const res = await fetch(url, {
@@ -19,8 +19,8 @@ async function getJson<T>(url: string): Promise<T> {
   return data as T;
 }
 
-export function createRoom(gens: number[], vsBot = false, maxPlayers = 2) {
-  return postJson<{ code: string; playerId: string }>("/api/battle/create", { gens, vsBot, maxPlayers });
+export function createRoom(gens: number[], vsBot = false, maxPlayers = 2, judgeMode: JudgeMode = "ai") {
+  return postJson<{ code: string; playerId: string }>("/api/battle/create", { gens, vsBot, maxPlayers, judgeMode });
 }
 
 export function joinRoom(code: string) {
@@ -54,5 +54,17 @@ export function fetchBattleImage(code: string, round: number, playerId: string, 
     `/api/battle/image?code=${encodeURIComponent(code)}&round=${round}&playerId=${encodeURIComponent(
       playerId
     )}&requesterId=${encodeURIComponent(requesterId)}`
+  );
+}
+
+export function castVote(code: string, playerId: string, slot: number) {
+  return postJson<{ room: BattleRoom }>("/api/battle/vote", { code, playerId, slot });
+}
+
+export function fetchVoteImage(code: string, round: number, playerId: string, slot: number) {
+  return getJson<{ image: string }>(
+    `/api/battle/vote-image?code=${encodeURIComponent(code)}&round=${round}&playerId=${encodeURIComponent(
+      playerId
+    )}&slot=${slot}`
   );
 }

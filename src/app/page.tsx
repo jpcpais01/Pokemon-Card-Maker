@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import GenSelector from "@/components/GenSelector";
+import JudgeModePicker from "@/components/battle/JudgeModePicker";
 import PlayerCountPicker from "@/components/battle/PlayerCountPicker";
 import RevealScreen, { type CardKey, type RevealData, type RevealFlags } from "@/components/RevealScreen";
 import LoadingScreen from "@/components/LoadingScreen";
@@ -13,6 +14,7 @@ import { ART_TYPES, pickSpecialForm, pickWeighted } from "@/lib/cardData";
 import { createRoom } from "@/lib/battle/api";
 import { storePlayerId } from "@/lib/battle/session";
 import { GENERATIONS, fetchPokemonForGenerations, pickRandomPokemon, toPokemonPick } from "@/lib/generations";
+import { MIN_VOTE_PLAYERS, type JudgeMode } from "@/lib/battle/types";
 import type { PokemonRef } from "@/lib/types";
 
 type Stage = "setup" | "reveal" | "prompt" | "image" | "result" | "error";
@@ -40,6 +42,7 @@ export default function Home() {
   const [startingBot, setStartingBot] = useState(false);
   const [botError, setBotError] = useState<string | null>(null);
   const [botPlayers, setBotPlayers] = useState(2);
+  const [botJudgeMode, setBotJudgeMode] = useState<JudgeMode>("ai");
 
   const [pool, setPool] = useState<PokemonRef[]>([]);
   const [revealData, setRevealData] = useState<RevealData | null>(null);
@@ -220,7 +223,8 @@ export default function Home() {
     setBotError(null);
     setStartingBot(true);
     try {
-      const { code, playerId } = await createRoom(gens, true, botPlayers);
+      const effectiveJudgeMode = botPlayers >= MIN_VOTE_PLAYERS ? botJudgeMode : "ai";
+      const { code, playerId } = await createRoom(gens, true, botPlayers, effectiveJudgeMode);
       storePlayerId(code, playerId);
       router.push(`/battle/${code}`);
     } catch (err) {
@@ -244,6 +248,9 @@ export default function Home() {
               Battle a friend
             </Link>
             <PlayerCountPicker value={botPlayers} onChange={setBotPlayers} label="Bot match players" />
+            {botPlayers >= MIN_VOTE_PLAYERS && (
+              <JudgeModePicker value={botJudgeMode} onChange={setBotJudgeMode} />
+            )}
             <button
               type="button"
               onClick={handleBattleBot}

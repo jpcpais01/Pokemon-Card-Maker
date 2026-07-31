@@ -4,10 +4,12 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import GenSelector from "@/components/GenSelector";
+import JudgeModePicker from "@/components/battle/JudgeModePicker";
 import PlayerCountPicker from "@/components/battle/PlayerCountPicker";
 import { createRoom, joinRoom } from "@/lib/battle/api";
 import { storePlayerId } from "@/lib/battle/session";
 import { GENERATIONS } from "@/lib/generations";
+import { MIN_VOTE_PLAYERS, type JudgeMode } from "@/lib/battle/types";
 
 type Mode = "menu" | "create" | "join";
 
@@ -17,6 +19,7 @@ export default function BattleLobby() {
 
   const [gens, setGens] = useState<number[]>(GENERATIONS.map((g) => g.id));
   const [maxPlayers, setMaxPlayers] = useState(2);
+  const [judgeMode, setJudgeMode] = useState<JudgeMode>("ai");
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
 
@@ -28,7 +31,8 @@ export default function BattleLobby() {
     setCreateError(null);
     setCreating(true);
     try {
-      const { code, playerId } = await createRoom(gens, false, maxPlayers);
+      const effectiveJudgeMode = maxPlayers >= MIN_VOTE_PLAYERS ? judgeMode : "ai";
+      const { code, playerId } = await createRoom(gens, false, maxPlayers, effectiveJudgeMode);
       storePlayerId(code, playerId);
       router.push(`/battle/${code}`);
     } catch (err) {
@@ -68,7 +72,12 @@ export default function BattleLobby() {
         subtitle="Pick which generations everyone can pull from and how many players, then share the room code."
         buttonLabel="Create Room"
         loadingLabel="Creating room..."
-        extraTop={<PlayerCountPicker value={maxPlayers} onChange={setMaxPlayers} />}
+        extraTop={
+          <>
+            <PlayerCountPicker value={maxPlayers} onChange={setMaxPlayers} />
+            {maxPlayers >= MIN_VOTE_PLAYERS && <JudgeModePicker value={judgeMode} onChange={setJudgeMode} />}
+          </>
+        }
         footer={
           <button
             type="button"

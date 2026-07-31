@@ -8,13 +8,16 @@ import BattlePickPanel from "@/components/battle/BattlePickPanel";
 import MatchResult from "@/components/battle/MatchResult";
 import OpponentStatus from "@/components/battle/OpponentStatus";
 import RoundResult from "@/components/battle/RoundResult";
+import VotingPanel from "@/components/battle/VotingPanel";
 import WaitingRoom from "@/components/battle/WaitingRoom";
 import ErrorScreen from "@/components/ErrorScreen";
 import LoadingScreen from "@/components/LoadingScreen";
 import {
   advanceRound,
+  castVote,
   fetchBattleImage,
   fetchRoomState,
+  fetchVoteImage,
   joinRoom,
   lockPicks,
   readyForNext,
@@ -58,6 +61,7 @@ export default function BattleRoomPage() {
   const [joinError, setJoinError] = useState<string | null>(null);
 
   const [images, setImages] = useState<Record<string, string>>({});
+  const [voteImages, setVoteImages] = useState<Record<string, string>>({});
   const [isStuck, setIsStuck] = useState(false);
   const advancingRef = useRef(false);
 
@@ -128,6 +132,22 @@ export default function BattleRoomPage() {
     }
   }, [code, playerId, room, images]);
 
+  // While voting, fetch this player's own anonymous ballot images (by slot, never by playerId).
+  useEffect(() => {
+    if (!playerId || !room) return;
+    const roundNumber = room.rounds.length;
+    const round = room.rounds[roundNumber - 1];
+    if (!round || round.status !== "voting" || !round.voteStatus) return;
+
+    for (let slot = 0; slot < round.voteStatus.slotCount; slot++) {
+      const key = `${roundNumber}:${slot}`;
+      if (voteImages[key]) continue;
+      fetchVoteImage(code, roundNumber, playerId, slot)
+        .then(({ image }) => setVoteImages((prev) => ({ ...prev, [key]: image })))
+        .catch(() => {});
+    }
+  }, [code, playerId, room, voteImages]);
+
   const roomRounds = room?.rounds ?? [];
   const currentRoundStatus = roomRounds.length > 0 ? roomRounds[roomRounds.length - 1].status : null;
   const isGenerating = currentRoundStatus !== null && currentRoundStatus in GENERATING_MESSAGES;
@@ -179,6 +199,19 @@ export default function BattleRoomPage() {
     setActionBusy(true);
     try {
       const { room } = await lockPicks(code, playerId);
+      setRoom(room);
+    } catch {
+      // ignore - next poll resyncs
+    } finally {
+      setActionBusy(false);
+    }
+  }
+
+  async function handleVote(slot: number) {
+    if (!playerId) return;
+    setActionBusy(true);
+    try {
+      const { room } = await castVote(code, playerId, slot);
       setRoom(room);
     } catch {
       // ignore - next poll resyncs
@@ -315,6 +348,21 @@ export default function BattleRoomPage() {
               }))}
             />
           </>
+        )}
+
+        {round.status === "voting" && round.voteStatus && (
+          <VotingPanel
+            key={room.round}
+            images={Array.from(
+              { length: round.voteStatus.slotCount },
+              (_, slot) => voteImages[`${room.round}:${slot}`] ?? null
+            )}
+            myVote={round.voteStatus.myVote}
+            votedCount={round.voteStatus.votedCount}
+            totalVoters={round.voteStatus.totalVoters}
+            busy={actionBusy}
+            onVote={handleVote}
+          />
         )}
 
         {isGenerating && (
