@@ -62,11 +62,11 @@ body {
   }
 }
 
-/* Fills over 20s and holds at full via animation-fill-mode - the caller
+/* Fills over 10s and holds at full via animation-fill-mode - the caller
    never has to know or care whether the request actually finished by then. */
 .progress-fill {
   transform-origin: left;
-  animation: progress-fill 20s cubic-bezier(0.45, 0, 0.55, 1) forwards;
+  animation: progress-fill 10s cubic-bezier(0.45, 0, 0.55, 1) forwards;
 }
 
 @keyframes spotlight-in {
