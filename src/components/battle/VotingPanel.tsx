@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import ImageLightbox from "@/components/ImageLightbox";
 
 interface Props {
   images: (string | null)[];
@@ -18,13 +19,14 @@ interface Props {
  */
 export default function VotingPanel({ images, myVote, votedCount, totalVoters, busy, onVote }: Props) {
   const [selected, setSelected] = useState<number | null>(null);
+  const [fullViewSrc, setFullViewSrc] = useState<string | null>(null);
   const hasVoted = myVote !== null;
   const activeSlot = hasVoted ? myVote : selected;
 
   return (
     <div>
       <p className="mb-4 text-center text-xs font-semibold text-slate-400">
-        Vote for your favorite card - not your own!
+        Vote for your favorite card - not your own! Tap a selected card again for a full view.
       </p>
 
       <div className="grid grid-cols-2 gap-3">
@@ -35,7 +37,13 @@ export default function VotingPanel({ images, myVote, votedCount, totalVoters, b
               key={slot}
               type="button"
               disabled={hasVoted || busy}
-              onClick={() => setSelected(slot)}
+              onClick={() => {
+                if (selected === slot && image) {
+                  setFullViewSrc(image);
+                } else {
+                  setSelected(slot);
+                }
+              }}
               className={`overflow-hidden rounded-2xl border-2 transition-all duration-200 active:scale-[0.97] disabled:active:scale-100 ${
                 isActive ? "border-amber-300 shadow-[0_0_24px_-4px_rgba(251,191,36,0.6)]" : "border-white/10"
               }`}
@@ -50,6 +58,11 @@ export default function VotingPanel({ images, myVote, votedCount, totalVoters, b
                 {hasVoted && isActive && (
                   <span className="absolute left-1.5 top-1.5 rounded-full bg-amber-400 px-2 py-0.5 text-[10px] font-black text-slate-900">
                     YOUR VOTE
+                  </span>
+                )}
+                {!hasVoted && isActive && image && (
+                  <span className="glass absolute bottom-1.5 right-1.5 flex h-6 w-6 items-center justify-center rounded-full text-xs text-white">
+                    ⤢
                   </span>
                 )}
               </div>
@@ -74,6 +87,10 @@ export default function VotingPanel({ images, myVote, votedCount, totalVoters, b
         >
           Cast Vote
         </button>
+      )}
+
+      {fullViewSrc && (
+        <ImageLightbox src={fullViewSrc} alt="Full size candidate artwork" onClose={() => setFullViewSrc(null)} />
       )}
     </div>
   );
