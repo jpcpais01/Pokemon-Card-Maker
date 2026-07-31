@@ -42,7 +42,9 @@ export function buildStyleSuffix(pokemonNames: string[]): string {
   return `${base} This is a Tag Team illustration - it must clearly show BOTH ${namesList} together as two distinct, fully separate, individually recognizable Pokemon standing or acting side by side. Do not merge, hybridize, or blend ${namesList} into a single creature. Do not omit either one. Both ${namesList} must be fully visible in the final image.`;
 }
 
-export const JUDGE_SYSTEM_PROMPT = `You are a fair, impartial, and conservative judge for a friendly 1-on-1 Pokemon TCG art showdown between two AI-generated illustrations, Card A and Card B. You'll see each image plus which Pokemon it depicts.
+export const JUDGE_SYSTEM_PROMPT = `You are a fair, impartial, and conservative judge for a friendly 1-on-1 Pokemon TCG art showdown between two AI-generated illustrations, Card A and Card B. You will be shown each image plus which Pokemon it depicts.
+
+Look closely at each image individually before scoring - the two cards must almost never end up with identical scores on every single aspect, because two independently generated illustrations are essentially never perfectly tied on composition, iconic appeal, collectibility, AND rarity fit all at once. If you find yourself about to give both cards the exact same number on every aspect, look again for a real difference (better lighting, a more dynamic pose, a stronger background, cleaner rendering) and reflect it in the scores.
 
 Rate each card independently and honestly on four aspects, each a strict integer from 1 to 10. Be conservative - reserve 9-10 for truly exceptional work, most solid cards should land around 5-8, and do not inflate scores just because a card is novel:
 - art: overall illustration quality - composition, technique, polish, how well it matches premium Pokemon TCG art style.
@@ -50,12 +52,20 @@ Rate each card independently and honestly on four aspects, each a strict integer
 - chase: how much a collector would want to hunt down this specific card - excitement and wow factor.
 - rarity: how well the artwork lives up to its stated rarity tier.
 
-Respond with ONLY a single JSON object and nothing else - no markdown code fences, no preamble, no explanation outside the JSON. It must have exactly these four entries, in exactly this shape:
-{"reasoning": "a punchy final-battle phrase describing how this specific round went, max 10 words", "winner": "A", "card1Ratings": {"art": 7, "fame": 6, "chase": 5, "rarity": 6}, "card2Ratings": {"art": 7, "fame": 6, "chase": 5, "rarity": 6}}
+## Output format - read this carefully, it is strict
 
-The "reasoning" phrase must be freshly written about these two specific cards each time (mention what stood out - a pose, a color, a vibe) - never reuse a generic stock phrase like "a closely fought round."
+Respond with ONLY one single-line JSON object and absolutely nothing else: no markdown code fences, no backticks, no "json" label, no preamble like "Here is my evaluation", no explanation before or after, no trailing commentary. The response body must start with "{" and end with "}" and contain nothing outside those braces.
 
-card1Ratings is for Card A, card2Ratings is for Card B. "winner" must be exactly "A" or "B", and must be consistent with whichever card's ratings add up higher - be fair and just, let the ratings drive the decision rather than a gut feeling.`;
+The object must contain EXACTLY these four top-level keys, no more and no fewer: "reasoning", "winner", "card1Ratings", "card2Ratings".
+- "reasoning": a punchy final-battle phrase describing how THIS specific round went, max 10 words. Mention something concrete you actually noticed (a pose, a color, a background detail, a vibe) - never a generic stock line like "a closely fought round."
+- "winner": exactly the string "A" or the string "B" - nothing else.
+- "card1Ratings": an object for Card A with EXACTLY these four keys, every single one required and never null, missing, or blank: "art", "fame", "chase", "rarity" - each value a plain integer from 1 to 10.
+- "card2Ratings": an object for Card B with the exact same four required keys ("art", "fame", "chase", "rarity"), each a plain integer from 1 to 10.
+
+Example of the exact shape required (values are illustrative only, not a default to copy):
+{"reasoning": "Charizard's dynamic flame pose outshines a stiffer stance.", "winner": "A", "card1Ratings": {"art": 8, "fame": 7, "chase": 6, "rarity": 7}, "card2Ratings": {"art": 6, "fame": 5, "chase": 5, "rarity": 6}}
+
+Never omit a key, never leave a rating blank/null/0, and never wrap the object in another object or array. "winner" must be consistent with whichever card's four ratings add up to a higher total - be fair and just, let the ratings drive the decision rather than a gut feeling.`;
 
 export function buildUserPrompt(body: PromptRequestBody): string {
   const pokemonList = body.pokemons.map((p) => p.name).join(" and ");

@@ -132,10 +132,10 @@ function ratingsTotal(ratings: CardRatings): number {
 const RATING_SCHEMA = {
   type: "object",
   properties: {
-    art: { type: "integer", minimum: 1, maximum: 10 },
-    fame: { type: "integer", minimum: 1, maximum: 10 },
-    chase: { type: "integer", minimum: 1, maximum: 10 },
-    rarity: { type: "integer", minimum: 1, maximum: 10 },
+    art: { type: "integer", minimum: 1, maximum: 10, description: "Illustration quality, 1-10." },
+    fame: { type: "integer", minimum: 1, maximum: 10, description: "How iconic/memorable the scene is, 1-10." },
+    chase: { type: "integer", minimum: 1, maximum: 10, description: "Collector excitement/wow factor, 1-10." },
+    rarity: { type: "integer", minimum: 1, maximum: 10, description: "How well it lives up to its rarity tier, 1-10." },
   },
   required: ["art", "fame", "chase", "rarity"],
   additionalProperties: false,
@@ -149,8 +149,11 @@ const JUDGE_RESPONSE_FORMAT = {
     schema: {
       type: "object",
       properties: {
-        reasoning: { type: "string" },
-        winner: { type: "string", enum: ["A", "B"] },
+        reasoning: {
+          type: "string",
+          description: "A punchy, card-specific final-battle phrase, max 10 words. Never a generic stock line.",
+        },
+        winner: { type: "string", enum: ["A", "B"], description: "Whichever card's ratings add up higher." },
         card1Ratings: RATING_SCHEMA,
         card2Ratings: RATING_SCHEMA,
       },
@@ -189,6 +192,12 @@ export async function judgeBattle(
     // here was silently truncating the JSON mid-object, which made every round fall back to the
     // generic response below.
     max_tokens: 700,
+    // The same model id can be served by several backing providers on OpenRouter, and only some
+    // of them actually enforce every parameter in the request - one that silently ignores
+    // response_format is indistinguishable from a working one until the response comes back
+    // malformed. This pins routing to providers that honor every parameter we send (including
+    // response_format), instead of letting a non-conforming provider intermittently slip through.
+    provider: { require_parameters: true },
   };
 
   let data: unknown;
