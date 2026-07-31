@@ -77,11 +77,21 @@ export interface BattleJudgement {
   card2Ratings: CardRatings;
 }
 
-/** Strips ```json fences some models wrap JSON in despite instructions not to. */
+/**
+ * Pulls the JSON object out of a model response, tolerating ```json fences and any stray
+ * preamble/trailing prose around it (some models add a stray sentence despite instructions not
+ * to) by slicing from the first `{` to the last `}` rather than requiring the whole string to be
+ * pure JSON.
+ */
 function extractJson(text: string): string {
   const trimmed = text.trim();
   const fenced = trimmed.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
-  return fenced ? fenced[1] : trimmed;
+  const candidate = fenced ? fenced[1] : trimmed;
+
+  const start = candidate.indexOf("{");
+  const end = candidate.lastIndexOf("}");
+  if (start === -1 || end === -1 || end < start) return candidate;
+  return candidate.slice(start, end + 1);
 }
 
 function clampRating(value: unknown): number {
@@ -126,7 +136,12 @@ export async function judgeBattle(
       },
     ],
     temperature: 0.6,
-    max_tokens: 300,
+    // Generous headroom above what the compact JSON payload itself needs - some models spend a
+    // chunk of the budget on hidden reasoning before writing the actual answer, and a tight cap
+    // here was silently truncating the JSON mid-object, which made every round fall back to the
+    // generic response below.
+    max_tokens: 700,
+    response_format: { type: "json_object" },
   });
 
   const content = data?.choices?.[0]?.message?.content;
@@ -163,11 +178,14 @@ export async function judgeBattle(
         : "A closely fought round!";
 
     return { winner, reason, card1Ratings, card2Ratings };
-  } catch {
+  } catch (err) {
+    // Should be rare now that we request strict JSON mode, but keep a safety net so a single
+    // malformed response can't crash the round - and log it so a recurring failure is visible.
+    console.error("judgeBattle: failed to parse judge response as JSON", err, content);
     const fallback: CardRatings = { art: 5, fame: 5, chase: 5, rarity: 5 };
     return {
       winner: Math.random() < 0.5 ? "A" : "B",
-      reason: "A closely fought round!",
+      reason: "The judge's notes got lost in the shuffle - too close to call!",
       card1Ratings: fallback,
       card2Ratings: fallback,
     };

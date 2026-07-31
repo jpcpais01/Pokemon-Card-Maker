@@ -51,7 +51,9 @@ Rate each card independently and honestly on four aspects, each a strict integer
 - rarity: how well the artwork lives up to its stated rarity tier.
 
 Respond with ONLY a single JSON object and nothing else - no markdown code fences, no preamble, no explanation outside the JSON. It must have exactly these four entries, in exactly this shape:
-{"reasoning": "a short, fun, one-sentence summary, max 20 words", "winner": "A", "card1Ratings": {"art": 7, "fame": 6, "chase": 5, "rarity": 6}, "card2Ratings": {"art": 7, "fame": 6, "chase": 5, "rarity": 6}}
+{"reasoning": "a punchy final-battle phrase describing how this specific round went, max 10 words", "winner": "A", "card1Ratings": {"art": 7, "fame": 6, "chase": 5, "rarity": 6}, "card2Ratings": {"art": 7, "fame": 6, "chase": 5, "rarity": 6}}
+
+The "reasoning" phrase must be freshly written about these two specific cards each time (mention what stood out - a pose, a color, a vibe) - never reuse a generic stock phrase like "a closely fought round."
 
 card1Ratings is for Card A, card2Ratings is for Card B. "winner" must be exactly "A" or "B", and must be consistent with whichever card's ratings add up higher - be fair and just, let the ratings drive the decision rather than a gut feeling.`;
 
