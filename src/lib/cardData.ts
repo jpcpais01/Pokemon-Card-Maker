@@ -42,23 +42,26 @@ export const ART_TYPES: WeightedOption<ArtType>[] = [
   },
 ];
 
+// Non-"none" weights are each exactly half of their original value (odds of getting any special
+// form at all halved from 48% to 24%), with "none" absorbing the freed-up share so the weights
+// still sum to 100 and read directly as percentages.
 export const SPECIAL_FORMS: WeightedOption<SpecialForm>[] = [
-  { value: "none", label: "Standard", weight: 52, blurb: "Regular, standard form." },
-  { value: "shiny", label: "Shiny", weight: 16, blurb: "Rare shiny color palette." },
-  { value: "mega", label: "Mega", weight: 8, blurb: "Mega Evolved form, more powerful and elaborate." },
+  { value: "none", label: "Standard", weight: 76, blurb: "Regular, standard form." },
+  { value: "shiny", label: "Shiny", weight: 8, blurb: "Rare shiny color palette." },
+  { value: "mega", label: "Mega", weight: 4, blurb: "Mega Evolved form, more powerful and elaborate." },
   {
     value: "tag-team",
     label: "Tag Team",
-    weight: 7,
+    weight: 3.5,
     blurb: "Tag Team card featuring two Pokemon together as partners in one dynamic scene.",
   },
-  { value: "ancient", label: "Ancient", weight: 6, blurb: "Primal, ancient prehistoric form, like a fossil-era relic." },
-  { value: "future", label: "Future", weight: 6, blurb: "Futuristic, bio-mechanical paradox form." },
-  { value: "gold-star", label: "Gold Star", weight: 3, blurb: "Ultra-rare Gold Star variant, radiant golden accents." },
+  { value: "ancient", label: "Ancient", weight: 3, blurb: "Primal, ancient prehistoric form, like a fossil-era relic." },
+  { value: "future", label: "Future", weight: 3, blurb: "Futuristic, bio-mechanical paradox form." },
+  { value: "gold-star", label: "Gold Star", weight: 1.5, blurb: "Ultra-rare Gold Star variant, radiant golden accents." },
   {
     value: "delta-species",
     label: "Delta Species",
-    weight: 2,
+    weight: 1,
     blurb: "Delta Species variant with an unexpected off-type elemental twist, marked with a δ symbol.",
   },
 ];
@@ -73,10 +76,13 @@ export function pickSpecialForm(poolSize: number, exclude?: SpecialForm): Weight
   return pickWeighted(candidates, exclude);
 }
 
+// Non-"default" weights are each exactly half of their original value (odds of getting any
+// regional form at all halved from 38% to 19%), with "default" absorbing the freed-up share so
+// the weights still sum to 100 and read directly as percentages.
 export const REGIONS: WeightedOption<Region>[] = [
-  { value: "default", label: "Default", weight: 62, blurb: "Standard, original regional form." },
-  { value: "alolan", label: "Alolan", weight: 15, blurb: "Alolan regional form, tropical island styling." },
-  { value: "galarian", label: "Galarian", weight: 12, blurb: "Galarian regional form, British-isles inspired styling." },
-  { value: "hisuian", label: "Hisuian", weight: 7, blurb: "Hisuian regional form, ancient feudal-Japan inspired styling." },
-  { value: "paldean", label: "Paldean", weight: 4, blurb: "Paldean regional form, Iberian-inspired styling." },
+  { value: "default", label: "Default", weight: 81, blurb: "Standard, original regional form." },
+  { value: "alolan", label: "Alolan", weight: 7.5, blurb: "Alolan regional form, tropical island styling." },
+  { value: "galarian", label: "Galarian", weight: 6, blurb: "Galarian regional form, British-isles inspired styling." },
+  { value: "hisuian", label: "Hisuian", weight: 3.5, blurb: "Hisuian regional form, ancient feudal-Japan inspired styling." },
+  { value: "paldean", label: "Paldean", weight: 2, blurb: "Paldean regional form, Iberian-inspired styling." },
 ];
