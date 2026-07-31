@@ -23,23 +23,27 @@ Given a set of card traits, write ONE detailed, vivid text-to-image prompt (120-
 - Match the rendering style to the rarity tier described.
 - Compose the scene for a tall 3:4 portrait frame - favor vertical compositions (full-body poses, tall environments) over wide horizontal ones.
 - Aside from the required "Pokemon TCG artwork style" phrase, never mention other card game terms like "card", "rarity", "border", or "text box" - describe only the illustration artwork itself, full-bleed, no frame.
-- Do not include any Pokemon that was not specified.`;
+- Do not include any Pokemon that was not specified.
+- Accuracy matters most of all: center the entire illustration on exactly the named Pokemon (or Pokemon, for a Tag Team). Never substitute a different species, a similar-looking relative, an evolution, or a pre-evolution - get the exact name and design right, every time.`;
 
 /**
- * Appended in code (not left to the drafting model's discretion) so the
- * style lock always reaches the image model, even if the drafted prompt
- * drifts from the system prompt's instructions. When two Pokemon are given,
- * also re-states both names explicitly as a hard guardrail against the image
- * model merging them into one creature or dropping one entirely.
+ * Appended in code (not left to the drafting model's discretion) so the style lock, and an
+ * explicit restatement of exactly which Pokemon this must depict, always reach the image model
+ * even if the drafted prompt drifts from the system prompt's instructions. This is a hard
+ * guardrail against the image model substituting a different (often similar-looking) species,
+ * and - when two Pokemon are given - against merging them into one creature or dropping one.
  */
 export function buildStyleSuffix(pokemonNames: string[]): string {
   const base =
     " Rendered in modern Pokemon TCG artwork style: smooth, glossy, semi-stylized creature design with soft airbrushed shading and crisp clean edges, set against a richly detailed painted background, vibrant saturated colors, professional official video-game-splash-art finish. Not photorealistic, not a photograph, not realistic fur/skin/feather texture, not a 3D render, not a generic fantasy illustration. Borderless, full-bleed artwork only - no card frame, no UI elements, no text, no logos, no watermarks. Make the scene, action, interaction, and camera angle unique and imaginative each time rather than a generic repeated pose - always nice and different.";
 
-  if (pokemonNames.length < 2) return base;
-
   const namesList = pokemonNames.join(" and ");
-  return `${base} This is a Tag Team illustration - it must clearly show BOTH ${namesList} together as two distinct, fully separate, individually recognizable Pokemon standing or acting side by side. Do not merge, hybridize, or blend ${namesList} into a single creature. Do not omit either one. Both ${namesList} must be fully visible in the final image.`;
+
+  if (pokemonNames.length < 2) {
+    return `${base} This artwork must depict exactly ${namesList} and only ${namesList} - not a different species, not a similar-looking relative, not an evolution or pre-evolution. Every visual detail must match ${namesList}'s official design precisely.`;
+  }
+
+  return `${base} This is a Tag Team illustration - it must clearly show BOTH ${namesList} together as two distinct, fully separate, individually recognizable Pokemon standing or acting side by side. Do not merge, hybridize, or blend ${namesList} into a single creature. Do not omit either one, and do not substitute a different species for either one. Both ${namesList} must be fully visible in the final image, each exactly matching its own official design.`;
 }
 
 export const JUDGE_SYSTEM_PROMPT = `You are a fair, impartial, and conservative judge for a friendly 1-on-1 Pokemon TCG art showdown between two AI-generated illustrations, Card A and Card B. You will be shown each image plus which Pokemon it depicts.

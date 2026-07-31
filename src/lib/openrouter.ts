@@ -125,6 +125,41 @@ function ratingsTotal(ratings: CardRatings): number {
 }
 
 /**
+ * Last-resort recovery for a response that fails JSON.parse (a stray unescaped quote inside
+ * "reasoning", a trailing comma, etc. can break the whole document even though the actual rating
+ * numbers are perfectly intact). Scans the raw text directly for `"blockKey": { ... "field": N ... }`
+ * patterns instead of requiring the whole response to be syntactically valid JSON.
+ */
+function regexExtractRatings(text: string, blockKey: string): CardRatings | null {
+  const blockStart = text.indexOf(`"${blockKey}"`);
+  if (blockStart === -1) return null;
+  // The ratings object itself is compact (4 short numeric fields) - a few hundred characters is
+  // always enough room to contain it even with generous whitespace.
+  const block = text.slice(blockStart, blockStart + 300);
+
+  const values: Partial<Record<"art" | "fame" | "chase" | "rarity", number>> = {};
+  for (const key of ["art", "fame", "chase", "rarity"] as const) {
+    const match = block.match(new RegExp(`"${key}"\\s*:\\s*(-?\\d+(?:\\.\\d+)?)`));
+    if (!match) return null;
+    values[key] = Number(match[1]);
+  }
+
+  return {
+    art: clampRating(values.art),
+    fame: clampRating(values.fame),
+    chase: clampRating(values.chase),
+    rarity: clampRating(values.rarity),
+  };
+}
+
+function regexExtractReason(text: string): string | null {
+  const match = text.match(/"reasoning"\s*:\s*"((?:[^"\\]|\\.)*)"/);
+  if (!match) return null;
+  const unescaped = match[1].replace(/\\"/g, '"').replace(/\\n/g, " ").trim();
+  return unescaped || null;
+}
+
+/**
  * Structured-output schema so the model is constrained to return exactly the fields we need -
  * this is a much stronger guarantee than the loose `json_object` mode, which only promises valid
  * JSON syntax and lets a model return something minimal/degenerate that still parses fine.
@@ -191,7 +226,7 @@ export async function judgeBattle(
     // chunk of the budget on hidden reasoning before writing the actual answer, and a tight cap
     // here was silently truncating the JSON mid-object, which made every round fall back to the
     // generic response below.
-    max_tokens: 700,
+    max_tokens: 1000,
     // The same model id can be served by several backing providers on OpenRouter, and only some
     // of them actually enforce every parameter in the request - one that silently ignores
     // response_format is indistinguishable from a working one until the response comes back
@@ -245,9 +280,23 @@ export async function judgeBattle(
 
     return { winner, reason, card1Ratings, card2Ratings };
   } catch (err) {
+    // JSON.parse can fail on a response that's 99% correct - a stray unescaped quote inside
+    // "reasoning" or a trailing comma breaks the whole document even though the actual rating
+    // numbers are sitting right there in the text. Try to recover them directly before giving up.
+    const card1Ratings = regexExtractRatings(content, "card1Ratings");
+    const card2Ratings = regexExtractRatings(content, "card2Ratings");
+    if (card1Ratings && card2Ratings) {
+      console.error("judgeBattle: JSON.parse failed, recovered ratings via regex fallback", err, content);
+      const total1 = ratingsTotal(card1Ratings);
+      const total2 = ratingsTotal(card2Ratings);
+      const winner = total1 !== total2 ? (total1 > total2 ? "A" : "B") : Math.random() < 0.5 ? "A" : "B";
+      const reason = regexExtractReason(content) ?? "A hard-fought round with a narrow edge.";
+      return { winner, reason, card1Ratings, card2Ratings };
+    }
+
     // Should be rare now that the response is schema-constrained, but keep a safety net so one
-    // bad response can't crash the round - and log the raw content so a recurring failure is
-    // actually diagnosable instead of silently masked by a fake-looking flat fallback.
+    // truly broken response can't crash the round - and log the raw content so a recurring
+    // failure is actually diagnosable instead of silently masked by a fake-looking flat fallback.
     console.error("judgeBattle: failed to parse judge response", err, content);
     const fallback: CardRatings = { art: 5, fame: 5, chase: 5, rarity: 5 };
     return {

@@ -34,7 +34,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ room: sanitizeRoomForPlayer(initialRoom, playerId) });
   }
 
-  const gotLock = await acquireLock(lockKey(code));
+  // Must comfortably outlast this route's own maxDuration (60s) - the previous default (25s)
+  // could expire while a slow image generation was still in flight, letting a concurrent poll
+  // from the other player acquire the "free" lock and start processing the same round a second
+  // time in parallel (duplicate OpenRouter calls racing to overwrite each other's saved state).
+  const gotLock = await acquireLock(lockKey(code), 55);
   if (!gotLock) {
     return NextResponse.json({ room: sanitizeRoomForPlayer(initialRoom, playerId) });
   }
