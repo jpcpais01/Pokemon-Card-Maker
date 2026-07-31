@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import ImageLightbox from "@/components/ImageLightbox";
+import { ratingsTier } from "@/lib/battle/tier";
 import type { BattleRound, BattleRoundPlayerState, CardRatings } from "@/lib/battle/types";
 
 type Phase = "card1" | "card2" | "victory" | "summary";
@@ -213,7 +214,7 @@ function CardSpotlight({
           </p>
         )}
 
-        {isVictory && ratings && <RatingsRow ratings={ratings} />}
+        {isVictory && ratings && <TierBadge tier={ratingsTier(ratings)} size="large" />}
       </div>
 
       <p className="text-[11px] font-semibold text-slate-600">Tap to skip →</p>
@@ -221,22 +222,33 @@ function CardSpotlight({
   );
 }
 
-function RatingsRow({ ratings }: { ratings: CardRatings }) {
-  const entries: [string, number][] = [
-    ["Art", ratings.art],
-    ["Fame", ratings.fame],
-    ["Chase", ratings.chase],
-    ["Rarity", ratings.rarity],
-  ];
+const TIER_COLORS: Record<string, string> = {
+  S: "border-amber-300 bg-amber-400/15 text-amber-300 shadow-[0_0_30px_-6px_rgba(251,191,36,0.7)]",
+  "A+": "border-purple-300 bg-purple-400/15 text-purple-200",
+  A: "border-purple-300 bg-purple-400/15 text-purple-200",
+  "A-": "border-purple-300 bg-purple-400/15 text-purple-200",
+  "B+": "border-emerald-300 bg-emerald-400/15 text-emerald-200",
+  B: "border-emerald-300 bg-emerald-400/15 text-emerald-200",
+  "B-": "border-emerald-300 bg-emerald-400/15 text-emerald-200",
+  "C+": "border-sky-300 bg-sky-400/15 text-sky-200",
+  C: "border-sky-300 bg-sky-400/15 text-sky-200",
+  "C-": "border-sky-300 bg-sky-400/15 text-sky-200",
+  D: "border-slate-400 bg-slate-400/15 text-slate-300",
+  F: "border-red-400 bg-red-400/15 text-red-300",
+};
+
+function TierBadge({ tier, size }: { tier: string; size: "large" | "small" }) {
+  const colors = TIER_COLORS[tier] ?? TIER_COLORS.F;
+  if (size === "large") {
+    return (
+      <div className={`flex flex-col items-center gap-1 rounded-2xl border-2 px-6 py-3 ${colors}`}>
+        <span className="text-3xl font-black leading-none">{tier}</span>
+        <span className="text-[9px] font-semibold uppercase tracking-[0.25em] opacity-80">Tier</span>
+      </div>
+    );
+  }
   return (
-    <div className="grid grid-cols-4 gap-2">
-      {entries.map(([label, value]) => (
-        <div key={label} className="glass rounded-xl px-2.5 py-2 text-center">
-          <p className="text-lg font-black text-amber-300">{value}</p>
-          <p className="text-[9px] font-semibold uppercase tracking-wide text-slate-400">{label}</p>
-        </div>
-      ))}
-    </div>
+    <span className={`rounded-full border px-2.5 py-0.5 text-xs font-black ${colors}`}>Tier {tier}</span>
   );
 }
 
@@ -306,23 +318,11 @@ function ResultCard({
           )}
         </div>
         {ratings && (
-          <div className="mt-1.5 grid grid-cols-4 gap-1 border-t border-white/10 pt-1.5">
-            <MiniStat label="Art" value={ratings.art} />
-            <MiniStat label="Fame" value={ratings.fame} />
-            <MiniStat label="Chase" value={ratings.chase} />
-            <MiniStat label="Rare" value={ratings.rarity} />
+          <div className="mt-1.5 flex justify-center border-t border-white/10 pt-1.5">
+            <TierBadge tier={ratingsTier(ratings)} size="small" />
           </div>
         )}
       </div>
-    </div>
-  );
-}
-
-function MiniStat({ label, value }: { label: string; value: number }) {
-  return (
-    <div>
-      <p className="text-xs font-black text-white">{value}</p>
-      <p className="text-[7px] font-semibold uppercase text-slate-500">{label}</p>
     </div>
   );
 }
