@@ -8,7 +8,7 @@ import type { BattleRound, BattleRoundPlayerState, CardRatings } from "@/lib/bat
 type Phase = "card1" | "card2" | "compare" | "victory" | "summary";
 
 const CARD_SPOTLIGHT_MS = 3000;
-const COMPARE_MS = 5400;
+const COMPARE_MS = 8500;
 const VICTORY_SPOTLIGHT_MS = 4000;
 
 interface Props {
@@ -250,7 +250,7 @@ function CardSpotlight({
 // bars share this exact rate, so they rise together and whichever total is lower simply stops
 // first while the other keeps climbing until it reaches its own value.
 const MAX_RATINGS_TOTAL = 40;
-const BAR_GROW_MS = 2200;
+const BAR_GROW_MS = 6600;
 const BAR_GROW_START_DELAY = 200;
 
 function RatingsBattle({
