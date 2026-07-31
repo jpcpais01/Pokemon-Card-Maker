@@ -20,11 +20,16 @@ export function ratingsTotal(ratings: CardRatings): number {
   return ratings.art + ratings.fame + ratings.chase + ratings.rarity;
 }
 
-/** Collapses the 4 category ratings (each 1-10, so 4-40 total) into a single letter tier. */
-export function ratingsTier(ratings: CardRatings): string {
-  const total = ratingsTotal(ratings);
+/** Maps a raw 0-40 total to its letter tier - exported separately so callers animating a
+ *  climbing total (e.g. mid-growth in a bar chart) can look up the tier for any in-between value. */
+export function tierForTotal(total: number): string {
   for (const { min, label } of TIER_THRESHOLDS) {
     if (total >= min) return label;
   }
   return "F";
+}
+
+/** Collapses the 4 category ratings (each 1-10, so 4-40 total) into a single letter tier. */
+export function ratingsTier(ratings: CardRatings): string {
+  return tierForTotal(ratingsTotal(ratings));
 }

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import ImageLightbox from "@/components/ImageLightbox";
-import { ratingsTier, ratingsTotal } from "@/lib/battle/tier";
+import { ratingsTier, ratingsTotal, tierForTotal } from "@/lib/battle/tier";
 import type { BattleRound, BattleRoundPlayerState, CardRatings } from "@/lib/battle/types";
 
 type Phase = "card1" | "card2" | "compare" | "victory" | "summary";
@@ -246,9 +246,6 @@ function CardSpotlight({
   );
 }
 
-// Kept in sync by hand with the `duration-[2200ms]` transition classes below - Tailwind's
-// arbitrary-value classes have to be literal strings for its build-time scanner to pick up, so
-// this can't be interpolated into the className directly.
 const BAR_GROW_MS = 2200;
 const BAR_GROW_START_DELAY = 200;
 
@@ -285,8 +282,6 @@ function RatingsBattle({
 
   const myTotal = myRatings ? ratingsTotal(myRatings) : 0;
   const opponentTotal = opponentRatings ? ratingsTotal(opponentRatings) : 0;
-  const myTier = myRatings ? ratingsTier(myRatings) : "F";
-  const opponentTier = opponentRatings ? ratingsTier(opponentRatings) : "F";
   const myAhead = revealed && myTotal > opponentTotal;
   const opponentAhead = revealed && opponentTotal > myTotal;
 
@@ -296,24 +291,13 @@ function RatingsBattle({
       className="fixed inset-0 z-40 flex cursor-pointer flex-col items-center justify-center gap-10 bg-[#05060f] px-6 py-10"
     >
       <div className="flex w-full max-w-sm items-end justify-center gap-6">
-        <RatingBar
-          label={myLabel}
-          image={myImage}
-          total={myTotal}
-          tier={myTier}
-          grown={grown}
-          revealed={revealed}
-          accent="amber"
-          ahead={myAhead}
-        />
+        <RatingBar label={myLabel} image={myImage} total={myTotal} grown={grown} accent="amber" ahead={myAhead} />
         <span className="mb-40 text-2xl font-black text-slate-500">VS</span>
         <RatingBar
           label={opponentLabel}
           image={opponentImage}
           total={opponentTotal}
-          tier={opponentTier}
           grown={grown}
-          revealed={revealed}
           accent="violet"
           ahead={opponentAhead}
         />
@@ -328,23 +312,42 @@ function RatingBar({
   label,
   image,
   total,
-  tier,
   grown,
-  revealed,
   accent,
   ahead,
 }: {
   label: string;
   image: string | null;
   total: number;
-  tier: string;
   grown: boolean;
-  revealed: boolean;
   accent: "amber" | "violet";
   ahead: boolean;
 }) {
-  const pct = Math.min(100, Math.max(6, (total / 40) * 100));
+  const [progress, setProgress] = useState(0);
   const isAmber = accent === "amber";
+  const targetPct = Math.min(100, Math.max(6, (total / 40) * 100));
+
+  // Animates the bar height, the rider image, and the climbing tier letter off one shared
+  // progress value each frame, so the letter genuinely counts up through the tiers (F, D, C-...)
+  // in lockstep with the bar rising rather than just appearing once it's done.
+  useEffect(() => {
+    if (!grown) return;
+    let rafId = 0;
+    let startTs: number | null = null;
+
+    function tick(ts: number) {
+      if (startTs === null) startTs = ts;
+      const raw = Math.min(1, (ts - startTs) / BAR_GROW_MS);
+      const eased = 1 - Math.pow(1 - raw, 3); // cubic ease-out
+      setProgress(eased);
+      if (raw < 1) rafId = requestAnimationFrame(tick);
+    }
+    rafId = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafId);
+  }, [grown]);
+
+  const pct = grown ? progress * targetPct : 0;
+  const currentTier = grown ? tierForTotal(Math.round(progress * total)) : "F";
 
   // Pixel math (matching the h-[26rem]/h-24 Tailwind classes below) so the image marker's own
   // height is accounted for and it never pokes out above the track, even at a near-max total.
@@ -359,11 +362,11 @@ function RatingBar({
       <div className="relative h-[26rem] w-32">
         <div className="absolute inset-0 overflow-hidden rounded-3xl border border-white/15 bg-white/5">
           <div
-            className={`absolute inset-x-0 bottom-0 rounded-t-2xl bg-gradient-to-t transition-[height] duration-[2200ms] ease-out ${
+            className={`absolute inset-x-0 bottom-0 rounded-t-2xl bg-gradient-to-t ${
               isAmber ? "from-amber-600 via-amber-400 to-yellow-200" : "from-violet-700 via-fuchsia-500 to-cyan-300"
             } ${ahead ? "victory-pulse" : ""}`}
             style={{
-              height: grown ? `${pct}%` : "0%",
+              height: `${pct}%`,
               boxShadow: grown
                 ? isAmber
                   ? "0 0 40px -4px rgba(251,191,36,0.75)"
@@ -374,10 +377,10 @@ function RatingBar({
         </div>
 
         <div
-          className={`absolute left-1/2 h-24 w-24 -translate-x-1/2 overflow-hidden rounded-2xl border-2 bg-black/40 shadow-lg transition-[bottom] duration-[2200ms] ease-out ${
+          className={`absolute left-1/2 h-24 w-24 -translate-x-1/2 overflow-hidden rounded-2xl border-2 bg-black/40 shadow-lg ${
             isAmber ? "border-amber-300" : "border-fuchsia-300"
           }`}
-          style={{ bottom: grown ? `${imageBottomPx}px` : "0px" }}
+          style={{ bottom: `${imageBottomPx}px` }}
         >
           {image && (
             // eslint-disable-next-line @next/next/no-img-element
@@ -387,11 +390,11 @@ function RatingBar({
       </div>
 
       <p
-        className={`text-4xl font-black transition-all duration-500 ${
-          revealed ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0"
-        } ${isAmber ? "text-amber-300" : "text-fuchsia-300"}`}
+        className={`text-4xl font-black transition-opacity duration-300 ${grown ? "opacity-100" : "opacity-0"} ${
+          isAmber ? "text-amber-300" : "text-fuchsia-300"
+        }`}
       >
-        {tier}
+        {currentTier}
       </p>
     </div>
   );
