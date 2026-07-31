@@ -8,7 +8,7 @@ import type { BattleRound, BattleRoundPlayerState, CardRatings } from "@/lib/bat
 type Phase = "card1" | "card2" | "compare" | "victory" | "summary";
 
 const CARD_SPOTLIGHT_MS = 3000;
-const COMPARE_MS = 4200;
+const COMPARE_MS = 5400;
 const VICTORY_SPOTLIGHT_MS = 4000;
 
 interface Props {
@@ -246,10 +246,10 @@ function CardSpotlight({
   );
 }
 
-// Kept in sync by hand with the `duration-[1400ms]` transition classes below - Tailwind's
+// Kept in sync by hand with the `duration-[2200ms]` transition classes below - Tailwind's
 // arbitrary-value classes have to be literal strings for its build-time scanner to pick up, so
 // this can't be interpolated into the className directly.
-const BAR_GROW_MS = 1400;
+const BAR_GROW_MS = 2200;
 const BAR_GROW_START_DELAY = 200;
 
 function RatingsBattle({
@@ -291,16 +291,11 @@ function RatingsBattle({
   return (
     <div
       onClick={onSkip}
-      className="fixed inset-0 z-40 flex cursor-pointer flex-col items-center justify-center gap-6 bg-[#05060f] px-6 py-10"
+      className="fixed inset-0 z-40 flex cursor-pointer flex-col items-center justify-center gap-10 bg-[#05060f] px-6 py-10"
     >
-      <div className="spotlight-in flex flex-col items-center gap-1">
-        <p className="text-xs font-bold uppercase tracking-[0.35em] text-slate-400">Tale of the Tape</p>
-        <p className="text-[11px] text-slate-600">Total score out of 40</p>
-      </div>
-
-      <div className="flex w-full max-w-sm items-end justify-center gap-4">
+      <div className="flex w-full max-w-sm items-end justify-center gap-6">
         <RatingBar label={myLabel} image={myImage} total={myTotal} grown={grown} revealed={revealed} accent="amber" ahead={myAhead} />
-        <span className="mb-20 text-sm font-black text-slate-600">VS</span>
+        <span className="mb-32 text-2xl font-black text-slate-500">VS</span>
         <RatingBar
           label={opponentLabel}
           image={opponentImage}
@@ -312,7 +307,7 @@ function RatingsBattle({
         />
       </div>
 
-      <p className="text-[11px] font-semibold text-slate-600">Tap to skip →</p>
+      <p className="text-xs font-semibold text-slate-600">Tap to skip →</p>
     </div>
   );
 }
@@ -337,32 +332,38 @@ function RatingBar({
   const pct = Math.min(100, Math.max(6, (total / 40) * 100));
   const isAmber = accent === "amber";
 
+  // Pixel math (matching the h-72/h-24 Tailwind classes below) so the image marker's own height
+  // is accounted for and it never pokes out above the track, even at a near-max total.
+  const trackHeightPx = 288;
+  const imageSizePx = 96;
+  const imageBottomPx = Math.min((pct / 100) * trackHeightPx, trackHeightPx - imageSizePx);
+
   return (
     <div className="flex flex-col items-center gap-3">
-      <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">{label}</p>
+      <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400">{label}</p>
 
-      <div className="relative h-52 w-20">
-        <div className="absolute inset-0 overflow-hidden rounded-2xl border border-white/15 bg-white/5">
+      <div className="relative h-72 w-32">
+        <div className="absolute inset-0 overflow-hidden rounded-3xl border border-white/15 bg-white/5">
           <div
-            className={`absolute inset-x-0 bottom-0 rounded-t-xl bg-gradient-to-t transition-[height] duration-[1400ms] ease-out ${
+            className={`absolute inset-x-0 bottom-0 rounded-t-2xl bg-gradient-to-t transition-[height] duration-[2200ms] ease-out ${
               isAmber ? "from-amber-600 via-amber-400 to-yellow-200" : "from-violet-700 via-fuchsia-500 to-cyan-300"
             } ${ahead ? "victory-pulse" : ""}`}
             style={{
               height: grown ? `${pct}%` : "0%",
               boxShadow: grown
                 ? isAmber
-                  ? "0 0 30px -4px rgba(251,191,36,0.75)"
-                  : "0 0 30px -4px rgba(217,70,239,0.75)"
+                  ? "0 0 40px -4px rgba(251,191,36,0.75)"
+                  : "0 0 40px -4px rgba(217,70,239,0.75)"
                 : "none",
             }}
           />
         </div>
 
         <div
-          className={`absolute left-1/2 h-14 w-14 -translate-x-1/2 overflow-hidden rounded-xl border-2 bg-black/40 shadow-lg transition-[bottom] duration-[1400ms] ease-out ${
+          className={`absolute left-1/2 h-24 w-24 -translate-x-1/2 overflow-hidden rounded-2xl border-2 bg-black/40 shadow-lg transition-[bottom] duration-[2200ms] ease-out ${
             isAmber ? "border-amber-300" : "border-fuchsia-300"
           }`}
-          style={{ bottom: grown ? `calc(${pct}% - 12px)` : "0%" }}
+          style={{ bottom: grown ? `${imageBottomPx}px` : "0px" }}
         >
           {image && (
             // eslint-disable-next-line @next/next/no-img-element
@@ -372,7 +373,7 @@ function RatingBar({
       </div>
 
       <p
-        className={`text-2xl font-black transition-all duration-500 ${
+        className={`text-4xl font-black transition-all duration-500 ${
           revealed ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0"
         } ${isAmber ? "text-amber-300" : "text-fuchsia-300"}`}
       >
