@@ -252,6 +252,7 @@ function CardSpotlight({
 const MAX_RATINGS_TOTAL = 40;
 const BAR_GROW_MS = 13200;
 const BAR_GROW_START_DELAY = 200;
+const POST_SETTLE_PAUSE_MS = 1000;
 
 function RatingsBattle({
   myLabel,
@@ -287,6 +288,16 @@ function RatingsBattle({
   const revealed = mySettled && opponentSettled;
   const myAhead = revealed && myTotal > opponentTotal;
   const opponentAhead = revealed && opponentTotal > myTotal;
+
+  // Advance shortly after both bars actually finish (rather than always waiting out the fixed
+  // COMPARE_MS ceiling sized for a worst-case max-total round) - most rounds settle well before
+  // that, so this is what keeps the pause after the bars stop feeling proportionate instead of
+  // always dragging on regardless of how far either bar actually had to climb.
+  useEffect(() => {
+    if (!revealed) return;
+    const timer = window.setTimeout(onSkip, POST_SETTLE_PAUSE_MS);
+    return () => window.clearTimeout(timer);
+  }, [revealed, onSkip]);
 
   return (
     <div

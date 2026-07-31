@@ -69,7 +69,7 @@ export default function GenSelector({
                     : "border-white/10 bg-white/[0.03] text-slate-400"
                 }`}
               >
-                <span className="text-xs font-bold uppercase tracking-wide">Gen {gen.roman}</span>
+                <span className="text-xs font-bold uppercase tracking-wide">{gen.label}</span>
                 <span className="mt-0.5 text-[11px] opacity-80">{gen.region}</span>
               </button>
             );

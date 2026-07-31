@@ -22,7 +22,6 @@ export interface WeightedOption<T extends string> {
 
 export interface Generation {
   id: number;
-  roman: string;
   label: string;
   region: string;
 }
