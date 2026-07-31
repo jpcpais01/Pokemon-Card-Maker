@@ -285,6 +285,8 @@ function RatingsBattle({
 
   const myTotal = myRatings ? ratingsTotal(myRatings) : 0;
   const opponentTotal = opponentRatings ? ratingsTotal(opponentRatings) : 0;
+  const myTier = myRatings ? ratingsTier(myRatings) : "F";
+  const opponentTier = opponentRatings ? ratingsTier(opponentRatings) : "F";
   const myAhead = revealed && myTotal > opponentTotal;
   const opponentAhead = revealed && opponentTotal > myTotal;
 
@@ -294,12 +296,22 @@ function RatingsBattle({
       className="fixed inset-0 z-40 flex cursor-pointer flex-col items-center justify-center gap-10 bg-[#05060f] px-6 py-10"
     >
       <div className="flex w-full max-w-sm items-end justify-center gap-6">
-        <RatingBar label={myLabel} image={myImage} total={myTotal} grown={grown} revealed={revealed} accent="amber" ahead={myAhead} />
-        <span className="mb-32 text-2xl font-black text-slate-500">VS</span>
+        <RatingBar
+          label={myLabel}
+          image={myImage}
+          total={myTotal}
+          tier={myTier}
+          grown={grown}
+          revealed={revealed}
+          accent="amber"
+          ahead={myAhead}
+        />
+        <span className="mb-40 text-2xl font-black text-slate-500">VS</span>
         <RatingBar
           label={opponentLabel}
           image={opponentImage}
           total={opponentTotal}
+          tier={opponentTier}
           grown={grown}
           revealed={revealed}
           accent="violet"
@@ -316,6 +328,7 @@ function RatingBar({
   label,
   image,
   total,
+  tier,
   grown,
   revealed,
   accent,
@@ -324,6 +337,7 @@ function RatingBar({
   label: string;
   image: string | null;
   total: number;
+  tier: string;
   grown: boolean;
   revealed: boolean;
   accent: "amber" | "violet";
@@ -332,9 +346,9 @@ function RatingBar({
   const pct = Math.min(100, Math.max(6, (total / 40) * 100));
   const isAmber = accent === "amber";
 
-  // Pixel math (matching the h-72/h-24 Tailwind classes below) so the image marker's own height
-  // is accounted for and it never pokes out above the track, even at a near-max total.
-  const trackHeightPx = 288;
+  // Pixel math (matching the h-[26rem]/h-24 Tailwind classes below) so the image marker's own
+  // height is accounted for and it never pokes out above the track, even at a near-max total.
+  const trackHeightPx = 416;
   const imageSizePx = 96;
   const imageBottomPx = Math.min((pct / 100) * trackHeightPx, trackHeightPx - imageSizePx);
 
@@ -342,7 +356,7 @@ function RatingBar({
     <div className="flex flex-col items-center gap-3">
       <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400">{label}</p>
 
-      <div className="relative h-72 w-32">
+      <div className="relative h-[26rem] w-32">
         <div className="absolute inset-0 overflow-hidden rounded-3xl border border-white/15 bg-white/5">
           <div
             className={`absolute inset-x-0 bottom-0 rounded-t-2xl bg-gradient-to-t transition-[height] duration-[2200ms] ease-out ${
@@ -377,7 +391,7 @@ function RatingBar({
           revealed ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0"
         } ${isAmber ? "text-amber-300" : "text-fuchsia-300"}`}
       >
-        {total}
+        {tier}
       </p>
     </div>
   );
