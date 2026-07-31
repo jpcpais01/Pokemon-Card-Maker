@@ -25,7 +25,7 @@ export default function BattlePickPanel({ pick, rerollsLeft, locked, busy, onRer
   // otherwise its mere presence would spoil the surprise before the player taps that card.
   const specialFormRevealed = locked || !!revealed.specialForm;
   const visiblePokemons = specialFormRevealed ? pick.pokemons : pick.pokemons.slice(0, 1);
-  const faces = buildCardFaces(pick.artType, pick.specialForm, pick.region, visiblePokemons);
+  const faces = buildCardFaces(pick.artType, pick.specialForm, visiblePokemons);
 
   const allRevealed = faces.every((face) => revealed[String(face.key)]);
 

@@ -1,5 +1,8 @@
 export type ArtType = "ex" | "illustration-rare" | "special-illustration-rare";
 
+// A single combined pool: special forms (Shiny, Mega, Tag Team, ...) and regional forms
+// (Alolan, Galarian, ...) are mutually exclusive outcomes of the same roll/card, not two
+// independent traits.
 export type SpecialForm =
   | "none"
   | "shiny"
@@ -8,9 +11,11 @@ export type SpecialForm =
   | "tag-team"
   | "ancient"
   | "future"
-  | "delta-species";
-
-export type Region = "default" | "alolan" | "galarian" | "hisuian" | "paldean";
+  | "delta-species"
+  | "alolan"
+  | "galarian"
+  | "hisuian"
+  | "paldean";
 
 export interface WeightedOption<T extends string> {
   value: T;
@@ -40,6 +45,5 @@ export interface CardSelections {
   generations: number[];
   artType: WeightedOption<ArtType>;
   specialForm: WeightedOption<SpecialForm>;
-  region: WeightedOption<Region>;
   pokemons: PokemonPick[];
 }

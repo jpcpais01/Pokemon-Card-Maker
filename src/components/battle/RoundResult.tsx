@@ -224,11 +224,6 @@ function CardSpotlight({
                 {pick.specialForm.label}
               </span>
             )}
-            {pick.region.value !== "default" && (
-              <span className="rounded-full bg-emerald-400/15 px-2.5 py-1 text-xs font-semibold text-emerald-300">
-                {pick.region.label}
-              </span>
-            )}
           </div>
         </div>
 
@@ -516,11 +511,6 @@ function ResultCard({
           {pick.specialForm.value !== "none" && (
             <span className="rounded-full bg-purple-400/15 px-1.5 py-0.5 text-[9px] font-semibold text-purple-300">
               {pick.specialForm.label}
-            </span>
-          )}
-          {pick.region.value !== "default" && (
-            <span className="rounded-full bg-emerald-400/15 px-1.5 py-0.5 text-[9px] font-semibold text-emerald-300">
-              {pick.region.label}
             </span>
           )}
         </div>

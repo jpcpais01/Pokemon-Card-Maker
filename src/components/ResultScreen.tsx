@@ -43,11 +43,6 @@ export default function ResultScreen({ image, prompt, data, onRegenerateImage, o
               {data.specialForm.label}
             </span>
           )}
-          {data.region.value !== "default" && (
-            <span className="rounded-full bg-emerald-400/15 px-2.5 py-1 text-emerald-300">
-              {data.region.label}
-            </span>
-          )}
         </div>
 
         <button

@@ -1,4 +1,4 @@
-import type { ArtType, Region, SpecialForm } from "./types";
+import type { ArtType, SpecialForm } from "./types";
 
 export const ART_TYPE_ICONS: Record<ArtType, string> = {
   ex: "⚔️",
@@ -15,10 +15,6 @@ export const SPECIAL_FORM_ICONS: Record<SpecialForm, string> = {
   ancient: "🦴",
   future: "🤖",
   "delta-species": "δ",
-};
-
-export const REGION_ICONS: Record<Region, string> = {
-  default: "🌐",
   alolan: "🌺",
   galarian: "⚔️",
   hisuian: "🏮",

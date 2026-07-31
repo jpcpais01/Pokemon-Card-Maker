@@ -1,4 +1,4 @@
-import { ART_TYPES, REGIONS, SPECIAL_FORMS, pickSpecialForm, pickWeighted } from "@/lib/cardData";
+import { ART_TYPES, SPECIAL_FORMS, pickSpecialForm, pickWeighted } from "@/lib/cardData";
 import type { CardKey } from "@/lib/cardFaces";
 import { pickRandomPokemon, toPokemonPick } from "@/lib/generations";
 import type { PokemonRef } from "@/lib/types";
@@ -7,7 +7,6 @@ import type { BattlePlayerPick, BattleRoom, BattleRound, BattleRoundPlayerState 
 function rollPlayerPick(pool: PokemonRef[]): BattlePlayerPick {
   const artType = pickWeighted(ART_TYPES);
   const specialForm = pickSpecialForm(pool.length);
-  const region = pickWeighted(REGIONS);
   const count = specialForm.value === "tag-team" ? 2 : 1;
 
   const chosenIds: number[] = [];
@@ -18,7 +17,7 @@ function rollPlayerPick(pool: PokemonRef[]): BattlePlayerPick {
     pokemons.push(toPokemonPick(p));
   }
 
-  return { artType, specialForm, region, pokemons };
+  return { artType, specialForm, pokemons };
 }
 
 /**
@@ -47,9 +46,6 @@ export function rerollPlayerCard(
 ): BattleRoundPlayerState {
   if (key === "artType") {
     return { ...state, artType: pickWeighted(ART_TYPES, state.artType.value) };
-  }
-  if (key === "region") {
-    return { ...state, region: pickWeighted(REGIONS, state.region.value) };
   }
   if (key === "specialForm") {
     const specialForm = pickSpecialForm(pool.length, state.specialForm.value);
@@ -80,7 +76,6 @@ export function rerollPlayerCard(
 const HIDDEN_PICK: BattlePlayerPick = {
   artType: ART_TYPES[0],
   specialForm: SPECIAL_FORMS[0],
-  region: REGIONS[0],
   pokemons: [{ id: 0, name: "unknown", displayName: "???", artworkUrl: "" }],
 };
 

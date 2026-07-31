@@ -1,8 +1,8 @@
 import type { ReactNode } from "react";
-import { ART_TYPE_ICONS, REGION_ICONS, SPECIAL_FORM_ICONS } from "@/lib/icons";
-import type { ArtType, PokemonPick, Region, SpecialForm, WeightedOption } from "@/lib/types";
+import { ART_TYPE_ICONS, SPECIAL_FORM_ICONS } from "@/lib/icons";
+import type { ArtType, PokemonPick, SpecialForm, WeightedOption } from "@/lib/types";
 
-export type CardKey = "artType" | "specialForm" | "region" | number;
+export type CardKey = "artType" | "specialForm" | number;
 
 export interface CardFace {
   key: CardKey;
@@ -10,11 +10,10 @@ export interface CardFace {
   front: ReactNode;
 }
 
-/** Builds the four/five FlipCard front faces shared by solo play and battle mode. */
+/** Builds the three/four FlipCard front faces shared by solo play and battle mode. */
 export function buildCardFaces(
   artType: WeightedOption<ArtType>,
   specialForm: WeightedOption<SpecialForm>,
-  region: WeightedOption<Region>,
   pokemons: PokemonPick[]
 ): CardFace[] {
   return [
@@ -35,16 +34,6 @@ export function buildCardFaces(
         <div className="flex h-full flex-col items-center justify-center gap-2 bg-gradient-to-br from-violet-400 via-purple-500 to-indigo-700 p-3 text-center text-white">
           <span className="text-4xl drop-shadow-sm">{SPECIAL_FORM_ICONS[specialForm.value]}</span>
           <span className="text-lg font-black leading-tight">{specialForm.label}</span>
-        </div>
-      ),
-    },
-    {
-      key: "region",
-      label: "Regional Form",
-      front: (
-        <div className="flex h-full flex-col items-center justify-center gap-2 bg-gradient-to-br from-teal-300 via-emerald-500 to-cyan-700 p-3 text-center text-slate-900">
-          <span className="text-4xl drop-shadow-sm">{REGION_ICONS[region.value]}</span>
-          <span className="text-lg font-black leading-tight">{region.label}</span>
         </div>
       ),
     },

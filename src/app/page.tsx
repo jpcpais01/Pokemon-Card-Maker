@@ -8,7 +8,7 @@ import RevealScreen, { type CardKey, type RevealData, type RevealFlags } from "@
 import LoadingScreen from "@/components/LoadingScreen";
 import ErrorScreen from "@/components/ErrorScreen";
 import ResultScreen from "@/components/ResultScreen";
-import { ART_TYPES, REGIONS, pickSpecialForm, pickWeighted } from "@/lib/cardData";
+import { ART_TYPES, pickSpecialForm, pickWeighted } from "@/lib/cardData";
 import { createRoom } from "@/lib/battle/api";
 import { storePlayerId } from "@/lib/battle/session";
 import { GENERATIONS, fetchPokemonForGenerations, pickRandomPokemon, toPokemonPick } from "@/lib/generations";
@@ -52,7 +52,7 @@ export default function Home() {
 
   const allRevealed = useMemo(() => {
     if (!flags) return false;
-    return flags.artType && flags.specialForm && flags.region && flags.pokemons.every(Boolean);
+    return flags.artType && flags.specialForm && flags.pokemons.every(Boolean);
   }, [flags]);
 
   async function handleOpenPack() {
@@ -64,7 +64,6 @@ export default function Home() {
 
       const artType = pickWeighted(ART_TYPES);
       const specialForm = pickSpecialForm(fetchedPool.length);
-      const region = pickWeighted(REGIONS);
       const count = specialForm.value === "tag-team" ? 2 : 1;
 
       const chosenIds: number[] = [];
@@ -76,8 +75,8 @@ export default function Home() {
       }
 
       setPool(fetchedPool);
-      setRevealData({ artType, specialForm, region, pokemons });
-      setFlags({ artType: false, specialForm: false, region: false, pokemons: pokemons.map(() => false) });
+      setRevealData({ artType, specialForm, pokemons });
+      setFlags({ artType: false, specialForm: false, pokemons: pokemons.map(() => false) });
       setRerollsLeft(TOTAL_REROLLS);
       setStage("reveal");
     } catch (err) {
@@ -100,7 +99,7 @@ export default function Home() {
   }
 
   function handleRevealAll() {
-    setFlags((prev) => (prev ? { artType: true, specialForm: true, region: true, pokemons: prev.pokemons.map(() => true) } : prev));
+    setFlags((prev) => (prev ? { artType: true, specialForm: true, pokemons: prev.pokemons.map(() => true) } : prev));
   }
 
   function handleReroll(key: CardKey) {
@@ -109,11 +108,6 @@ export default function Home() {
 
     if (key === "artType") {
       setRevealData((prev) => (prev ? { ...prev, artType: pickWeighted(ART_TYPES, prev.artType.value) } : prev));
-      return;
-    }
-
-    if (key === "region") {
-      setRevealData((prev) => (prev ? { ...prev, region: pickWeighted(REGIONS, prev.region.value) } : prev));
       return;
     }
 
@@ -157,7 +151,6 @@ export default function Home() {
       const { prompt } = await postJson<{ prompt: string }>("/api/generate-prompt", {
         artType: { label: data.artType.label, blurb: data.artType.blurb },
         specialForm: { label: data.specialForm.label, blurb: data.specialForm.blurb },
-        region: { label: data.region.label, blurb: data.region.blurb },
         pokemons: data.pokemons.map((p) => ({ name: p.displayName })),
       });
       generatedPrompt = prompt;

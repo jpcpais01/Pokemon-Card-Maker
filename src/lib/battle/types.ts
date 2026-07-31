@@ -1,5 +1,5 @@
 import type { CardRatings } from "@/lib/openrouter";
-import type { ArtType, PokemonPick, Region, SpecialForm, WeightedOption } from "@/lib/types";
+import type { ArtType, PokemonPick, SpecialForm, WeightedOption } from "@/lib/types";
 
 export type { CardRatings };
 
@@ -15,7 +15,6 @@ export type RoomStatus = "waiting" | "playing" | "finished";
 export interface BattlePlayerPick {
   artType: WeightedOption<ArtType>;
   specialForm: WeightedOption<SpecialForm>;
-  region: WeightedOption<Region>;
   pokemons: PokemonPick[];
 }
 

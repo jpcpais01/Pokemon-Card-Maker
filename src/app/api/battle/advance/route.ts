@@ -63,7 +63,6 @@ export async function POST(request: Request) {
             const userPrompt = buildUserPrompt({
               artType: state.artType,
               specialForm: state.specialForm,
-              region: state.region,
               pokemons: state.pokemons.map((p) => ({ name: p.displayName })),
             });
             const drafted = await generateText(SYSTEM_PROMPT, userPrompt);
