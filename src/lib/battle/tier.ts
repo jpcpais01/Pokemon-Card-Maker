@@ -16,9 +16,13 @@ const TIER_THRESHOLDS: { min: number; label: string }[] = [
   { min: 0, label: "F" },
 ];
 
+export function ratingsTotal(ratings: CardRatings): number {
+  return ratings.art + ratings.fame + ratings.chase + ratings.rarity;
+}
+
 /** Collapses the 4 category ratings (each 1-10, so 4-40 total) into a single letter tier. */
 export function ratingsTier(ratings: CardRatings): string {
-  const total = ratings.art + ratings.fame + ratings.chase + ratings.rarity;
+  const total = ratingsTotal(ratings);
   for (const { min, label } of TIER_THRESHOLDS) {
     if (total >= min) return label;
   }

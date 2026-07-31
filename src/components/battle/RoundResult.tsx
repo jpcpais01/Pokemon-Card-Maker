@@ -2,12 +2,13 @@
 
 import { useCallback, useEffect, useState } from "react";
 import ImageLightbox from "@/components/ImageLightbox";
-import { ratingsTier } from "@/lib/battle/tier";
+import { ratingsTier, ratingsTotal } from "@/lib/battle/tier";
 import type { BattleRound, BattleRoundPlayerState, CardRatings } from "@/lib/battle/types";
 
-type Phase = "card1" | "card2" | "victory" | "summary";
+type Phase = "card1" | "card2" | "compare" | "victory" | "summary";
 
 const CARD_SPOTLIGHT_MS = 3000;
+const COMPARE_MS = 4200;
 const VICTORY_SPOTLIGHT_MS = 4000;
 
 interface Props {
@@ -45,16 +46,39 @@ export default function RoundResult({
   const opponentPick = round.players[opponentId];
   const bothImagesReady = !!myImage && !!opponentImage;
 
+  // Only worth a dedicated bars-comparison beat when the judge actually produced ratings -
+  // a coin-flip/default-win round has none, so it skips straight to the victory spotlight.
+  const hasRatings = !!round.ratings;
+
   const advancePhase = useCallback(() => {
-    setPhase((p) => (p === "card1" ? "card2" : p === "card2" ? "victory" : "summary"));
-  }, []);
+    setPhase((p) => {
+      if (p === "card1") return "card2";
+      if (p === "card2") return hasRatings ? "compare" : "victory";
+      if (p === "compare") return "victory";
+      return "summary";
+    });
+  }, [hasRatings]);
 
   useEffect(() => {
     if (phase === "summary" || !bothImagesReady) return;
-    const duration = phase === "victory" ? VICTORY_SPOTLIGHT_MS : CARD_SPOTLIGHT_MS;
+    const duration = phase === "victory" ? VICTORY_SPOTLIGHT_MS : phase === "compare" ? COMPARE_MS : CARD_SPOTLIGHT_MS;
     const timer = window.setTimeout(advancePhase, duration);
     return () => window.clearTimeout(timer);
   }, [phase, bothImagesReady, advancePhase]);
+
+  if (phase === "compare") {
+    return (
+      <RatingsBattle
+        myLabel="You"
+        myImage={myImage}
+        myRatings={round.ratings?.[myId]}
+        opponentLabel={opponentLabel}
+        opponentImage={opponentImage}
+        opponentRatings={round.ratings?.[opponentId]}
+        onSkip={advancePhase}
+      />
+    );
+  }
 
   if (phase !== "summary") {
     const spotlight =
@@ -218,6 +242,142 @@ function CardSpotlight({
       </div>
 
       <p className="text-[11px] font-semibold text-slate-600">Tap to skip →</p>
+    </div>
+  );
+}
+
+// Kept in sync by hand with the `duration-[1400ms]` transition classes below - Tailwind's
+// arbitrary-value classes have to be literal strings for its build-time scanner to pick up, so
+// this can't be interpolated into the className directly.
+const BAR_GROW_MS = 1400;
+const BAR_GROW_START_DELAY = 200;
+
+function RatingsBattle({
+  myLabel,
+  myImage,
+  myRatings,
+  opponentLabel,
+  opponentImage,
+  opponentRatings,
+  onSkip,
+}: {
+  myLabel: string;
+  myImage: string | null;
+  myRatings?: CardRatings;
+  opponentLabel: string;
+  opponentImage: string | null;
+  opponentRatings?: CardRatings;
+  onSkip: () => void;
+}) {
+  const [grown, setGrown] = useState(false);
+  const [revealed, setRevealed] = useState(false);
+
+  useEffect(() => {
+    const growTimer = window.setTimeout(() => setGrown(true), BAR_GROW_START_DELAY);
+    return () => window.clearTimeout(growTimer);
+  }, []);
+
+  useEffect(() => {
+    if (!grown) return;
+    const revealTimer = window.setTimeout(() => setRevealed(true), BAR_GROW_MS);
+    return () => window.clearTimeout(revealTimer);
+  }, [grown]);
+
+  const myTotal = myRatings ? ratingsTotal(myRatings) : 0;
+  const opponentTotal = opponentRatings ? ratingsTotal(opponentRatings) : 0;
+  const myAhead = revealed && myTotal > opponentTotal;
+  const opponentAhead = revealed && opponentTotal > myTotal;
+
+  return (
+    <div
+      onClick={onSkip}
+      className="fixed inset-0 z-40 flex cursor-pointer flex-col items-center justify-center gap-6 bg-[#05060f] px-6 py-10"
+    >
+      <div className="spotlight-in flex flex-col items-center gap-1">
+        <p className="text-xs font-bold uppercase tracking-[0.35em] text-slate-400">Tale of the Tape</p>
+        <p className="text-[11px] text-slate-600">Total score out of 40</p>
+      </div>
+
+      <div className="flex w-full max-w-sm items-end justify-center gap-4">
+        <RatingBar label={myLabel} image={myImage} total={myTotal} grown={grown} revealed={revealed} accent="amber" ahead={myAhead} />
+        <span className="mb-20 text-sm font-black text-slate-600">VS</span>
+        <RatingBar
+          label={opponentLabel}
+          image={opponentImage}
+          total={opponentTotal}
+          grown={grown}
+          revealed={revealed}
+          accent="violet"
+          ahead={opponentAhead}
+        />
+      </div>
+
+      <p className="text-[11px] font-semibold text-slate-600">Tap to skip →</p>
+    </div>
+  );
+}
+
+function RatingBar({
+  label,
+  image,
+  total,
+  grown,
+  revealed,
+  accent,
+  ahead,
+}: {
+  label: string;
+  image: string | null;
+  total: number;
+  grown: boolean;
+  revealed: boolean;
+  accent: "amber" | "violet";
+  ahead: boolean;
+}) {
+  const pct = Math.min(100, Math.max(6, (total / 40) * 100));
+  const isAmber = accent === "amber";
+
+  return (
+    <div className="flex flex-col items-center gap-3">
+      <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">{label}</p>
+
+      <div className="relative h-52 w-20">
+        <div className="absolute inset-0 overflow-hidden rounded-2xl border border-white/15 bg-white/5">
+          <div
+            className={`absolute inset-x-0 bottom-0 rounded-t-xl bg-gradient-to-t transition-[height] duration-[1400ms] ease-out ${
+              isAmber ? "from-amber-600 via-amber-400 to-yellow-200" : "from-violet-700 via-fuchsia-500 to-cyan-300"
+            } ${ahead ? "victory-pulse" : ""}`}
+            style={{
+              height: grown ? `${pct}%` : "0%",
+              boxShadow: grown
+                ? isAmber
+                  ? "0 0 30px -4px rgba(251,191,36,0.75)"
+                  : "0 0 30px -4px rgba(217,70,239,0.75)"
+                : "none",
+            }}
+          />
+        </div>
+
+        <div
+          className={`absolute left-1/2 h-14 w-14 -translate-x-1/2 overflow-hidden rounded-xl border-2 bg-black/40 shadow-lg transition-[bottom] duration-[1400ms] ease-out ${
+            isAmber ? "border-amber-300" : "border-fuchsia-300"
+          }`}
+          style={{ bottom: grown ? `calc(${pct}% - 12px)` : "0%" }}
+        >
+          {image && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={image} alt={label} className="h-full w-full object-cover" />
+          )}
+        </div>
+      </div>
+
+      <p
+        className={`text-2xl font-black transition-all duration-500 ${
+          revealed ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0"
+        } ${isAmber ? "text-amber-300" : "text-fuchsia-300"}`}
+      >
+        {total}
+      </p>
     </div>
   );
 }
