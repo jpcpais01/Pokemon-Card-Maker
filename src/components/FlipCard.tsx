@@ -44,12 +44,6 @@ export default function FlipCard({ label, revealed, onReveal, front, rerollsLeft
       >
         {front}
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-tr from-white/0 via-white/10 to-white/0" />
-
-        {revealed && onReroll && !!rerollsLeft && (
-          <span className="pointer-events-none absolute right-1.5 top-1.5 flex h-7 w-7 items-center justify-center rounded-full border border-white/20 bg-black/55 text-sm text-white">
-            ↻
-          </span>
-        )}
       </button>
     </div>
   );
