@@ -27,7 +27,7 @@ export default function OpengraphImage() {
             top: -180,
             left: -140,
             borderRadius: 9999,
-            background: "#fbbf24",
+            background: "#7c3aed",
             opacity: 0.5,
             filter: "blur(120px)",
           }}
@@ -41,7 +41,7 @@ export default function OpengraphImage() {
             top: -160,
             right: -180,
             borderRadius: 9999,
-            background: "#8b5cf6",
+            background: "#06b6d4",
             opacity: 0.45,
             filter: "blur(120px)",
           }}
@@ -55,7 +55,7 @@ export default function OpengraphImage() {
             bottom: -260,
             left: 300,
             borderRadius: 9999,
-            background: "#2dd4bf",
+            background: "#d946ef",
             opacity: 0.4,
             filter: "blur(120px)",
           }}
@@ -68,13 +68,13 @@ export default function OpengraphImage() {
               width: 156,
               height: 156,
               borderRadius: 36,
-              background: "linear-gradient(135deg, #fbbf24 0%, #f97316 100%)",
+              background: "linear-gradient(135deg, #7c3aed 0%, #d946ef 55%, #06b6d4 100%)",
               alignItems: "center",
               justifyContent: "center",
-              boxShadow: "0 24px 70px rgba(251,146,60,0.45)",
+              boxShadow: "0 24px 70px rgba(168,85,247,0.45)",
             }}
           >
-            <span style={{ fontSize: 96, fontWeight: 900, color: "#0f172a", fontFamily: "sans-serif" }}>P</span>
+            <span style={{ fontSize: 96, fontWeight: 900, color: "#ffffff", fontFamily: "sans-serif" }}>P</span>
           </div>
           <span style={{ fontSize: 108, fontWeight: 900, color: "#ffffff", fontFamily: "sans-serif" }}>PokeGen</span>
         </div>

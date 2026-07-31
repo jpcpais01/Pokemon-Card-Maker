@@ -13,11 +13,11 @@ export default function Icon() {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          background: "linear-gradient(135deg, #fbbf24 0%, #f97316 100%)",
+          background: "linear-gradient(135deg, #7c3aed 0%, #d946ef 55%, #06b6d4 100%)",
           borderRadius: 7,
         }}
       >
-        <span style={{ fontSize: 21, fontWeight: 900, color: "#0f172a", fontFamily: "sans-serif" }}>P</span>
+        <span style={{ fontSize: 20, fontWeight: 900, color: "#ffffff", fontFamily: "sans-serif" }}>P</span>
       </div>
     ),
     { ...size }
