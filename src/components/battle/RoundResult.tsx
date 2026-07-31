@@ -246,6 +246,10 @@ function CardSpotlight({
   );
 }
 
+// Reference duration for growing from 0 to the theoretical max total (4 categories x 10) - both
+// bars share this exact rate, so they rise together and whichever total is lower simply stops
+// first while the other keeps climbing until it reaches its own value.
+const MAX_RATINGS_TOTAL = 40;
 const BAR_GROW_MS = 2200;
 const BAR_GROW_START_DELAY = 200;
 
@@ -267,21 +271,20 @@ function RatingsBattle({
   onSkip: () => void;
 }) {
   const [grown, setGrown] = useState(false);
-  const [revealed, setRevealed] = useState(false);
+  const [mySettled, setMySettled] = useState(false);
+  const [opponentSettled, setOpponentSettled] = useState(false);
 
   useEffect(() => {
     const growTimer = window.setTimeout(() => setGrown(true), BAR_GROW_START_DELAY);
     return () => window.clearTimeout(growTimer);
   }, []);
 
-  useEffect(() => {
-    if (!grown) return;
-    const revealTimer = window.setTimeout(() => setRevealed(true), BAR_GROW_MS);
-    return () => window.clearTimeout(revealTimer);
-  }, [grown]);
+  const handleMySettled = useCallback(() => setMySettled(true), []);
+  const handleOpponentSettled = useCallback(() => setOpponentSettled(true), []);
 
   const myTotal = myRatings ? ratingsTotal(myRatings) : 0;
   const opponentTotal = opponentRatings ? ratingsTotal(opponentRatings) : 0;
+  const revealed = mySettled && opponentSettled;
   const myAhead = revealed && myTotal > opponentTotal;
   const opponentAhead = revealed && opponentTotal > myTotal;
 
@@ -291,7 +294,15 @@ function RatingsBattle({
       className="fixed inset-0 z-40 flex cursor-pointer flex-col items-center justify-center gap-10 bg-[#05060f] px-6 py-10"
     >
       <div className="flex w-full max-w-sm items-end justify-center gap-6">
-        <RatingBar label={myLabel} image={myImage} total={myTotal} grown={grown} accent="amber" ahead={myAhead} />
+        <RatingBar
+          label={myLabel}
+          image={myImage}
+          total={myTotal}
+          grown={grown}
+          accent="amber"
+          ahead={myAhead}
+          onSettled={handleMySettled}
+        />
         <span className="mb-40 text-2xl font-black text-slate-500">VS</span>
         <RatingBar
           label={opponentLabel}
@@ -300,6 +311,7 @@ function RatingsBattle({
           grown={grown}
           accent="violet"
           ahead={opponentAhead}
+          onSettled={handleOpponentSettled}
         />
       </div>
 
@@ -315,6 +327,7 @@ function RatingBar({
   grown,
   accent,
   ahead,
+  onSettled,
 }: {
   label: string;
   image: string | null;
@@ -322,14 +335,14 @@ function RatingBar({
   grown: boolean;
   accent: "amber" | "violet";
   ahead: boolean;
+  onSettled: () => void;
 }) {
-  const [progress, setProgress] = useState(0);
+  const [currentTotal, setCurrentTotal] = useState(0);
   const isAmber = accent === "amber";
-  const targetPct = Math.min(100, Math.max(6, (total / 40) * 100));
 
-  // Animates the bar height, the rider image, and the climbing tier letter off one shared
-  // progress value each frame, so the letter genuinely counts up through the tiers (F, D, C-...)
-  // in lockstep with the bar rising rather than just appearing once it's done.
+  // Both bars run the exact same elapsed-time -> total curve (independent of this bar's own
+  // total), so their instantaneous speed is identical - a bar only stops early because it clamps
+  // at its own total, not because it was ever moving slower than the other one.
   useEffect(() => {
     if (!grown) return;
     let rafId = 0;
@@ -337,17 +350,22 @@ function RatingBar({
 
     function tick(ts: number) {
       if (startTs === null) startTs = ts;
-      const raw = Math.min(1, (ts - startTs) / BAR_GROW_MS);
-      const eased = 1 - Math.pow(1 - raw, 3); // cubic ease-out
-      setProgress(eased);
-      if (raw < 1) rafId = requestAnimationFrame(tick);
+      const rawFrac = Math.min(1, (ts - startTs) / BAR_GROW_MS);
+      const eased = 1 - Math.pow(1 - rawFrac, 3); // cubic ease-out
+      const next = Math.min(total, eased * MAX_RATINGS_TOTAL);
+      setCurrentTotal(next);
+      if (next < total && rawFrac < 1) {
+        rafId = requestAnimationFrame(tick);
+      } else {
+        onSettled();
+      }
     }
     rafId = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(rafId);
-  }, [grown]);
+  }, [grown, total, onSettled]);
 
-  const pct = grown ? progress * targetPct : 0;
-  const currentTier = grown ? tierForTotal(Math.round(progress * total)) : "F";
+  const pct = grown ? Math.max(6, (currentTotal / MAX_RATINGS_TOTAL) * 100) : 0;
+  const currentTier = grown ? tierForTotal(Math.round(currentTotal)) : "F";
 
   // Pixel math (matching the h-[26rem]/h-24 Tailwind classes below) so the image marker's own
   // height is accounted for and it never pokes out above the track, even at a near-max total.

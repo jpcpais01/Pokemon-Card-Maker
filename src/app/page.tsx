@@ -2,12 +2,15 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import GenSelector from "@/components/GenSelector";
 import RevealScreen, { type CardKey, type RevealData, type RevealFlags } from "@/components/RevealScreen";
 import LoadingScreen from "@/components/LoadingScreen";
 import ErrorScreen from "@/components/ErrorScreen";
 import ResultScreen from "@/components/ResultScreen";
 import { ART_TYPES, REGIONS, pickSpecialForm, pickWeighted } from "@/lib/cardData";
+import { createRoom } from "@/lib/battle/api";
+import { storePlayerId } from "@/lib/battle/session";
 import { GENERATIONS, fetchPokemonForGenerations, pickRandomPokemon, toPokemonPick } from "@/lib/generations";
 import type { PokemonRef } from "@/lib/types";
 
@@ -27,10 +30,14 @@ async function postJson<T>(url: string, body: unknown): Promise<T> {
 }
 
 export default function Home() {
+  const router = useRouter();
   const [stage, setStage] = useState<Stage>("setup");
   const [gens, setGens] = useState<number[]>(GENERATIONS.map((g) => g.id));
   const [poolLoading, setPoolLoading] = useState(false);
   const [poolError, setPoolError] = useState<string | null>(null);
+
+  const [startingBot, setStartingBot] = useState(false);
+  const [botError, setBotError] = useState<string | null>(null);
 
   const [pool, setPool] = useState<PokemonRef[]>([]);
   const [revealData, setRevealData] = useState<RevealData | null>(null);
@@ -214,6 +221,20 @@ export default function Home() {
     setStage("setup");
   }
 
+  async function handleBattleBot() {
+    setBotError(null);
+    setStartingBot(true);
+    try {
+      const { code, playerId } = await createRoom(gens, true);
+      storePlayerId(code, playerId);
+      router.push(`/battle/${code}`);
+    } catch (err) {
+      setBotError(err instanceof Error ? err.message : "Failed to start match.");
+    } finally {
+      setStartingBot(false);
+    }
+  }
+
   if (stage === "setup") {
     return (
       <GenSelector
@@ -223,12 +244,20 @@ export default function Home() {
         loading={poolLoading}
         error={poolError}
         footer={
-          <Link
-            href="/battle"
-            className="mt-4 block text-center text-sm font-semibold text-slate-400 active:text-amber-300"
-          >
-            ⚔️ Battle a friend
-          </Link>
+          <div className="mt-4 flex flex-col gap-2">
+            <Link href="/battle" className="block text-center text-sm font-semibold text-slate-400 active:text-amber-300">
+              Battle a friend
+            </Link>
+            <button
+              type="button"
+              onClick={handleBattleBot}
+              disabled={startingBot}
+              className="block text-center text-sm font-semibold text-slate-400 active:text-amber-300 disabled:opacity-50"
+            >
+              {startingBot ? "Starting match..." : "Play vs Bot"}
+            </button>
+            {botError && <p className="text-center text-xs text-red-300">{botError}</p>}
+          </div>
         }
       />
     );
