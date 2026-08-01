@@ -11,16 +11,19 @@ export default function GalleryPage() {
   const [openImage, setOpenImage] = useState<string | null>(null);
 
   useEffect(() => {
-    // Deferred so reading localStorage (unavailable during SSR) happens in a callback, not the effect body itself.
-    const timeout = window.setTimeout(() => {
-      setFavorites(getFavorites());
+    let cancelled = false;
+    getFavorites().then((favs) => {
+      if (cancelled) return;
+      setFavorites(favs);
       setLoaded(true);
-    }, 0);
-    return () => window.clearTimeout(timeout);
+    });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  function handleRemove(image: string) {
-    removeFavoriteByImage(image);
+  async function handleRemove(image: string) {
+    await removeFavoriteByImage(image);
     setFavorites((prev) => prev.filter((f) => f.image !== image));
     setOpenImage((prev) => (prev === image ? null : prev));
   }

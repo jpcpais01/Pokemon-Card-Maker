@@ -40,9 +40,13 @@ export default function Home() {
   const [favoriteCount, setFavoriteCount] = useState(0);
 
   useEffect(() => {
-    // Deferred so reading localStorage (unavailable during SSR) happens in a callback, not the effect body itself.
-    const timeout = window.setTimeout(() => setFavoriteCount(getFavorites().length), 0);
-    return () => window.clearTimeout(timeout);
+    let cancelled = false;
+    getFavorites().then((favs) => {
+      if (!cancelled) setFavoriteCount(favs.length);
+    });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   return (
