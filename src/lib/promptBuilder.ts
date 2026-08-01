@@ -38,7 +38,7 @@ Given a set of card traits, write ONE detailed, vivid text-to-image prompt (220-
  */
 export function buildStyleSuffix(pokemonNames: string[]): string {
   const base =
-    " Rendered in modern Pokemon TCG artwork style: smooth, glossy, semi-stylized creature design with soft airbrushed shading and crisp clean edges, set against a richly detailed painted background, vibrant saturated colors, professional official video-game-splash-art finish. Not photorealistic, not a photograph, not realistic fur/skin/feather texture, not a 3D render, not a generic fantasy illustration. Borderless, full-bleed artwork only - no card frame, no UI elements, no text, no logos, no watermarks. Make the scene, action, interaction, and camera angle unique and imaginative each time rather than a generic repeated pose - always nice and different.";
+    " Rendered in modern Pokemon TCG artwork style: smooth, glossy, semi-stylized creature design with soft airbrushed shading and crisp clean edges, set against a richly detailed painted background, vibrant saturated colors, professional official video-game-splash-art finish. Not photorealistic, not a photograph, not realistic fur/skin/feather texture, not a 3D render, not a generic fantasy illustration. Borderless, full-bleed artwork only, filling the entire frame edge to edge: no borders, no margins, no card frame, no UI elements, no text, no logos, no watermarks. Make the scene, action, interaction, and camera angle unique and imaginative each time rather than a generic repeated pose - always nice and different.";
 
   const namesList = pokemonNames.join(" and ");
 
