@@ -18,7 +18,7 @@ function ModeTile({ href, icon, title, subtitle, tone, delay }: ModeTileProps) {
     <Link
       href={href}
       style={{ animationDelay: `${delay}ms` }}
-      className="glass rise-in group flex items-center gap-3.5 rounded-2xl border border-white/10 p-3.5 transition-all duration-150 active:scale-[0.97] active:border-amber-300/40"
+      className="rise-in group flex items-center gap-3.5 rounded-2xl border border-white/10 bg-white/[0.04] p-3.5 transition-all duration-150 active:scale-[0.97] active:border-amber-300/40"
     >
       <span
         className={`flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl text-2xl shadow-inner transition-transform duration-200 group-active:scale-90 ${
@@ -72,19 +72,18 @@ export default function Home() {
 
         <Link
           href="/gallery"
-          className="group relative mb-6 flex items-center gap-3.5 overflow-hidden rounded-2xl border border-amber-300/30 bg-amber-400/10 p-4 transition-all active:scale-[0.97]"
+          className="group mb-6 flex items-center gap-3.5 rounded-2xl border border-amber-300/30 bg-amber-400/10 p-4 transition-all active:scale-[0.97]"
         >
-          <div className="holo-sheen opacity-25" />
-          <span className="brand-gradient relative flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl text-2xl shadow-lg shadow-fuchsia-500/20 transition-transform duration-200 group-active:scale-90">
+          <span className="brand-gradient flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl text-2xl shadow-lg shadow-fuchsia-500/20 transition-transform duration-200 group-active:scale-90">
             ★
           </span>
-          <div className="relative min-w-0">
+          <div className="min-w-0">
             <p className="text-base font-bold text-white">My Binder</p>
             <p className="text-xs text-slate-400">
               {favoriteCount > 0 ? `${favoriteCount} saved card${favoriteCount === 1 ? "" : "s"}` : "Your saved favorites"}
             </p>
           </div>
-          <span className="relative ml-auto flex-shrink-0 text-slate-500 transition-transform duration-150 group-active:translate-x-0.5">
+          <span className="ml-auto flex-shrink-0 text-slate-500 transition-transform duration-150 group-active:translate-x-0.5">
             ›
           </span>
         </Link>
