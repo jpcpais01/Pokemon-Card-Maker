@@ -2,6 +2,10 @@ import type { Generation, PokemonPick, PokemonRef } from "./types";
 
 /** Not a real generation - a curated pool of ~100 iconic/fan-favorite Pokemon spanning every generation. */
 export const TOP_100_GEN_ID = 0;
+/** Not a real generation - a curated pool of Pokemon fan communities commonly consider attractive/alluring. */
+export const BADDIES_GEN_ID = -1;
+/** Not a real generation - a curated pool of underrated, weird, or design-forward Pokemon that rarely get the spotlight. */
+export const NICHE_GEN_ID = -2;
 
 export const GENERATIONS: Generation[] = [
   { id: 1, label: "Gen I", region: "Kanto" },
@@ -14,6 +18,8 @@ export const GENERATIONS: Generation[] = [
   { id: 8, label: "Gen VIII", region: "Galar" },
   { id: 9, label: "Gen IX", region: "Paldea" },
   { id: TOP_100_GEN_ID, label: "Best 100", region: "Fan Favorites" },
+  { id: BADDIES_GEN_ID, label: "Baddies", region: "Iconic & Alluring" },
+  { id: NICHE_GEN_ID, label: "Niche", region: "Hidden Gems" },
 ];
 
 /**
@@ -132,6 +138,94 @@ const TOP_100_SPECIES: PokemonRef[] = [
   { id: 936, name: "armarouge" },
 ];
 
+/** Not fetched from PokeAPI - a hand-picked pool of Pokemon fan communities commonly consider
+ *  conventionally attractive/alluring, spanning as many generations as possible. */
+const BADDIES_SPECIES: PokemonRef[] = [
+  { id: 38, name: "ninetales" },
+  { id: 78, name: "rapidash" },
+  { id: 282, name: "gardevoir" },
+  { id: 475, name: "gallade" },
+  { id: 350, name: "milotic" },
+  { id: 359, name: "absol" },
+  { id: 407, name: "roserade" },
+  { id: 196, name: "espeon" },
+  { id: 197, name: "umbreon" },
+  { id: 700, name: "sylveon" },
+  { id: 471, name: "glaceon" },
+  { id: 380, name: "latias" },
+  { id: 381, name: "latios" },
+  { id: 428, name: "lopunny" },
+  { id: 429, name: "mismagius" },
+  { id: 478, name: "froslass" },
+  { id: 497, name: "serperior" },
+  { id: 549, name: "lilligant" },
+  { id: 571, name: "zoroark" },
+  { id: 576, name: "gothitelle" },
+  { id: 654, name: "braixen" },
+  { id: 655, name: "delphox" },
+  { id: 658, name: "greninja" },
+  { id: 461, name: "weavile" },
+  { id: 671, name: "florges" },
+  { id: 678, name: "meowstic" },
+  { id: 510, name: "liepard" },
+  { id: 727, name: "incineroar" },
+  { id: 730, name: "primarina" },
+  { id: 758, name: "salazzle" },
+  { id: 763, name: "tsareena" },
+  { id: 807, name: "zeraora" },
+  { id: 815, name: "cinderace" },
+  { id: 849, name: "toxtricity" },
+  { id: 876, name: "indeedee" },
+  { id: 887, name: "dragapult" },
+  { id: 908, name: "meowscarada" },
+  { id: 911, name: "skeledirge" },
+  { id: 914, name: "quaquaval" },
+];
+
+/** Not fetched from PokeAPI - a hand-picked pool of underrated, weird-but-cool, design-forward
+ *  Pokemon that don't usually get much attention, spanning as many generations as possible. */
+const NICHE_SPECIES: PokemonRef[] = [
+  { id: 437, name: "bronzong" },
+  { id: 561, name: "sigilyph" },
+  { id: 563, name: "cofagrigus" },
+  { id: 618, name: "stunfisk" },
+  { id: 623, name: "golurk" },
+  { id: 707, name: "klefki" },
+  { id: 740, name: "crabominable" },
+  { id: 741, name: "oricorio" },
+  { id: 743, name: "ribombee" },
+  { id: 746, name: "wishiwashi" },
+  { id: 747, name: "mareanie" },
+  { id: 750, name: "mudsdale" },
+  { id: 752, name: "araquanid" },
+  { id: 756, name: "shiinotic" },
+  { id: 760, name: "bewear" },
+  { id: 764, name: "comfey" },
+  { id: 765, name: "oranguru" },
+  { id: 766, name: "passimian" },
+  { id: 768, name: "golisopod" },
+  { id: 770, name: "palossand" },
+  { id: 771, name: "pyukumuku" },
+  { id: 772, name: "type-null" },
+  { id: 773, name: "silvally" },
+  { id: 775, name: "komala" },
+  { id: 776, name: "turtonator" },
+  { id: 779, name: "bruxish" },
+  { id: 780, name: "drampa" },
+  { id: 781, name: "dhelmise" },
+  { id: 793, name: "nihilego" },
+  { id: 795, name: "pheromosa" },
+  { id: 796, name: "xurkitree" },
+  { id: 797, name: "celesteela" },
+  { id: 798, name: "kartana" },
+  { id: 799, name: "guzzlord" },
+  { id: 803, name: "poipole" },
+  { id: 804, name: "naganadel" },
+  { id: 805, name: "stakataka" },
+  { id: 806, name: "blacephalon" },
+  { id: 738, name: "vikavolt" },
+];
+
 const genCache = new Map<number, Promise<PokemonRef[]>>();
 
 /** A handful of species whose kebab-case PokeAPI name doesn't title-case cleanly. */
@@ -175,6 +269,8 @@ function speciesIdFromUrl(url: string): number {
 
 async function fetchGeneration(genId: number): Promise<PokemonRef[]> {
   if (genId === TOP_100_GEN_ID) return TOP_100_SPECIES;
+  if (genId === BADDIES_GEN_ID) return BADDIES_SPECIES;
+  if (genId === NICHE_GEN_ID) return NICHE_SPECIES;
   const res = await fetch(`https://pokeapi.co/api/v2/generation/${genId}`);
   if (!res.ok) throw new Error(`Failed to load generation ${genId}`);
   const data = await res.json();
