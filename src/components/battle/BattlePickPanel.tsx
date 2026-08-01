@@ -8,6 +8,7 @@ import type { BattlePlayerPick } from "@/lib/battle/types";
 interface Props {
   pick: BattlePlayerPick;
   rerollsLeft: number;
+  unlimitedRerolls?: boolean;
   locked: boolean;
   busy: boolean;
   onReroll: (key: CardKey) => void;
@@ -18,7 +19,15 @@ interface Props {
  * The local player's own pick panel for a battle round. Remount this with a
  * `key` on the round number so its reveal state resets fresh each round.
  */
-export default function BattlePickPanel({ pick, rerollsLeft, locked, busy, onReroll, onLock }: Props) {
+export default function BattlePickPanel({
+  pick,
+  rerollsLeft,
+  unlimitedRerolls,
+  locked,
+  busy,
+  onReroll,
+  onLock,
+}: Props) {
   const [revealed, setRevealed] = useState<Record<string, boolean>>({});
 
   // The 2nd Tag Team card only appears once Special Form has actually been revealed as such -
@@ -32,7 +41,15 @@ export default function BattlePickPanel({ pick, rerollsLeft, locked, busy, onRer
   return (
     <div>
       <p className="mb-4 text-center text-xs font-semibold text-slate-400">
-        <span className="text-amber-300">↻ {rerollsLeft}</span> reroll{rerollsLeft === 1 ? "" : "s"} left
+        {unlimitedRerolls ? (
+          <>
+            <span className="text-amber-300">↻ ∞</span> rerolls
+          </>
+        ) : (
+          <>
+            <span className="text-amber-300">↻ {rerollsLeft}</span> reroll{rerollsLeft === 1 ? "" : "s"} left
+          </>
+        )}
       </p>
 
       <div className="flex flex-wrap justify-center gap-4">
@@ -43,7 +60,7 @@ export default function BattlePickPanel({ pick, rerollsLeft, locked, busy, onRer
               revealed={locked || !!revealed[String(face.key)]}
               onReveal={() => setRevealed((prev) => ({ ...prev, [String(face.key)]: true }))}
               front={face.front}
-              rerollsLeft={rerollsLeft}
+              rerollsLeft={unlimitedRerolls ? Infinity : rerollsLeft}
               onReroll={() => onReroll(face.key)}
             />
           </div>

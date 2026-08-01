@@ -33,7 +33,7 @@ export async function POST(request: Request) {
   if (!playerState || playerState.locked) {
     return NextResponse.json({ error: "You've already locked in this round." }, { status: 409 });
   }
-  if ((room.rerolls[playerId] ?? 0) <= 0) {
+  if (!room.unlimitedRerolls && (room.rerolls[playerId] ?? 0) <= 0) {
     return NextResponse.json({ error: "No rerolls left." }, { status: 409 });
   }
   if (typeof cardKey === "number" && !playerState.pokemons[cardKey]) {
@@ -42,7 +42,7 @@ export async function POST(request: Request) {
 
   const pool = await fetchPokemonForGenerations(room.gens);
   round.players[playerId] = rerollPlayerCard(playerState, cardKey, pool);
-  room.rerolls[playerId] -= 1;
+  if (!room.unlimitedRerolls) room.rerolls[playerId] -= 1;
 
   await saveRoom(room);
   return NextResponse.json({ room: sanitizeRoomForPlayer(room, playerId) });

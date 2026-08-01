@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import GenSelector from "@/components/GenSelector";
 import JudgeModePicker from "@/components/battle/JudgeModePicker";
 import PlayerCountPicker from "@/components/battle/PlayerCountPicker";
+import UnlimitedRerollsToggle from "@/components/battle/UnlimitedRerollsToggle";
 import RevealScreen, { type CardKey, type RevealData, type RevealFlags } from "@/components/RevealScreen";
 import LoadingScreen from "@/components/LoadingScreen";
 import ErrorScreen from "@/components/ErrorScreen";
@@ -43,6 +44,7 @@ export default function Home() {
   const [botError, setBotError] = useState<string | null>(null);
   const [botPlayers, setBotPlayers] = useState(2);
   const [botJudgeMode, setBotJudgeMode] = useState<JudgeMode>("ai");
+  const [botUnlimitedRerolls, setBotUnlimitedRerolls] = useState(false);
 
   const [pool, setPool] = useState<PokemonRef[]>([]);
   const [revealData, setRevealData] = useState<RevealData | null>(null);
@@ -224,7 +226,7 @@ export default function Home() {
     setStartingBot(true);
     try {
       const effectiveJudgeMode = botPlayers >= MIN_VOTE_PLAYERS ? botJudgeMode : "ai";
-      const { code, playerId } = await createRoom(gens, true, botPlayers, effectiveJudgeMode);
+      const { code, playerId } = await createRoom(gens, true, botPlayers, effectiveJudgeMode, botUnlimitedRerolls);
       storePlayerId(code, playerId);
       router.push(`/battle/${code}`);
     } catch (err) {
@@ -251,6 +253,7 @@ export default function Home() {
             {botPlayers >= MIN_VOTE_PLAYERS && (
               <JudgeModePicker value={botJudgeMode} onChange={setBotJudgeMode} />
             )}
+            <UnlimitedRerollsToggle value={botUnlimitedRerolls} onChange={setBotUnlimitedRerolls} />
             <button
               type="button"
               onClick={handleBattleBot}

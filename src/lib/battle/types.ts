@@ -88,4 +88,6 @@ export interface BattleRoom {
   vsBot?: boolean;
   /** "ai" (default) has an LLM judge each round; "vote" has every player vote anonymously instead. */
   judgeMode?: JudgeMode;
+  /** vs-bot only - when true, rerolls are never checked or spent, so every player has infinite rerolls. */
+  unlimitedRerolls?: boolean;
 }

@@ -14,7 +14,7 @@ import type { BattleRoom, JudgeMode } from "@/lib/battle/types";
 import { fetchPokemonForGenerations } from "@/lib/generations";
 
 export async function POST(request: Request) {
-  let body: { gens?: number[]; vsBot?: boolean; maxPlayers?: number; judgeMode?: string };
+  let body: { gens?: number[]; vsBot?: boolean; maxPlayers?: number; judgeMode?: string; unlimitedRerolls?: boolean };
   try {
     body = await request.json();
   } catch {
@@ -41,6 +41,9 @@ export async function POST(request: Request) {
   }
 
   const vsBot = body.vsBot === true;
+  // Unlimited rerolls is a vs-bot-only relaxation - a friend room's fairness depends on everyone
+  // having the same finite budget, so silently ignore the flag outside vs-bot matches.
+  const unlimitedRerolls = vsBot && body.unlimitedRerolls === true;
   const playerId = randomUUID();
   const botIds = vsBot ? BOT_PLAYER_IDS.slice(0, maxPlayers - 1) : [];
   const players = vsBot ? [playerId, ...botIds] : [playerId];
@@ -58,6 +61,7 @@ export async function POST(request: Request) {
     rounds: [],
     vsBot,
     judgeMode,
+    unlimitedRerolls,
   };
 
   if (vsBot) {

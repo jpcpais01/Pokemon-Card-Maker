@@ -334,6 +334,7 @@ export default function BattleRoomPage() {
               key={room.round}
               pick={round.players[playerId]}
               rerollsLeft={room.rerolls[playerId] ?? 0}
+              unlimitedRerolls={room.unlimitedRerolls}
               locked={round.players[playerId]?.locked ?? false}
               busy={actionBusy}
               onReroll={handleReroll}

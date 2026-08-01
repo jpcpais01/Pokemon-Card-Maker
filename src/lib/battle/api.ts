@@ -19,8 +19,20 @@ async function getJson<T>(url: string): Promise<T> {
   return data as T;
 }
 
-export function createRoom(gens: number[], vsBot = false, maxPlayers = 2, judgeMode: JudgeMode = "ai") {
-  return postJson<{ code: string; playerId: string }>("/api/battle/create", { gens, vsBot, maxPlayers, judgeMode });
+export function createRoom(
+  gens: number[],
+  vsBot = false,
+  maxPlayers = 2,
+  judgeMode: JudgeMode = "ai",
+  unlimitedRerolls = false
+) {
+  return postJson<{ code: string; playerId: string }>("/api/battle/create", {
+    gens,
+    vsBot,
+    maxPlayers,
+    judgeMode,
+    unlimitedRerolls,
+  });
 }
 
 export function joinRoom(code: string) {
