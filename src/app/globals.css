@@ -2,6 +2,7 @@
 
 @theme inline {
   --font-sans: var(--font-geist-sans);
+  --font-display: var(--font-baloo);
 }
 
 html {
@@ -18,19 +19,174 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 
-/* Glass surface used across cards, panels and buttons. */
+/* Fixed film-grain texture over the whole app - the single biggest cheap trick for making a flat
+   dark UI feel like premium printed/tactile material instead of a plain gradient. */
+.grain {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0.05;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  background-size: 180px 180px;
+}
+
+/* Glass surface used across cards, panels and buttons - deeper blur/saturation and a hairline
+   inner top highlight so panels read as physical frosted material, not a flat tint. */
 @utility glass {
+  background-color: rgb(255 255 255 / 5%);
+  backdrop-filter: blur(28px) saturate(160%);
+  -webkit-backdrop-filter: blur(28px) saturate(160%);
+  border: 1px solid rgb(255 255 255 / 10%);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 8%),
+    0 1px 2px rgb(0 0 0 / 20%);
+}
+
+@utility glass-strong {
+  background-color: rgb(255 255 255 / 8%);
+  backdrop-filter: blur(32px) saturate(170%);
+  -webkit-backdrop-filter: blur(32px) saturate(170%);
+  border: 1px solid rgb(255 255 255 / 14%);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 12%),
+    0 12px 32px -10px rgb(0 0 0 / 50%);
+}
+
+/* Brand gradient - matches the app icon (violet -> fuchsia -> cyan) and is reused as the "holo"
+   accent everywhere a premium/rare moment needs a second color language beyond the amber CTA. */
+@utility brand-gradient {
+  background-image: linear-gradient(135deg, #7c3aed 0%, #d946ef 55%, #06b6d4 100%);
+}
+
+@utility brand-gradient-text {
+  background-image: linear-gradient(135deg, #a78bfa 0%, #f0abfc 55%, #67e8f9 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+}
+
+/* Primary CTA - gold-foil gradient with a soft inner highlight/lowlight so it reads as a raised,
+   slightly metallic button rather than a flat fill. */
+@utility btn-primary {
+  position: relative;
+  overflow: hidden;
+  display: block;
+  border-radius: 1.25rem;
+  padding: 1rem 1.5rem;
+  text-align: center;
+  font-weight: 800;
+  font-size: 1rem;
+  color: #241304;
+  background-image: linear-gradient(135deg, #ffe08a 0%, #fcd34d 30%, #f59e0b 65%, #ea580c 100%);
+  box-shadow:
+    0 14px 32px -12px rgb(245 158 11 / 60%),
+    inset 0 1px 0 rgb(255 255 255 / 50%),
+    inset 0 -2px 6px rgb(120 53 15 / 35%);
+
+  &::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 35%;
+    background-image: linear-gradient(90deg, transparent, rgb(255 255 255 / 55%), transparent);
+    animation: shine-sweep 4.5s ease-in-out infinite;
+    animation-delay: 1.2s;
+    pointer-events: none;
+  }
+}
+
+@keyframes shine-sweep {
+  0%, 15% {
+    transform: translateX(-160%) skewX(-20deg);
+  }
+  40%, 100% {
+    transform: translateX(280%) skewX(-20deg);
+  }
+}
+
+/* Secondary/ghost action - same frosted glass language as panels, so buttons feel cut from the
+   same material as the surfaces they sit on. */
+@utility btn-ghost {
+  display: block;
+  border-radius: 1.25rem;
+  padding: 0.875rem 1.5rem;
+  text-align: center;
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: rgb(226 232 240);
   background-color: rgb(255 255 255 / 6%);
   backdrop-filter: blur(24px) saturate(140%);
   -webkit-backdrop-filter: blur(24px) saturate(140%);
   border: 1px solid rgb(255 255 255 / 12%);
 }
 
-@utility glass-strong {
-  background-color: rgb(255 255 255 / 10%);
-  backdrop-filter: blur(28px) saturate(150%);
-  -webkit-backdrop-filter: blur(28px) saturate(150%);
-  border: 1px solid rgb(255 255 255 / 16%);
+/* Small pill tags for card traits (art type / special form / vibe / generation) - one shared base
+   plus a tone modifier instead of the same three-class combo repeated at every call site. */
+@utility chip {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 9999px;
+  padding: 0.25rem 0.7rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+@utility chip-gold {
+  background-color: rgb(251 191 36 / 15%);
+  color: rgb(252 211 77);
+}
+
+@utility chip-violet {
+  background-color: rgb(192 132 252 / 15%);
+  color: rgb(216 180 254);
+}
+
+@utility chip-teal {
+  background-color: rgb(45 212 191 / 15%);
+  color: rgb(94 234 212);
+}
+
+/* Compact variant for chips packed into tight grid tiles. */
+@utility chip-sm {
+  padding: 0.125rem 0.4rem;
+  font-size: 0.5625rem;
+}
+
+/* Rotating diagonal rainbow sheen laid over rare-card fronts and premium moments - the classic
+   holo-foil refraction look, done as a real layered element (not a pseudo-element) so callers can
+   mount/unmount it conditionally per rarity. */
+@utility holo-sheen {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: linear-gradient(
+    115deg,
+    transparent 20%,
+    rgb(255 255 255 / 18%) 33%,
+    rgb(168 85 247 / 45%) 42%,
+    rgb(6 182 212 / 45%) 50%,
+    rgb(251 191 36 / 45%) 58%,
+    rgb(255 255 255 / 18%) 67%,
+    transparent 80%
+  );
+  background-size: 280% 280%;
+  mix-blend-mode: color-dodge;
+  animation: holo-sweep 3.4s linear infinite;
+  opacity: 0.6;
+}
+
+@keyframes holo-sweep {
+  0% {
+    background-position: 0% 20%;
+  }
+  100% {
+    background-position: 200% 220%;
+  }
 }
 
 @keyframes blob-float {
@@ -98,4 +254,19 @@ body {
 
 .victory-pulse {
   animation: victory-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.rise-in {
+  animation: rise-in 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }

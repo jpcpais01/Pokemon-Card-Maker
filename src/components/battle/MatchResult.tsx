@@ -48,22 +48,23 @@ export default function MatchResult({ players, mvp, vsBot }: Props) {
   const title = tied ? (iAmTiedLeader ? "It's a Tie!" : "You Lose") : iWon ? "You Win! 🏆" : "You Lose";
 
   return (
-    <div className="flex min-h-dvh flex-col items-center justify-center px-5 py-10">
-      <div className="glass w-full max-w-sm rounded-[2rem] p-6 text-center shadow-2xl shadow-black/40">
+    <div className="flex min-h-full flex-col items-center justify-center px-5 py-10">
+      <div className="glass-strong rise-in w-full max-w-sm rounded-[2rem] p-6 text-center shadow-2xl shadow-black/40">
         <p className="text-[11px] font-semibold uppercase tracking-[0.35em] text-amber-300/90">Match Complete</p>
-        <h1 className="mt-2 text-3xl font-black tracking-tight text-white">{title}</h1>
+        <h1 className="font-display mt-2 text-3xl font-extrabold tracking-tight text-white">{title}</h1>
 
         {mvp && mvp.image && (
           <button
             type="button"
             onClick={() => setFullView(true)}
-            className="mt-5 flex w-full items-center gap-3 rounded-2xl border border-amber-300/30 bg-amber-400/10 p-2.5 text-left active:scale-[0.98]"
+            className="relative mt-5 flex w-full items-center gap-3 overflow-hidden rounded-2xl border border-amber-300/30 bg-amber-400/10 p-2.5 text-left active:scale-[0.98]"
           >
+            <div className="holo-sheen opacity-20" />
             <div className="relative aspect-[3/4] h-20 flex-shrink-0 overflow-hidden rounded-xl border border-amber-300/40">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={mvp.image} alt={mvp.pokemonNames} className="h-full w-full object-cover" />
             </div>
-            <div className="min-w-0">
+            <div className="relative min-w-0">
               <p className="text-[10px] font-bold uppercase tracking-wider text-amber-300/80">🏆 MVP Card</p>
               <p className="truncate text-sm font-black text-white">{mvp.pokemonNames}</p>
               <p className="text-xs text-slate-400">
@@ -90,17 +91,8 @@ export default function MatchResult({ players, mvp, vsBot }: Props) {
           ))}
         </div>
 
-        <Link
-          href={vsBot ? "/bot" : "/battle"}
-          className="mt-8 block w-full rounded-2xl bg-gradient-to-r from-amber-400 to-orange-500 py-4 text-base font-bold text-slate-900 shadow-lg shadow-amber-500/25 transition-transform active:scale-[0.98]"
-        >
+        <Link href={vsBot ? "/bot" : "/battle"} className="btn-primary mt-8 block w-full transition-transform active:scale-[0.98]">
           Play Again
-        </Link>
-        <Link
-          href="/"
-          className="glass mt-3 block w-full rounded-2xl py-3.5 text-sm font-semibold text-slate-200 transition-colors active:bg-white/10"
-        >
-          ← All Modes
         </Link>
       </div>
 

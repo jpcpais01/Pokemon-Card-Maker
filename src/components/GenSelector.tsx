@@ -48,11 +48,11 @@ export default function GenSelector({
   }
 
   return (
-    <div className="flex min-h-dvh flex-col items-center justify-center px-5 py-10">
-      <div className="glass w-full max-w-sm rounded-[2rem] p-6 shadow-2xl shadow-black/40">
+    <div className="flex min-h-full flex-col items-center justify-center px-5 py-8">
+      <div className="glass-strong rise-in w-full max-w-sm rounded-[2rem] p-6 shadow-2xl shadow-black/40">
         <div className="mb-7 text-center">
           <p className="text-[11px] font-semibold uppercase tracking-[0.35em] text-amber-300/90">{eyebrow}</p>
-          <h1 className="mt-2 text-3xl font-black tracking-tight text-white">{title}</h1>
+          <h1 className="font-display mt-2 text-3xl font-extrabold tracking-tight text-white">{title}</h1>
           <p className="mt-2 text-sm leading-relaxed text-slate-400">{subtitle}</p>
         </div>
 
@@ -68,7 +68,7 @@ export default function GenSelector({
                 className={`flex flex-col items-center justify-center rounded-2xl border px-2 py-3 transition-all duration-200 active:scale-95 ${
                   active
                     ? "border-amber-300/70 bg-amber-400/15 text-amber-200 shadow-[0_0_20px_-4px_rgba(251,191,36,0.5)]"
-                    : "border-white/10 bg-white/[0.03] text-slate-400"
+                    : "border-white/10 bg-white/[0.03] text-slate-500"
                 }`}
               >
                 <span className="text-xs font-bold uppercase tracking-wide">{gen.label}</span>
@@ -81,7 +81,7 @@ export default function GenSelector({
         <button
           type="button"
           onClick={toggleAll}
-          className="glass mt-3 w-full rounded-xl py-2.5 text-xs font-semibold text-slate-300 transition-colors active:bg-white/10"
+          className="glass mt-3 w-full rounded-xl py-2.5 text-xs font-semibold text-slate-300 transition-colors active:bg-white/10 active:scale-[0.98]"
         >
           {allSelected ? "Deselect all" : "Select all generations"}
         </button>
@@ -98,7 +98,7 @@ export default function GenSelector({
           type="button"
           onClick={onStart}
           disabled={loading || selected.length === 0}
-          className="mt-7 w-full rounded-2xl bg-gradient-to-r from-amber-400 to-orange-500 py-4 text-base font-bold text-slate-900 shadow-lg shadow-amber-500/25 transition-transform active:scale-[0.98] disabled:opacity-50"
+          className="btn-primary mt-7 w-full transition-transform active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40"
         >
           {loading ? loadingLabel : buttonLabel}
         </button>

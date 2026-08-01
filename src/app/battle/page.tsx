@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import GenSelector from "@/components/GenSelector";
 import JudgeModePicker from "@/components/battle/JudgeModePicker";
@@ -97,11 +96,14 @@ export default function BattleLobby() {
 
   if (mode === "join") {
     return (
-      <div className="flex min-h-dvh flex-col items-center justify-center px-5 py-10">
-        <form onSubmit={handleJoin} className="glass w-full max-w-sm rounded-[2rem] p-6 shadow-2xl shadow-black/40">
+      <div className="flex min-h-full flex-col items-center justify-center px-5 py-10">
+        <form
+          onSubmit={handleJoin}
+          className="glass-strong rise-in w-full max-w-sm rounded-[2rem] p-6 shadow-2xl shadow-black/40"
+        >
           <div className="mb-7 text-center">
             <p className="text-[11px] font-semibold uppercase tracking-[0.35em] text-amber-300/90">Battle</p>
-            <h1 className="mt-2 text-3xl font-black tracking-tight text-white">Join a Room</h1>
+            <h1 className="font-display mt-2 text-3xl font-extrabold tracking-tight text-white">Join a Room</h1>
             <p className="mt-2 text-sm leading-relaxed text-slate-400">
               Enter the 6-character code your friend shared with you.
             </p>
@@ -126,7 +128,7 @@ export default function BattleLobby() {
           <button
             type="submit"
             disabled={joining || code.trim().length < 4}
-            className="mt-7 w-full rounded-2xl bg-gradient-to-r from-amber-400 to-orange-500 py-4 text-base font-bold text-slate-900 shadow-lg shadow-amber-500/25 transition-transform active:scale-[0.98] disabled:opacity-50"
+            className="btn-primary mt-7 w-full transition-transform active:scale-[0.98] disabled:opacity-50"
           >
             {joining ? "Joining..." : "Join Room"}
           </button>
@@ -144,11 +146,11 @@ export default function BattleLobby() {
   }
 
   return (
-    <div className="flex min-h-dvh flex-col items-center justify-center px-5 py-10">
-      <div className="glass w-full max-w-sm rounded-[2rem] p-6 shadow-2xl shadow-black/40">
+    <div className="flex min-h-full flex-col items-center justify-center px-5 py-10">
+      <div className="glass-strong rise-in w-full max-w-sm rounded-[2rem] p-6 shadow-2xl shadow-black/40">
         <div className="mb-8 text-center">
           <p className="text-[11px] font-semibold uppercase tracking-[0.35em] text-amber-300/90">Battle</p>
-          <h1 className="mt-2 text-3xl font-black tracking-tight text-white">Card Showdown</h1>
+          <h1 className="font-display mt-2 text-3xl font-extrabold tracking-tight text-white">Card Showdown</h1>
           <p className="mt-2 text-sm leading-relaxed text-slate-400">
             Open packs against 1-3 friends. Five rounds, an AI judge picks the better card each round, most points
             wins.
@@ -156,25 +158,17 @@ export default function BattleLobby() {
         </div>
 
         <div className="flex flex-col gap-3">
-          <button
-            type="button"
-            onClick={() => setMode("create")}
-            className="w-full rounded-2xl bg-gradient-to-r from-amber-400 to-orange-500 py-4 text-base font-bold text-slate-900 shadow-lg shadow-amber-500/25 transition-transform active:scale-[0.98]"
-          >
+          <button type="button" onClick={() => setMode("create")} className="btn-primary w-full transition-transform active:scale-[0.98]">
             Create Room
           </button>
           <button
             type="button"
             onClick={() => setMode("join")}
-            className="glass w-full rounded-2xl py-4 text-base font-bold text-white transition-colors active:bg-white/10"
+            className="btn-ghost w-full transition-colors active:bg-white/10 active:scale-[0.98]"
           >
             Join Room
           </button>
         </div>
-
-        <Link href="/" className="mt-6 block text-center text-sm font-semibold text-slate-400 active:text-white">
-          ← All Modes
-        </Link>
       </div>
     </div>
   );

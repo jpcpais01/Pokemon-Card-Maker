@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import GenSelector from "@/components/GenSelector";
 import JudgeModePicker from "@/components/battle/JudgeModePicker";
@@ -65,11 +64,6 @@ export default function BattleBotSetupPage() {
           {botPlayers >= MIN_VOTE_PLAYERS && <JudgeModePicker value={botJudgeMode} onChange={setBotJudgeMode} />}
           <UnlimitedRerollsToggle value={botUnlimitedRerolls} onChange={setBotUnlimitedRerolls} />
         </>
-      }
-      footer={
-        <Link href="/" className="mt-4 block text-center text-sm font-semibold text-slate-400 active:text-white">
-          ← All Modes
-        </Link>
       }
     />
   );

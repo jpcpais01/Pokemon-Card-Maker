@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import ImageLightbox from "@/components/ImageLightbox";
+import TraitChip from "@/components/TraitChip";
 import { ratingsTier, ratingsTotal, tierForTotal } from "@/lib/battle/tier";
 import type { BattleRound, BattleRoundPlayerState, CardRatings } from "@/lib/battle/types";
 import { useFavoriteToggle } from "@/lib/favorites";
@@ -142,7 +143,7 @@ export default function RoundResult({
         type="button"
         onClick={onReady}
         disabled={myReady || readyBusy}
-        className="mt-6 w-full rounded-2xl bg-gradient-to-r from-amber-400 to-orange-500 py-4 text-base font-bold text-slate-900 shadow-lg shadow-amber-500/25 transition-all active:scale-[0.98] disabled:opacity-50"
+        className="btn-primary mt-6 w-full transition-transform active:scale-[0.98] disabled:opacity-50"
       >
         {myReady
           ? allOthersReady
@@ -224,19 +225,11 @@ function CardSpotlight({
           {isVictory && (
             <p className="text-xs font-bold uppercase tracking-[0.3em] text-amber-300/80">{label}</p>
           )}
-          <p className="mt-1 text-2xl font-black text-white">{name}</p>
+          <p className="font-display mt-1 text-2xl font-extrabold text-white">{name}</p>
           <div className="mt-2 flex flex-wrap justify-center gap-1.5">
-            <span className="rounded-full bg-amber-400/15 px-2.5 py-1 text-xs font-semibold text-amber-300">
-              {pick.artType.label}
-            </span>
-            {pick.specialForm.value !== "none" && (
-              <span className="rounded-full bg-purple-400/15 px-2.5 py-1 text-xs font-semibold text-purple-300">
-                {pick.specialForm.label}
-              </span>
-            )}
-            <span className="rounded-full bg-teal-400/15 px-2.5 py-1 text-xs font-semibold text-teal-300">
-              {pick.vibe.label}
-            </span>
+            <TraitChip tone="gold">{pick.artType.label}</TraitChip>
+            {pick.specialForm.value !== "none" && <TraitChip tone="violet">{pick.specialForm.label}</TraitChip>}
+            <TraitChip tone="teal">{pick.vibe.label}</TraitChip>
           </div>
         </div>
 
@@ -522,17 +515,17 @@ function ResultCard({
         <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">{label}</p>
         <p className="truncate text-xs font-bold text-white">{name}</p>
         <div className="mt-1 flex flex-wrap justify-center gap-1">
-          <span className="rounded-full bg-amber-400/15 px-1.5 py-0.5 text-[9px] font-semibold text-amber-300">
+          <TraitChip tone="gold" small>
             {pick.artType.label}
-          </span>
+          </TraitChip>
           {pick.specialForm.value !== "none" && (
-            <span className="rounded-full bg-purple-400/15 px-1.5 py-0.5 text-[9px] font-semibold text-purple-300">
+            <TraitChip tone="violet" small>
               {pick.specialForm.label}
-            </span>
+            </TraitChip>
           )}
-          <span className="rounded-full bg-teal-400/15 px-1.5 py-0.5 text-[9px] font-semibold text-teal-300">
+          <TraitChip tone="teal" small>
             {pick.vibe.label}
-          </span>
+          </TraitChip>
         </div>
         {ratings && (
           <div className="mt-1.5 flex justify-center border-t border-white/10 pt-1.5">

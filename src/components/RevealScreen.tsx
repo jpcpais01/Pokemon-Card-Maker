@@ -61,7 +61,7 @@ export default function RevealScreen({
   }));
 
   return (
-    <div className="flex min-h-dvh flex-col px-5 py-8">
+    <div className="flex min-h-full flex-col px-5 py-8">
       <div className="mx-auto w-full max-w-sm flex-1">
         <div className="glass mb-6 flex items-center justify-between rounded-2xl px-4 py-3">
           <button onClick={onBack} className="text-sm font-semibold text-slate-300 active:text-white">
@@ -113,7 +113,7 @@ export default function RevealScreen({
           type="button"
           onClick={onGenerate}
           disabled={!allRevealed}
-          className="w-full rounded-2xl bg-gradient-to-r from-amber-400 to-orange-500 py-4 text-base font-bold text-slate-900 shadow-lg shadow-amber-500/25 transition-all active:scale-[0.98] disabled:pointer-events-none disabled:opacity-0"
+          className="btn-primary w-full transition-transform active:scale-[0.98] disabled:pointer-events-none disabled:opacity-0"
         >
           Generate Card Artwork
         </button>

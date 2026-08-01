@@ -112,7 +112,7 @@ export default function ImageLightbox({
           href={src}
           download={downloadFilename(alt)}
           onClick={(e) => e.stopPropagation()}
-          className="glass flex items-center gap-2 rounded-2xl px-5 py-3 text-sm font-bold text-white active:scale-95"
+          className="btn-primary flex items-center justify-center gap-2 !py-3 active:scale-95"
         >
           ⤓ Download Image
         </a>

@@ -267,10 +267,10 @@ export default function BattleRoomPage() {
 
   if (!playerId) {
     return (
-      <div className="flex min-h-dvh flex-col items-center justify-center px-5 py-10">
-        <div className="glass w-full max-w-sm rounded-[2rem] p-6 text-center shadow-2xl shadow-black/40">
+      <div className="flex min-h-full flex-col items-center justify-center px-5 py-10">
+        <div className="glass-strong rise-in w-full max-w-sm rounded-[2rem] p-6 text-center shadow-2xl shadow-black/40">
           <p className="text-[11px] font-semibold uppercase tracking-[0.35em] text-amber-300/90">1v1 Battle</p>
-          <h1 className="mt-2 text-2xl font-black tracking-tight text-white">You&apos;re Invited!</h1>
+          <h1 className="font-display mt-2 text-2xl font-extrabold tracking-tight text-white">You&apos;re Invited!</h1>
           <p className="mt-2 text-sm text-slate-400">
             Join room <span className="font-bold text-amber-300">{code}</span> for a card showdown.
           </p>
@@ -285,12 +285,12 @@ export default function BattleRoomPage() {
             type="button"
             onClick={handleJoinHere}
             disabled={joining}
-            className="mt-6 w-full rounded-2xl bg-gradient-to-r from-amber-400 to-orange-500 py-4 text-base font-bold text-slate-900 shadow-lg shadow-amber-500/25 transition-transform active:scale-[0.98] disabled:opacity-50"
+            className="btn-primary mt-6 w-full transition-transform active:scale-[0.98] disabled:opacity-50"
           >
             {joining ? "Joining..." : "Join Room"}
           </button>
           <Link href="/battle" className="mt-4 block text-center text-sm font-semibold text-slate-400 active:text-white">
-            ← Back
+            ← Back to Lobby
           </Link>
         </div>
       </div>
@@ -361,7 +361,7 @@ export default function BattleRoomPage() {
           : [];
 
   return (
-    <div className="flex min-h-dvh flex-col px-5 py-8">
+    <div className="flex min-h-full flex-col px-5 py-8">
       <div className="mx-auto w-full max-w-sm flex-1">
         <BattleHeader
           round={room.round}
@@ -409,7 +409,10 @@ export default function BattleRoomPage() {
         )}
 
         {isGenerating && (
-          <div className="glass flex flex-col items-center gap-5 rounded-[2rem] px-8 py-12 text-center">
+          <div className="glass-strong rise-in flex flex-col items-center gap-5 rounded-[2rem] px-8 py-12 text-center">
+            <span className="brand-gradient flex h-12 w-12 animate-pulse items-center justify-center rounded-2xl text-2xl shadow-lg shadow-fuchsia-500/20">
+              ✨
+            </span>
             <div className="h-2 w-full overflow-hidden rounded-full bg-white/10">
               <div
                 key={round.status}
@@ -425,7 +428,7 @@ export default function BattleRoomPage() {
                   type="button"
                   onClick={handleForceAdvance}
                   disabled={actionBusy}
-                  className="w-full rounded-xl bg-gradient-to-r from-amber-400 to-orange-500 py-3 text-sm font-bold text-slate-900 transition-transform active:scale-[0.98] disabled:opacity-50"
+                  className="btn-primary w-full !py-3 transition-transform active:scale-[0.98] disabled:opacity-50"
                 >
                   Try Again
                 </button>

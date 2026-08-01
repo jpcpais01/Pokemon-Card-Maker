@@ -76,7 +76,7 @@ export default function BattlePickPanel({
         type="button"
         onClick={onLock}
         disabled={!allRevealed || locked || busy}
-        className="mt-8 w-full rounded-2xl bg-gradient-to-r from-amber-400 to-orange-500 py-4 text-base font-bold text-slate-900 shadow-lg shadow-amber-500/25 transition-all active:scale-[0.98] disabled:opacity-50"
+        className="btn-primary mt-8 w-full transition-transform active:scale-[0.98] disabled:opacity-50"
       >
         {locked ? "Waiting for opponent..." : "Lock In"}
       </button>

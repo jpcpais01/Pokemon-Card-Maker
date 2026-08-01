@@ -83,7 +83,7 @@ export default function VotingPanel({ images, myVote, votedCount, totalVoters, b
           type="button"
           onClick={() => selected !== null && onVote(selected)}
           disabled={selected === null || busy}
-          className="mt-6 w-full rounded-2xl bg-gradient-to-r from-amber-400 to-orange-500 py-4 text-base font-bold text-slate-900 shadow-lg shadow-amber-500/25 transition-all active:scale-[0.98] disabled:opacity-50"
+          className="btn-primary mt-6 w-full transition-transform active:scale-[0.98] disabled:opacity-50"
         >
           Cast Vote
         </button>

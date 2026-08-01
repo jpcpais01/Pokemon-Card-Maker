@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import ImageLightbox from "./ImageLightbox";
+import TraitChip from "./TraitChip";
 import type { RevealData } from "./RevealScreen";
 import { useFavoriteToggle } from "@/lib/favorites";
 
@@ -36,34 +37,33 @@ export default function ResultScreen({ image, prompt, data, onRegenerateImage, o
     a.remove();
   }
 
+  const isSir = data.artType.label === "Special Illustration Rare";
+
   return (
-    <div className="flex min-h-dvh flex-col items-center px-5 py-8">
-      <div className="glass w-full max-w-sm rounded-[2rem] p-5 shadow-2xl shadow-black/40">
+    <div className="flex min-h-full flex-col items-center px-5 py-8">
+      <div className="glass-strong rise-in w-full max-w-sm rounded-[2rem] p-5 shadow-2xl shadow-black/40">
         <p className="text-center text-[11px] font-semibold uppercase tracking-[0.3em] text-amber-300/90">
           Your Card
         </p>
-        <h1 className="mt-1 text-center text-2xl font-black tracking-tight text-white">{title}</h1>
+        <h1 className="font-display mt-1 text-center text-2xl font-extrabold tracking-tight text-white">{title}</h1>
 
-        <div className="mt-4 flex flex-wrap justify-center gap-1.5 text-[11px] font-semibold">
-          <span className="rounded-full bg-amber-400/15 px-2.5 py-1 text-amber-300">{data.artType.label}</span>
-          {data.specialForm.value !== "none" && (
-            <span className="rounded-full bg-purple-400/15 px-2.5 py-1 text-purple-300">
-              {data.specialForm.label}
-            </span>
-          )}
-          <span className="rounded-full bg-teal-400/15 px-2.5 py-1 text-teal-300">{data.vibe.label}</span>
+        <div className="mt-4 flex flex-wrap justify-center gap-1.5">
+          <TraitChip tone="gold">{data.artType.label}</TraitChip>
+          {data.specialForm.value !== "none" && <TraitChip tone="violet">{data.specialForm.label}</TraitChip>}
+          <TraitChip tone="teal">{data.vibe.label}</TraitChip>
         </div>
 
         <button
           type="button"
           onClick={() => !regenerating && setFullView(true)}
           aria-label="View full size"
-          className={`group relative mt-5 aspect-[3/4] w-full overflow-hidden rounded-2xl border border-amber-300/40 bg-black/20 shadow-xl shadow-black/40 transition-opacity ${
-            regenerating ? "opacity-40" : "opacity-100"
-          }`}
+          className={`group relative mt-5 aspect-[3/4] w-full overflow-hidden rounded-2xl border shadow-xl shadow-black/40 transition-opacity ${
+            isSir ? "border-amber-300/60" : "border-amber-300/40"
+          } ${regenerating ? "opacity-40" : "opacity-100"}`}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={image} alt={`${title} illustration`} className="h-full w-full object-cover" />
+          {isSir && !regenerating && <div className="holo-sheen" />}
           {regenerating && (
             <div className="absolute inset-0 flex items-center justify-center bg-black/40">
               <span className="h-8 w-8 animate-spin rounded-full border-4 border-white/30 border-t-white" />
@@ -88,25 +88,21 @@ export default function ResultScreen({ image, prompt, data, onRegenerateImage, o
         )}
 
         <div className="mt-6 flex flex-col gap-3">
-          <button
-            type="button"
-            onClick={download}
-            className="w-full rounded-2xl bg-gradient-to-r from-amber-400 to-orange-500 py-4 text-base font-bold text-slate-900 shadow-lg shadow-amber-500/25 transition-transform active:scale-[0.98]"
-          >
+          <button type="button" onClick={download} className="btn-primary w-full transition-transform active:scale-[0.98]">
             Download Image
           </button>
           <button
             type="button"
             onClick={onRegenerateImage}
             disabled={regenerating}
-            className="glass w-full rounded-2xl py-3.5 text-sm font-semibold text-slate-200 transition-colors active:bg-white/10 disabled:opacity-50"
+            className="btn-ghost w-full transition-colors active:bg-white/10 active:scale-[0.98] disabled:opacity-50"
           >
             Regenerate artwork
           </button>
           <button
             type="button"
             onClick={onStartOver}
-            className="glass w-full rounded-2xl py-3.5 text-sm font-semibold text-slate-200 transition-colors active:bg-white/10"
+            className="btn-ghost w-full transition-colors active:bg-white/10 active:scale-[0.98]"
           >
             Open a New Pack
           </button>
