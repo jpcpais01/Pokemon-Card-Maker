@@ -210,6 +210,9 @@ function CardSpotlight({
                 {pick.specialForm.label}
               </span>
             )}
+            <span className="rounded-full bg-teal-400/15 px-2.5 py-1 text-xs font-semibold text-teal-300">
+              {pick.vibe.label}
+            </span>
           </div>
         </div>
 
@@ -503,6 +506,9 @@ function ResultCard({
               {pick.specialForm.label}
             </span>
           )}
+          <span className="rounded-full bg-teal-400/15 px-1.5 py-0.5 text-[9px] font-semibold text-teal-300">
+            {pick.vibe.label}
+          </span>
         </div>
         {ratings && (
           <div className="mt-1.5 flex justify-center border-t border-white/10 pt-1.5">

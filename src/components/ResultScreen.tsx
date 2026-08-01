@@ -43,6 +43,7 @@ export default function ResultScreen({ image, prompt, data, onRegenerateImage, o
               {data.specialForm.label}
             </span>
           )}
+          <span className="rounded-full bg-teal-400/15 px-2.5 py-1 text-teal-300">{data.vibe.label}</span>
         </div>
 
         <button

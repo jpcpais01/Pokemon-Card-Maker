@@ -1,4 +1,4 @@
-import type { ArtType, SpecialForm } from "./types";
+import type { ArtType, SpecialForm, Vibe } from "./types";
 
 export const ART_TYPE_ICONS: Record<ArtType, string> = {
   ex: "⚔️",
@@ -19,4 +19,27 @@ export const SPECIAL_FORM_ICONS: Record<SpecialForm, string> = {
   galarian: "⚔️",
   hisuian: "🏮",
   paldean: "🍇",
+};
+
+export const VIBE_ICONS: Record<Vibe, string> = {
+  cozy: "🕯️",
+  menacing: "😈",
+  serene: "🕊️",
+  chaotic: "🌀",
+  majestic: "👑",
+  playful: "🎈",
+  melancholic: "🌧️",
+  triumphant: "🏆",
+  mysterious: "🌫️",
+  electric: "⚡",
+  dreamy: "💭",
+  fierce: "🔥",
+  nostalgic: "📻",
+  ethereal: "🌌",
+  rebellious: "🤘",
+  wholesome: "🌻",
+  ominous: "⛈️",
+  vibrant: "🌈",
+  tranquil: "🌊",
+  epic: "🎬",
 };

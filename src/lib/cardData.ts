@@ -1,4 +1,4 @@
-import type { ArtType, SpecialForm, WeightedOption } from "./types";
+import type { ArtType, SpecialForm, Vibe, WeightedOption } from "./types";
 
 /**
  * Picks one option at random, respecting relative weights. Pass `exclude` to
@@ -80,3 +80,29 @@ export function pickSpecialForm(poolSize: number, exclude?: SpecialForm): Weight
   const candidates = poolSize < 2 ? SPECIAL_FORMS.filter((f) => f.value !== "tag-team") : SPECIAL_FORMS;
   return pickWeighted(candidates, exclude);
 }
+
+// The mood/atmosphere the illustration is rendered in - all 20 equally likely (weight 5 each,
+// summing to 100 like the other tables). Unlike Special Form there's no "none"/default entry:
+// every card always gets one of these vibes.
+export const VIBES: WeightedOption<Vibe>[] = [
+  { value: "cozy", label: "Cozy", weight: 5, blurb: "Warm, soft, inviting atmosphere with gentle candlelit glow." },
+  { value: "menacing", label: "Menacing", weight: 5, blurb: "Dark, threatening mood with harsh shadows and a looming presence." },
+  { value: "serene", label: "Serene", weight: 5, blurb: "Calm, peaceful stillness bathed in soft, even light." },
+  { value: "chaotic", label: "Chaotic", weight: 5, blurb: "Wild, frenzied energy with clashing motion and scattered debris." },
+  { value: "majestic", label: "Majestic", weight: 5, blurb: "Grand, regal, awe-inspiring scale with sweeping composition." },
+  { value: "playful", label: "Playful", weight: 5, blurb: "Lighthearted, whimsical energy with bouncy motion and bright colors." },
+  { value: "melancholic", label: "Melancholic", weight: 5, blurb: "Wistful, bittersweet mood with muted tones and quiet stillness." },
+  { value: "triumphant", label: "Triumphant", weight: 5, blurb: "Victorious, heroic mood bathed in radiant golden light." },
+  { value: "mysterious", label: "Mysterious", weight: 5, blurb: "Shadowy, enigmatic atmosphere with secrets half-hidden in fog." },
+  { value: "electric", label: "Electric", weight: 5, blurb: "Crackling high-voltage energy with vivid neon-tinged light." },
+  { value: "dreamy", label: "Dreamy", weight: 5, blurb: "Hazy, surreal atmosphere with soft pastel colors and floating light." },
+  { value: "fierce", label: "Fierce", weight: 5, blurb: "Aggressive, powerful, primal intensity with a raw, feral edge." },
+  { value: "nostalgic", label: "Nostalgic", weight: 5, blurb: "Warm, sun-faded mood evoking a cherished half-remembered afternoon." },
+  { value: "ethereal", label: "Ethereal", weight: 5, blurb: "Otherworldly, glowing atmosphere with soft celestial light." },
+  { value: "rebellious", label: "Rebellious", weight: 5, blurb: "Edgy, defiant energy with bold contrast and gritty attitude." },
+  { value: "wholesome", label: "Wholesome", weight: 5, blurb: "Warm-hearted, friendly mood under bright, cheerful sunlight." },
+  { value: "ominous", label: "Ominous", weight: 5, blurb: "Foreboding atmosphere with heavy storm clouds and building dread." },
+  { value: "vibrant", label: "Vibrant", weight: 5, blurb: "Explosively colorful, high-energy mood with bold saturated hues." },
+  { value: "tranquil", label: "Tranquil", weight: 5, blurb: "Still, gentle, zen-like calm with soft natural light." },
+  { value: "epic", label: "Epic", weight: 5, blurb: "Cinematic, larger-than-life mood with sweeping dramatic scale." },
+];

@@ -1,5 +1,5 @@
 import type { CardRatings } from "@/lib/openrouter";
-import type { ArtType, PokemonPick, SpecialForm, WeightedOption } from "@/lib/types";
+import type { ArtType, PokemonPick, SpecialForm, Vibe, WeightedOption } from "@/lib/types";
 
 export type { CardRatings };
 
@@ -25,6 +25,7 @@ export const MIN_VOTE_PLAYERS = 3;
 export interface BattlePlayerPick {
   artType: WeightedOption<ArtType>;
   specialForm: WeightedOption<SpecialForm>;
+  vibe: WeightedOption<Vibe>;
   pokemons: PokemonPick[];
 }
 

@@ -34,7 +34,7 @@ export default function BattlePickPanel({
   // otherwise its mere presence would spoil the surprise before the player taps that card.
   const specialFormRevealed = locked || !!revealed.specialForm;
   const visiblePokemons = specialFormRevealed ? pick.pokemons : pick.pokemons.slice(0, 1);
-  const faces = buildCardFaces(pick.artType, pick.specialForm, visiblePokemons);
+  const faces = buildCardFaces(pick.artType, pick.specialForm, pick.vibe, visiblePokemons);
 
   const allRevealed = faces.every((face) => revealed[String(face.key)]);
 

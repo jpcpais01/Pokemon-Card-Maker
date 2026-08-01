@@ -1,4 +1,4 @@
-import { ART_TYPES, SPECIAL_FORMS, pickSpecialForm, pickWeighted } from "@/lib/cardData";
+import { ART_TYPES, SPECIAL_FORMS, VIBES, pickSpecialForm, pickWeighted } from "@/lib/cardData";
 import type { CardKey } from "@/lib/cardFaces";
 import { pickRandomPokemon, toPokemonPick } from "@/lib/generations";
 import type { PokemonRef } from "@/lib/types";
@@ -7,6 +7,7 @@ import type { BattlePlayerPick, BattleRoom, BattleRound, BattleRoundPlayerState 
 function rollPlayerPick(pool: PokemonRef[]): BattlePlayerPick {
   const artType = pickWeighted(ART_TYPES);
   const specialForm = pickSpecialForm(pool.length);
+  const vibe = pickWeighted(VIBES);
   const count = specialForm.value === "tag-team" ? 2 : 1;
 
   const chosenIds: number[] = [];
@@ -17,7 +18,7 @@ function rollPlayerPick(pool: PokemonRef[]): BattlePlayerPick {
     pokemons.push(toPokemonPick(p));
   }
 
-  return { artType, specialForm, pokemons };
+  return { artType, specialForm, vibe, pokemons };
 }
 
 /**
@@ -46,6 +47,9 @@ export function rerollPlayerCard(
 ): BattleRoundPlayerState {
   if (key === "artType") {
     return { ...state, artType: pickWeighted(ART_TYPES, state.artType.value) };
+  }
+  if (key === "vibe") {
+    return { ...state, vibe: pickWeighted(VIBES, state.vibe.value) };
   }
   if (key === "specialForm") {
     const specialForm = pickSpecialForm(pool.length, state.specialForm.value);
@@ -98,6 +102,7 @@ export function buildVoteOrders(pids: string[], candidatePids: string[]): Record
 const HIDDEN_PICK: BattlePlayerPick = {
   artType: ART_TYPES[0],
   specialForm: SPECIAL_FORMS[0],
+  vibe: VIBES[0],
   pokemons: [{ id: 0, name: "unknown", displayName: "???", artworkUrl: "" }],
 };
 

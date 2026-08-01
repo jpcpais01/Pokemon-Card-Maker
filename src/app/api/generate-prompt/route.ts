@@ -13,6 +13,7 @@ export async function POST(request: Request) {
   if (
     !body?.artType?.label ||
     !body?.specialForm?.label ||
+    !body?.vibe?.label ||
     !Array.isArray(body.pokemons) ||
     body.pokemons.length === 0
   ) {

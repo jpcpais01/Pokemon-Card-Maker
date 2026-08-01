@@ -2,17 +2,19 @@
 
 import FlipCard from "./FlipCard";
 import { buildCardFaces, type CardKey } from "@/lib/cardFaces";
-import type { ArtType, PokemonPick, SpecialForm, WeightedOption } from "@/lib/types";
+import type { ArtType, PokemonPick, SpecialForm, Vibe, WeightedOption } from "@/lib/types";
 
 export interface RevealData {
   artType: WeightedOption<ArtType>;
   specialForm: WeightedOption<SpecialForm>;
+  vibe: WeightedOption<Vibe>;
   pokemons: PokemonPick[];
 }
 
 export interface RevealFlags {
   artType: boolean;
   specialForm: boolean;
+  vibe: boolean;
   pokemons: boolean[];
 }
 
@@ -44,7 +46,7 @@ export default function RevealScreen({
   // The 2nd Tag Team card only appears once Special Form has actually been revealed as such -
   // otherwise its mere presence would spoil the surprise before the player taps that card.
   const visiblePokemons = flags.specialForm ? data.pokemons : data.pokemons.slice(0, 1);
-  const faces = buildCardFaces(data.artType, data.specialForm, visiblePokemons);
+  const faces = buildCardFaces(data.artType, data.specialForm, data.vibe, visiblePokemons);
   const cards = faces.map((face) => ({
     ...face,
     revealed: typeof face.key === "number" ? flags.pokemons[face.key] : flags[face.key],

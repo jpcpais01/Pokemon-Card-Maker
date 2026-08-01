@@ -1,8 +1,8 @@
 import type { ReactNode } from "react";
-import { ART_TYPE_ICONS, SPECIAL_FORM_ICONS } from "@/lib/icons";
-import type { ArtType, PokemonPick, SpecialForm, WeightedOption } from "@/lib/types";
+import { ART_TYPE_ICONS, SPECIAL_FORM_ICONS, VIBE_ICONS } from "@/lib/icons";
+import type { ArtType, PokemonPick, SpecialForm, Vibe, WeightedOption } from "@/lib/types";
 
-export type CardKey = "artType" | "specialForm" | number;
+export type CardKey = "artType" | "specialForm" | "vibe" | number;
 
 export interface CardFace {
   key: CardKey;
@@ -10,10 +10,11 @@ export interface CardFace {
   front: ReactNode;
 }
 
-/** Builds the three/four FlipCard front faces shared by solo play and battle mode. */
+/** Builds the four/five FlipCard front faces shared by solo play and battle mode. */
 export function buildCardFaces(
   artType: WeightedOption<ArtType>,
   specialForm: WeightedOption<SpecialForm>,
+  vibe: WeightedOption<Vibe>,
   pokemons: PokemonPick[]
 ): CardFace[] {
   return [
@@ -34,6 +35,16 @@ export function buildCardFaces(
         <div className="flex h-full flex-col items-center justify-center gap-2 bg-gradient-to-br from-violet-400 via-purple-500 to-indigo-700 p-3 text-center text-white">
           <span className="text-4xl drop-shadow-sm">{SPECIAL_FORM_ICONS[specialForm.value]}</span>
           <span className="text-lg font-black leading-tight">{specialForm.label}</span>
+        </div>
+      ),
+    },
+    {
+      key: "vibe",
+      label: "Vibe",
+      front: (
+        <div className="flex h-full flex-col items-center justify-center gap-2 bg-gradient-to-br from-teal-300 via-cyan-500 to-sky-700 p-3 text-center text-white">
+          <span className="text-4xl drop-shadow-sm">{VIBE_ICONS[vibe.value]}</span>
+          <span className="text-lg font-black leading-tight">{vibe.label}</span>
         </div>
       ),
     },

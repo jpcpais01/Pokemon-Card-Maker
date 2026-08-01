@@ -14,7 +14,11 @@ export async function POST(request: Request) {
   }
 
   const { playerId, cardKey } = body;
-  if (!body.code || !playerId || (cardKey !== "artType" && cardKey !== "specialForm" && typeof cardKey !== "number")) {
+  if (
+    !body.code ||
+    !playerId ||
+    (cardKey !== "artType" && cardKey !== "specialForm" && cardKey !== "vibe" && typeof cardKey !== "number")
+  ) {
     return NextResponse.json({ error: "Missing or invalid fields." }, { status: 400 });
   }
 

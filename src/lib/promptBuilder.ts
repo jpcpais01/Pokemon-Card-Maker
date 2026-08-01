@@ -5,6 +5,7 @@ interface PokemonInfo {
 export interface PromptRequestBody {
   artType: { label: string; blurb: string };
   specialForm: { label: string; blurb: string };
+  vibe: { label: string; blurb: string };
   pokemons: PokemonInfo[];
 }
 
@@ -18,6 +19,7 @@ Given a set of card traits, write ONE detailed, vivid text-to-image prompt (120-
 - Always explicitly include the phrase "Pokemon TCG artwork style" plus the qualifiers "not photorealistic", "not a photograph", and "not a generic fantasy illustration" somewhere in the prompt. Describe the Pokemon's surfaces as smooth and glossy with soft airbrushed shading - never realistic fur, skin, or feather texture.
 - Describe the named Pokemon's physical appearance in specific visual detail - body shape, coloring, markings, textures, and distinguishing features - rather than just naming it. Keep its exact simplified, game-accurate proportions, do not make it anatomically realistic.
 - If a special form is given - this may be a form like Shiny/Mega/Ancient/Future, or a regional variant like Alolan/Galarian/Hisuian/Paldean - use your own knowledge of how that Pokemon canonically looks in that variant (e.g. Alolan Vulpix's icy-blue fur and crystalline tail, Mega Charizard X's black scales and blue flame, Galarian Ponyta's pastel mane) and describe those exact visual changes - color palette shifts, added/altered features, silhouette or texture changes. If no official design exists for that combination, invent a plausible, consistent one in the same visual spirit as real regional/special forms and describe that invented look in the same concrete detail.
+- A vibe is always given - let it drive the mood, lighting, color grading, and background atmosphere of the whole scene (e.g. a "Menacing" vibe means hard shadows and a threatening pose; a "Cozy" vibe means warm soft light and an inviting setting). Never let the vibe override the Pokemon's own design, the special form, or the required TCG rendering style - it only shapes atmosphere and feeling, not what's depicted.
 - If TWO Pokemon are given (a Tag Team pairing), you MUST describe BOTH of them individually and explicitly by name, each with its own physical description, before describing their shared action or interaction. Both must appear as two complete, fully distinct, individually recognizable creatures in the same scene - never merge, hybridize, blend, or fuse their features into a single creature, and never omit either one.
 - Match the rendering style to the rarity tier described.
 - Compose the scene for a tall 3:4 portrait frame - favor vertical compositions (full-body poses, tall environments) over wide horizontal ones.
@@ -91,6 +93,7 @@ export function buildUserPrompt(body: PromptRequestBody): string {
     `Pokemon: ${pokemonList}`,
     `Special form: ${body.specialForm.label} - ${body.specialForm.blurb}`,
     `Rarity/art tier: ${body.artType.label} - ${body.artType.blurb}`,
+    `Vibe: ${body.vibe.label} - ${body.vibe.blurb}`,
   ];
   return lines.join("\n");
 }
