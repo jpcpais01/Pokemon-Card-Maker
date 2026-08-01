@@ -102,7 +102,6 @@ export default function GalleryPage() {
         <ImageLightbox
           src={openCard.image}
           alt={openCard.pokemonNames}
-          prompt={openCard.prompt}
           onClose={() => setOpenImage(null)}
           isFavorited
           onToggleFavorite={() => handleRemove(openCard.image)}

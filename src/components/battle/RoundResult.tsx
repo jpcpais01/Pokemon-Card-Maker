@@ -158,7 +158,6 @@ export default function RoundResult({
         <ImageLightbox
           src={fullView.src}
           alt="Full size artwork"
-          prompt={fullView.prompt}
           onClose={() => setFullView(null)}
           isFavorited={isFavorited}
           onToggleFavorite={toggleFavorite}

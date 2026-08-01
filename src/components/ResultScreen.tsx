@@ -114,7 +114,6 @@ export default function ResultScreen({ image, prompt, data, onRegenerateImage, o
           src={image}
           alt={`${title} illustration`}
           onClose={() => setFullView(false)}
-          prompt={prompt}
           isFavorited={isFavorited}
           onToggleFavorite={toggle}
           favoriteError={favoriteError}

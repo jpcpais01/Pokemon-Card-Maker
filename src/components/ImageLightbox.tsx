@@ -6,8 +6,6 @@ interface Props {
   src: string;
   alt: string;
   onClose: () => void;
-  /** The exact text-to-image prompt used to generate this artwork, shown below it when given. */
-  prompt?: string;
   /** Star toggle shown next to the close button - omit both to hide it entirely (e.g. anonymous ballots). */
   isFavorited?: boolean;
   onToggleFavorite?: () => void;
@@ -26,7 +24,6 @@ export default function ImageLightbox({
   src,
   alt,
   onClose,
-  prompt,
   isFavorited,
   onToggleFavorite,
   favoriteError,
@@ -94,18 +91,6 @@ export default function ImageLightbox({
           >
             {favoriteError}
           </p>
-        )}
-
-        {prompt && (
-          <div
-            onClick={(e) => e.stopPropagation()}
-            className="glass w-full max-w-md rounded-2xl p-4 text-left"
-          >
-            <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-amber-300/80">
-              Art Prompt
-            </p>
-            <p className="text-xs leading-relaxed text-slate-300">{prompt}</p>
-          </div>
         )}
 
         <a

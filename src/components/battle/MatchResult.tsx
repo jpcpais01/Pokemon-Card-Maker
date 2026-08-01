@@ -106,7 +106,6 @@ export default function MatchResult({ players, mvp, vsBot }: Props) {
         <ImageLightbox
           src={mvp.image}
           alt={mvp.pokemonNames}
-          prompt={mvp.prompt}
           onClose={() => setFullView(false)}
           isFavorited={isFavorited}
           onToggleFavorite={toggle}
