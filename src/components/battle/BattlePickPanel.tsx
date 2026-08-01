@@ -13,6 +13,7 @@ interface Props {
   busy: boolean;
   onReroll: (key: CardKey) => void;
   onLock: () => void;
+  forcedKeys?: CardKey[];
 }
 
 /**
@@ -27,6 +28,7 @@ export default function BattlePickPanel({
   busy,
   onReroll,
   onLock,
+  forcedKeys = [],
 }: Props) {
   const [revealed, setRevealed] = useState<Record<string, boolean>>({});
 
@@ -34,7 +36,9 @@ export default function BattlePickPanel({
   // otherwise its mere presence would spoil the surprise before the player taps that card.
   const specialFormRevealed = locked || !!revealed.specialForm;
   const visiblePokemons = specialFormRevealed ? pick.pokemons : pick.pokemons.slice(0, 1);
-  const faces = buildCardFaces(pick.artType, pick.specialForm, pick.vibe, visiblePokemons);
+  const faces = buildCardFaces(pick.artType, pick.specialForm, pick.vibe, visiblePokemons).map((face) =>
+    forcedKeys.includes(face.key) ? { ...face, rare: false } : face
+  );
 
   const allRevealed = faces.every((face) => revealed[String(face.key)]);
 
@@ -61,7 +65,7 @@ export default function BattlePickPanel({
               onReveal={() => setRevealed((prev) => ({ ...prev, [String(face.key)]: true }))}
               front={face.front}
               rerollsLeft={unlimitedRerolls ? Infinity : rerollsLeft}
-              onReroll={() => onReroll(face.key)}
+              onReroll={forcedKeys.includes(face.key) ? undefined : () => onReroll(face.key)}
               rare={face.rare}
             />
           </div>

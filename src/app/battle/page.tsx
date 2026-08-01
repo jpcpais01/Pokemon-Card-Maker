@@ -5,11 +5,13 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import GenSelector from "@/components/GenSelector";
 import JudgeModePicker from "@/components/battle/JudgeModePicker";
+import PackModePicker from "@/components/battle/PackModePicker";
 import PlayerCountPicker from "@/components/battle/PlayerCountPicker";
 import { createRoom, joinRoom } from "@/lib/battle/api";
 import { storePlayerId } from "@/lib/battle/session";
 import { GENERATIONS } from "@/lib/generations";
 import { MIN_VOTE_PLAYERS, type JudgeMode } from "@/lib/battle/types";
+import type { PackMode } from "@/lib/types";
 
 type Mode = "menu" | "create" | "join";
 
@@ -20,6 +22,7 @@ export default function BattleLobby() {
   const [gens, setGens] = useState<number[]>(GENERATIONS.map((g) => g.id));
   const [maxPlayers, setMaxPlayers] = useState(2);
   const [judgeMode, setJudgeMode] = useState<JudgeMode>("ai");
+  const [packMode, setPackMode] = useState<PackMode>("classic");
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
 
@@ -32,7 +35,7 @@ export default function BattleLobby() {
     setCreating(true);
     try {
       const effectiveJudgeMode = maxPlayers >= MIN_VOTE_PLAYERS ? judgeMode : "ai";
-      const { code, playerId } = await createRoom(gens, false, maxPlayers, effectiveJudgeMode);
+      const { code, playerId } = await createRoom(gens, false, maxPlayers, effectiveJudgeMode, false, packMode);
       storePlayerId(code, playerId);
       router.push(`/battle/${code}`);
     } catch (err) {
@@ -75,6 +78,7 @@ export default function BattleLobby() {
         extraTop={
           <>
             <PlayerCountPicker value={maxPlayers} onChange={setMaxPlayers} />
+            <PackModePicker value={packMode} onChange={setPackMode} />
             {maxPlayers >= MIN_VOTE_PLAYERS && <JudgeModePicker value={judgeMode} onChange={setJudgeMode} />}
           </>
         }

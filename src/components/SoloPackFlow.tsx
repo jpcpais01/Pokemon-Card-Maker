@@ -9,9 +9,9 @@ import ErrorScreen from "@/components/ErrorScreen";
 import ResultScreen from "@/components/ResultScreen";
 import { ART_TYPES, SPECIAL_FORMS, VIBES, pickSpecialForm, pickWeighted } from "@/lib/cardData";
 import { GENERATIONS, fetchPokemonForGenerations, pickRandomPokemon, toPokemonPick } from "@/lib/generations";
-import type { PokemonRef } from "@/lib/types";
+import type { PackMode, PokemonRef } from "@/lib/types";
 
-export type SoloMode = "classic" | "sir" | "tagteam";
+export type SoloMode = PackMode;
 
 const MODE_COPY: Record<SoloMode, { eyebrow: string; title: string; subtitle: string; packEyebrow: string; forcedKeys: CardKey[] }> = {
   classic: {

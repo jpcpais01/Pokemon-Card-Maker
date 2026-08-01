@@ -60,7 +60,13 @@ export async function POST(request: Request) {
       if (pool.length === 0) {
         return NextResponse.json({ error: "No Pokemon found for this room's generations." }, { status: 500 });
       }
-      room.rounds = [createRound(room.players, pool)];
+      if (room.packMode === "tagteam" && pool.length < 2) {
+        return NextResponse.json(
+          { error: "Need at least 2 Pokemon in this room's generations for a Tag Team." },
+          { status: 500 }
+        );
+      }
+      room.rounds = [createRound(room.players, pool, [], room.packMode)];
     }
 
     await saveRoom(room);

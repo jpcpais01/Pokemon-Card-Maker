@@ -1,4 +1,5 @@
 import type { CardKey } from "@/lib/cardFaces";
+import type { PackMode } from "@/lib/types";
 import type { BattleRoom, JudgeMode } from "./types";
 
 async function postJson<T>(url: string, body: unknown): Promise<T> {
@@ -24,7 +25,8 @@ export function createRoom(
   vsBot = false,
   maxPlayers = 2,
   judgeMode: JudgeMode = "ai",
-  unlimitedRerolls = false
+  unlimitedRerolls = false,
+  packMode: PackMode = "classic"
 ) {
   return postJson<{ code: string; playerId: string }>("/api/battle/create", {
     gens,
@@ -32,6 +34,7 @@ export function createRoom(
     maxPlayers,
     judgeMode,
     unlimitedRerolls,
+    packMode,
   });
 }
 

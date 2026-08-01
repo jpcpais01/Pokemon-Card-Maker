@@ -1,7 +1,7 @@
 import type { CardRatings } from "@/lib/openrouter";
-import type { ArtType, PokemonPick, SpecialForm, Vibe, WeightedOption } from "@/lib/types";
+import type { ArtType, PackMode, PokemonPick, SpecialForm, Vibe, WeightedOption } from "@/lib/types";
 
-export type { CardRatings };
+export type { CardRatings, PackMode };
 
 export const BATTLE_ROUNDS = 5;
 /** Granted at the start of every round, on top of whatever's left unused from the previous round. */
@@ -91,4 +91,7 @@ export interface BattleRoom {
   judgeMode?: JudgeMode;
   /** vs-bot only - when true, rerolls are never checked or spent, so every player has infinite rerolls. */
   unlimitedRerolls?: boolean;
+  /** "classic" (default) leaves art type and special form random; "sir"/"tagteam" force every
+   *  player's artType/specialForm for the whole match, matching solo mode's forced-trait packs. */
+  packMode?: PackMode;
 }

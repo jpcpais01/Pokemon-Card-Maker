@@ -10,11 +10,18 @@ import {
   MIN_PLAYERS,
   MIN_VOTE_PLAYERS,
 } from "@/lib/battle/types";
-import type { BattleRoom, JudgeMode } from "@/lib/battle/types";
+import type { BattleRoom, JudgeMode, PackMode } from "@/lib/battle/types";
 import { fetchPokemonForGenerations } from "@/lib/generations";
 
 export async function POST(request: Request) {
-  let body: { gens?: number[]; vsBot?: boolean; maxPlayers?: number; judgeMode?: string; unlimitedRerolls?: boolean };
+  let body: {
+    gens?: number[];
+    vsBot?: boolean;
+    maxPlayers?: number;
+    judgeMode?: string;
+    unlimitedRerolls?: boolean;
+    packMode?: string;
+  };
   try {
     body = await request.json();
   } catch {
@@ -34,6 +41,8 @@ export async function POST(request: Request) {
   if (judgeMode === "vote" && maxPlayers < MIN_VOTE_PLAYERS) {
     return NextResponse.json({ error: `Player vote mode needs at least ${MIN_VOTE_PLAYERS} players.` }, { status: 400 });
   }
+
+  const packMode: PackMode = body.packMode === "sir" || body.packMode === "tagteam" ? body.packMode : "classic";
 
   let code = generateRoomCode();
   for (let attempt = 0; attempt < 5 && (await getRoom(code)); attempt++) {
@@ -62,6 +71,7 @@ export async function POST(request: Request) {
     vsBot,
     judgeMode,
     unlimitedRerolls,
+    packMode,
   };
 
   if (vsBot) {
@@ -69,7 +79,13 @@ export async function POST(request: Request) {
     if (pool.length === 0) {
       return NextResponse.json({ error: "No Pokemon found for the selected generations." }, { status: 500 });
     }
-    room.rounds = [createRound(players, pool, botIds)];
+    if (packMode === "tagteam" && pool.length < 2) {
+      return NextResponse.json(
+        { error: "Need at least 2 Pokemon in the selected generations for a Tag Team." },
+        { status: 400 }
+      );
+    }
+    room.rounds = [createRound(players, pool, botIds, packMode)];
   }
 
   await saveRoom(room);

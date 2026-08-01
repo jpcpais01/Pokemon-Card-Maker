@@ -37,6 +37,12 @@ export async function POST(request: Request) {
   if (!playerState || playerState.locked) {
     return NextResponse.json({ error: "You've already locked in this round." }, { status: 409 });
   }
+  if (room.packMode === "sir" && cardKey === "artType") {
+    return NextResponse.json({ error: "Art type is locked in for this match." }, { status: 409 });
+  }
+  if (room.packMode === "tagteam" && cardKey === "specialForm") {
+    return NextResponse.json({ error: "Special form is locked in for this match." }, { status: 409 });
+  }
   if (!room.unlimitedRerolls && (room.rerolls[playerId] ?? 0) <= 0) {
     return NextResponse.json({ error: "No rerolls left." }, { status: 409 });
   }

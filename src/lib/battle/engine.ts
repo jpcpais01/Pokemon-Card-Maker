@@ -1,12 +1,14 @@
 import { ART_TYPES, SPECIAL_FORMS, VIBES, pickSpecialForm, pickWeighted } from "@/lib/cardData";
 import type { CardKey } from "@/lib/cardFaces";
 import { pickRandomPokemon, toPokemonPick } from "@/lib/generations";
-import type { PokemonRef } from "@/lib/types";
+import type { PackMode, PokemonRef } from "@/lib/types";
 import type { BattlePlayerPick, BattleRoom, BattleRound, BattleRoundPlayerState } from "./types";
 
-function rollPlayerPick(pool: PokemonRef[]): BattlePlayerPick {
-  const artType = pickWeighted(ART_TYPES);
-  const specialForm = pickSpecialForm(pool.length);
+function rollPlayerPick(pool: PokemonRef[], packMode: PackMode): BattlePlayerPick {
+  const artType =
+    packMode === "sir" ? ART_TYPES.find((a) => a.value === "special-illustration-rare")! : pickWeighted(ART_TYPES);
+  const specialForm =
+    packMode === "tagteam" ? SPECIAL_FORMS.find((f) => f.value === "tag-team")! : pickSpecialForm(pool.length);
   const vibe = pickWeighted(VIBES);
   const count = specialForm.value === "tag-team" ? 2 : 1;
 
@@ -26,11 +28,16 @@ function rollPlayerPick(pool: PokemonRef[]): BattlePlayerPick {
  * has their pick locked in immediately - a bot never rerolls, it just gets a randomized pick with
  * the exact same odds as anyone else and waits for the humans to lock in.
  */
-export function createRound(playerIds: string[], pool: PokemonRef[], botIds: readonly string[] = []): BattleRound {
+export function createRound(
+  playerIds: string[],
+  pool: PokemonRef[],
+  botIds: readonly string[] = [],
+  packMode: PackMode = "classic"
+): BattleRound {
   const players: BattleRound["players"] = {};
   for (const pid of playerIds) {
     players[pid] = {
-      ...rollPlayerPick(pool),
+      ...rollPlayerPick(pool, packMode),
       locked: botIds.includes(pid),
       promptStatus: "pending",
       imageStatus: "pending",

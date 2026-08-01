@@ -351,6 +351,8 @@ export default function BattleRoomPage() {
 
   const round = room.rounds[room.rounds.length - 1];
   const myScore = room.scores[playerId] ?? 0;
+  const forcedKeys: CardKey[] =
+    room.packMode === "sir" ? ["artType"] : room.packMode === "tagteam" ? ["specialForm"] : [];
 
   return (
     <div className="flex min-h-dvh flex-col px-5 py-8">
@@ -372,6 +374,7 @@ export default function BattleRoomPage() {
               busy={actionBusy}
               onReroll={handleReroll}
               onLock={handleLock}
+              forcedKeys={forcedKeys}
             />
             <OpponentStatus
               roundStatus={round.status}

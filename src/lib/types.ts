@@ -1,5 +1,9 @@
 export type ArtType = "ex" | "illustration-rare" | "special-illustration-rare";
 
+// Forces every card's artType ("sir") or specialForm ("tagteam") for a whole pack-opening
+// session or battle match; "classic" (the default) leaves both random.
+export type PackMode = "classic" | "sir" | "tagteam";
+
 // The mood/atmosphere the artwork gets rendered in - always exactly one of these 20, all equally
 // likely; unlike Special Form there is no "none"/default outcome.
 export type Vibe =

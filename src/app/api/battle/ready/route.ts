@@ -45,7 +45,7 @@ export async function POST(request: Request) {
       const pool = await fetchPokemonForGenerations(room.gens);
       room.round += 1;
       const botIds = room.vsBot ? room.players.filter(isBotPlayerId) : [];
-      room.rounds.push(createRound(room.players, pool, botIds));
+      room.rounds.push(createRound(room.players, pool, botIds, room.packMode));
       // Unused rerolls carry over - each new round just adds a fresh base allotment on top.
       for (const pid of room.players) {
         room.rerolls[pid] = (room.rerolls[pid] ?? 0) + BATTLE_REROLLS_PER_ROUND;
