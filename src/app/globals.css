@@ -17,6 +17,14 @@ body {
 
 * {
   -webkit-tap-highlight-color: transparent;
+  /* Hidden but still functional scrollbars everywhere - visible scrollbar chrome is one of the
+     biggest tells that something is a web page rather than a native app. */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+*::-webkit-scrollbar {
+  display: none;
 }
 
 /* Fixed film-grain texture over the whole app - the single biggest cheap trick for making a flat
