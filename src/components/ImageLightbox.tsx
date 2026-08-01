@@ -6,6 +6,8 @@ interface Props {
   src: string;
   alt: string;
   onClose: () => void;
+  /** The exact text-to-image prompt used to generate this artwork, shown below it when given. */
+  prompt?: string;
 }
 
 function downloadFilename(alt: string): string {
@@ -16,7 +18,7 @@ function downloadFilename(alt: string): string {
   return `${slug || "pokegen-card"}.png`;
 }
 
-export default function ImageLightbox({ src, alt, onClose }: Props) {
+export default function ImageLightbox({ src, alt, onClose, prompt }: Props) {
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -36,31 +38,47 @@ export default function ImageLightbox({ src, alt, onClose }: Props) {
       aria-modal="true"
       aria-label={alt}
       onClick={onClose}
-      className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-5 bg-black/90 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-50 overflow-y-auto bg-black/90 backdrop-blur-sm"
     >
       <button
         type="button"
         onClick={onClose}
         aria-label="Close full view"
-        className="glass absolute right-4 top-[calc(env(safe-area-inset-top)+1rem)] flex h-10 w-10 items-center justify-center rounded-full text-lg text-white active:scale-95"
+        className="glass fixed right-4 top-[calc(env(safe-area-inset-top)+1rem)] z-10 flex h-10 w-10 items-center justify-center rounded-full text-lg text-white active:scale-95"
       >
         ✕
       </button>
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={src}
-        alt={alt}
-        onClick={(e) => e.stopPropagation()}
-        className="max-h-full max-w-full rounded-2xl object-contain shadow-2xl"
-      />
-      <a
-        href={src}
-        download={downloadFilename(alt)}
-        onClick={(e) => e.stopPropagation()}
-        className="glass flex items-center gap-2 rounded-2xl px-5 py-3 text-sm font-bold text-white active:scale-95"
-      >
-        ⤓ Download Image
-      </a>
+
+      <div className="flex min-h-full flex-col items-center justify-center gap-5 p-4">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={src}
+          alt={alt}
+          onClick={(e) => e.stopPropagation()}
+          className="max-h-[70vh] max-w-full rounded-2xl object-contain shadow-2xl"
+        />
+
+        {prompt && (
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="glass w-full max-w-md rounded-2xl p-4 text-left"
+          >
+            <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-amber-300/80">
+              Art Prompt
+            </p>
+            <p className="text-xs leading-relaxed text-slate-300">{prompt}</p>
+          </div>
+        )}
+
+        <a
+          href={src}
+          download={downloadFilename(alt)}
+          onClick={(e) => e.stopPropagation()}
+          className="glass flex items-center gap-2 rounded-2xl px-5 py-3 text-sm font-bold text-white active:scale-95"
+        >
+          ⤓ Download Image
+        </a>
+      </div>
     </div>
   );
 }

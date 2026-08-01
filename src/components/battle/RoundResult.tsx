@@ -40,7 +40,7 @@ export default function RoundResult({
   onReady,
 }: Props) {
   const [phaseIndex, setPhaseIndex] = useState(0);
-  const [fullViewSrc, setFullViewSrc] = useState<string | null>(null);
+  const [fullView, setFullView] = useState<{ src: string; prompt?: string } | null>(null);
 
   const n = players.length;
   const COMPARE_PHASE = n;
@@ -111,7 +111,7 @@ export default function RoundResult({
             image={p.image}
             winner={p.id === round.winnerId}
             ratings={p.ratings}
-            onOpenFullView={setFullViewSrc}
+            onOpenFullView={(src, prompt) => setFullView({ src, prompt })}
           />
         ))}
       </div>
@@ -137,8 +137,13 @@ export default function RoundResult({
             : "Next Round"}
       </button>
 
-      {fullViewSrc && (
-        <ImageLightbox src={fullViewSrc} alt="Full size artwork" onClose={() => setFullViewSrc(null)} />
+      {fullView && (
+        <ImageLightbox
+          src={fullView.src}
+          alt="Full size artwork"
+          prompt={fullView.prompt}
+          onClose={() => setFullView(null)}
+        />
       )}
     </div>
   );
@@ -460,7 +465,7 @@ function ResultCard({
   image: string | null;
   winner: boolean;
   ratings?: CardRatings;
-  onOpenFullView: (src: string) => void;
+  onOpenFullView: (src: string, prompt?: string) => void;
 }) {
   const name = pick.pokemons.map((p) => p.displayName).join(" & ");
 
@@ -472,7 +477,7 @@ function ResultCard({
     >
       <button
         type="button"
-        onClick={() => image && onOpenFullView(image)}
+        onClick={() => image && onOpenFullView(image, pick.prompt)}
         aria-label={image ? `View ${name} artwork full size` : undefined}
         disabled={!image}
         className="relative block aspect-[3/4] w-full bg-black/30 disabled:cursor-default"

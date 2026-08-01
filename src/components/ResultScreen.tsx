@@ -106,7 +106,7 @@ export default function ResultScreen({ image, prompt, data, onRegenerateImage, o
       </div>
 
       {fullView && (
-        <ImageLightbox src={image} alt={`${title} illustration`} onClose={() => setFullView(false)} />
+        <ImageLightbox src={image} alt={`${title} illustration`} onClose={() => setFullView(false)} prompt={prompt} />
       )}
     </div>
   );
