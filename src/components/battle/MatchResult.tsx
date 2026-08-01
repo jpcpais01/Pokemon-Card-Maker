@@ -26,9 +26,10 @@ export interface MatchResultMvp {
 interface Props {
   players: MatchResultPlayer[];
   mvp?: MatchResultMvp | null;
+  vsBot?: boolean;
 }
 
-export default function MatchResult({ players, mvp }: Props) {
+export default function MatchResult({ players, mvp, vsBot }: Props) {
   const [fullView, setFullView] = useState(false);
   const { isFavorited, toggle, error: favoriteError } = useFavoriteToggle(
     mvp?.image ?? null,
@@ -90,7 +91,7 @@ export default function MatchResult({ players, mvp }: Props) {
         </div>
 
         <Link
-          href="/battle"
+          href={vsBot ? "/bot" : "/battle"}
           className="mt-8 block w-full rounded-2xl bg-gradient-to-r from-amber-400 to-orange-500 py-4 text-base font-bold text-slate-900 shadow-lg shadow-amber-500/25 transition-transform active:scale-[0.98]"
         >
           Play Again
@@ -99,7 +100,7 @@ export default function MatchResult({ players, mvp }: Props) {
           href="/"
           className="glass mt-3 block w-full rounded-2xl py-3.5 text-sm font-semibold text-slate-200 transition-colors active:bg-white/10"
         >
-          Back to Solo Mode
+          ← All Modes
         </Link>
       </div>
 

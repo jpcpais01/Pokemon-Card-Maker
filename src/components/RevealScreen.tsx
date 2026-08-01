@@ -31,6 +31,10 @@ interface Props {
   onBack: () => void;
   rerollsLeft: number;
   onReroll: (key: CardKey) => void;
+  /** Traits fixed by the current game mode (e.g. Only SIRs, Tag Teams) - not rerollable, and never
+   *  flagged as a "rare pull" chime since they're guaranteed rather than a surprise. */
+  forcedKeys?: CardKey[];
+  eyebrow?: string;
 }
 
 export default function RevealScreen({
@@ -43,6 +47,8 @@ export default function RevealScreen({
   onBack,
   rerollsLeft,
   onReroll,
+  forcedKeys = [],
+  eyebrow = "Your Pack",
 }: Props) {
   // The 2nd Tag Team card only appears once Special Form has actually been revealed as such -
   // otherwise its mere presence would spoil the surprise before the player taps that card.
@@ -51,6 +57,7 @@ export default function RevealScreen({
   const cards = faces.map((face) => ({
     ...face,
     revealed: typeof face.key === "number" ? flags.pokemons[face.key] : flags[face.key],
+    rare: forcedKeys.includes(face.key) ? false : face.rare,
   }));
 
   return (
@@ -60,7 +67,7 @@ export default function RevealScreen({
           <button onClick={onBack} className="text-sm font-semibold text-slate-300 active:text-white">
             ← Gens
           </button>
-          <p className="text-xs font-semibold uppercase tracking-[0.25em] text-amber-300">Your Pack</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.25em] text-amber-300">{eyebrow}</p>
           <button
             onClick={() => {
               const anyHiddenRare = cards.some((c) => !c.revealed && c.rare);
@@ -93,7 +100,7 @@ export default function RevealScreen({
                 onReveal={() => onReveal(card.key)}
                 front={card.front}
                 rerollsLeft={rerollsLeft}
-                onReroll={() => onReroll(card.key)}
+                onReroll={forcedKeys.includes(card.key) ? undefined : () => onReroll(card.key)}
                 rare={card.rare}
               />
             </div>

@@ -169,7 +169,7 @@ export default function BattleLobby() {
         </div>
 
         <Link href="/" className="mt-6 block text-center text-sm font-semibold text-slate-400 active:text-white">
-          ← Solo mode
+          ← All Modes
         </Link>
       </div>
     </div>

@@ -344,6 +344,7 @@ export default function BattleRoomPage() {
           ...otherPlayers.map((p) => ({ id: p.id, label: p.label, score: room.scores[p.id] ?? 0, isMe: false })),
         ]}
         mvp={mvp}
+        vsBot={room.vsBot}
       />
     );
   }
