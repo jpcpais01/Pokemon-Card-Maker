@@ -37,12 +37,22 @@ export async function generateText(systemPrompt: string, userPrompt: string): Pr
       { role: "user", content: userPrompt },
     ],
     temperature: 0.9,
-    max_tokens: 700,
+    // Generous headroom above the ~300-word target - same issue as judgeMultiBattle below: some
+    // models spend a chunk of the budget on hidden reasoning before writing the actual answer, and
+    // a tight cap here was silently truncating the drafted prompt after only a sentence or two,
+    // which then got the fixed style suffix glued onto that unfinished fragment.
+    max_tokens: 2000,
   });
 
-  const content = data?.choices?.[0]?.message?.content;
+  const choice = data?.choices?.[0];
+  const content = choice?.message?.content;
   if (!content || typeof content !== "string") {
     throw new Error("The prompt model returned an empty response.");
+  }
+  if (choice?.finish_reason === "length") {
+    // Never silently ship a truncated, mid-sentence draft - surface it as a retryable failure
+    // instead, same as an empty response.
+    throw new Error("The prompt model's response was cut off before finishing.");
   }
   return content.trim();
 }
