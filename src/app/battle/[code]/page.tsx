@@ -23,6 +23,7 @@ import {
   readyForNext,
   rerollCard,
 } from "@/lib/battle/api";
+import { computeMvp } from "@/lib/battle/mvp";
 import { getStoredPlayerId, storePlayerId } from "@/lib/battle/session";
 import type { BattleRoom, RoundStatus } from "@/lib/battle/types";
 import type { CardKey } from "@/lib/cardFaces";
@@ -62,6 +63,7 @@ export default function BattleRoomPage() {
 
   const [images, setImages] = useState<Record<string, string>>({});
   const [voteImages, setVoteImages] = useState<Record<string, string>>({});
+  const [mvpImage, setMvpImage] = useState<string | null>(null);
   const [isStuck, setIsStuck] = useState(false);
   const advancingRef = useRef(false);
 
@@ -147,6 +149,16 @@ export default function BattleRoomPage() {
         .catch(() => {});
     }
   }, [code, playerId, room, voteImages]);
+
+  // Once the match is finished, fetch the single best-scoring card of the whole match for MatchResult's MVP highlight.
+  useEffect(() => {
+    if (!playerId || !room || room.status !== "finished" || mvpImage) return;
+    const mvp = computeMvp(room);
+    if (!mvp) return;
+    fetchBattleImage(code, mvp.round, mvp.playerId, playerId)
+      .then(({ image }) => setMvpImage(image))
+      .catch(() => {});
+  }, [code, playerId, room, mvpImage]);
 
   const roomRounds = room?.rounds ?? [];
   const currentRoundStatus = roomRounds.length > 0 ? roomRounds[roomRounds.length - 1].status : null;
@@ -306,12 +318,32 @@ export default function BattleRoomPage() {
   const otherPlayers = getOtherPlayers(room.players, playerId, room.vsBot);
 
   if (room.status === "finished") {
+    const mvpResult = computeMvp(room);
+    const mvpPick = mvpResult ? room.rounds[mvpResult.round - 1]?.players[mvpResult.playerId] : undefined;
+    const mvp =
+      mvpResult && mvpPick
+        ? {
+            label:
+              mvpResult.playerId === playerId
+                ? "You"
+                : (otherPlayers.find((p) => p.id === mvpResult.playerId)?.label ?? "Opponent"),
+            image: mvpImage,
+            prompt: mvpPick.prompt,
+            pokemonNames: mvpPick.pokemons.map((p) => p.displayName).join(" & "),
+            artType: mvpPick.artType.label,
+            specialForm: mvpPick.specialForm.value !== "none" ? mvpPick.specialForm.label : undefined,
+            vibe: mvpPick.vibe.label,
+            scoreLabel: mvpResult.scoreLabel,
+          }
+        : null;
+
     return (
       <MatchResult
         players={[
           { id: playerId, label: "You", score: room.scores[playerId] ?? 0, isMe: true },
           ...otherPlayers.map((p) => ({ id: p.id, label: p.label, score: room.scores[p.id] ?? 0, isMe: false })),
         ]}
+        mvp={mvp}
       />
     );
   }

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import ImageLightbox from "./ImageLightbox";
 import type { RevealData } from "./RevealScreen";
+import { useFavoriteToggle } from "@/lib/favorites";
 
 interface Props {
   image: string;
@@ -18,6 +19,13 @@ export default function ResultScreen({ image, prompt, data, onRegenerateImage, o
   const [fullView, setFullView] = useState(false);
 
   const title = data.pokemons.map((p) => p.displayName).join(" & ");
+  const { isFavorited, toggle, error: favoriteError } = useFavoriteToggle(image, {
+    prompt,
+    pokemonNames: title,
+    artType: data.artType.label,
+    specialForm: data.specialForm.value !== "none" ? data.specialForm.label : undefined,
+    vibe: data.vibe.label,
+  });
 
   function download() {
     const a = document.createElement("a");
@@ -106,7 +114,15 @@ export default function ResultScreen({ image, prompt, data, onRegenerateImage, o
       </div>
 
       {fullView && (
-        <ImageLightbox src={image} alt={`${title} illustration`} onClose={() => setFullView(false)} prompt={prompt} />
+        <ImageLightbox
+          src={image}
+          alt={`${title} illustration`}
+          onClose={() => setFullView(false)}
+          prompt={prompt}
+          isFavorited={isFavorited}
+          onToggleFavorite={toggle}
+          favoriteError={favoriteError}
+        />
       )}
     </div>
   );

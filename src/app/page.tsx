@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import GenSelector from "@/components/GenSelector";
@@ -13,6 +13,7 @@ import ErrorScreen from "@/components/ErrorScreen";
 import ResultScreen from "@/components/ResultScreen";
 import { ART_TYPES, VIBES, pickSpecialForm, pickWeighted } from "@/lib/cardData";
 import { createRoom } from "@/lib/battle/api";
+import { getFavorites } from "@/lib/favorites";
 import { storePlayerId } from "@/lib/battle/session";
 import { GENERATIONS, fetchPokemonForGenerations, pickRandomPokemon, toPokemonPick } from "@/lib/generations";
 import { MIN_VOTE_PLAYERS, type JudgeMode } from "@/lib/battle/types";
@@ -45,6 +46,13 @@ export default function Home() {
   const [botPlayers, setBotPlayers] = useState(2);
   const [botJudgeMode, setBotJudgeMode] = useState<JudgeMode>("ai");
   const [botUnlimitedRerolls, setBotUnlimitedRerolls] = useState(false);
+  const [favoriteCount, setFavoriteCount] = useState(0);
+
+  useEffect(() => {
+    // Deferred so reading localStorage (unavailable during SSR) happens in a callback, not the effect body itself.
+    const timeout = window.setTimeout(() => setFavoriteCount(getFavorites().length), 0);
+    return () => window.clearTimeout(timeout);
+  }, []);
 
   const [pool, setPool] = useState<PokemonRef[]>([]);
   const [revealData, setRevealData] = useState<RevealData | null>(null);
@@ -257,6 +265,9 @@ export default function Home() {
           <div className="mt-4 flex flex-col gap-2">
             <Link href="/battle" className="block text-center text-sm font-semibold text-slate-400 active:text-amber-300">
               Battle a friend
+            </Link>
+            <Link href="/gallery" className="block text-center text-sm font-semibold text-slate-400 active:text-amber-300">
+              ★ My Binder{favoriteCount > 0 ? ` (${favoriteCount})` : ""}
             </Link>
             <PlayerCountPicker value={botPlayers} onChange={setBotPlayers} label="Bot match players" />
             {botPlayers >= MIN_VOTE_PLAYERS && (

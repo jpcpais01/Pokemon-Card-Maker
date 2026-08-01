@@ -8,6 +8,10 @@ interface Props {
   onClose: () => void;
   /** The exact text-to-image prompt used to generate this artwork, shown below it when given. */
   prompt?: string;
+  /** Star toggle shown next to the close button - omit both to hide it entirely (e.g. anonymous ballots). */
+  isFavorited?: boolean;
+  onToggleFavorite?: () => void;
+  favoriteError?: string | null;
 }
 
 function downloadFilename(alt: string): string {
@@ -18,7 +22,15 @@ function downloadFilename(alt: string): string {
   return `${slug || "pokegen-card"}.png`;
 }
 
-export default function ImageLightbox({ src, alt, onClose, prompt }: Props) {
+export default function ImageLightbox({
+  src,
+  alt,
+  onClose,
+  prompt,
+  isFavorited,
+  onToggleFavorite,
+  favoriteError,
+}: Props) {
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -49,6 +61,23 @@ export default function ImageLightbox({ src, alt, onClose, prompt }: Props) {
         ✕
       </button>
 
+      {onToggleFavorite && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleFavorite();
+          }}
+          aria-label={isFavorited ? "Remove from favorites" : "Save to favorites"}
+          aria-pressed={isFavorited}
+          className={`glass fixed left-4 top-[calc(env(safe-area-inset-top)+1rem)] z-10 flex h-10 w-10 items-center justify-center rounded-full text-lg transition-colors active:scale-95 ${
+            isFavorited ? "text-amber-300" : "text-white"
+          }`}
+        >
+          {isFavorited ? "★" : "☆"}
+        </button>
+      )}
+
       <div className="flex min-h-full flex-col items-center justify-center gap-5 p-4">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
@@ -57,6 +86,15 @@ export default function ImageLightbox({ src, alt, onClose, prompt }: Props) {
           onClick={(e) => e.stopPropagation()}
           className="max-h-[70vh] max-w-full rounded-2xl object-contain shadow-2xl"
         />
+
+        {favoriteError && (
+          <p
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-md rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2 text-center text-xs text-red-300"
+          >
+            {favoriteError}
+          </p>
+        )}
 
         {prompt && (
           <div

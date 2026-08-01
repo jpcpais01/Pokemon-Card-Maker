@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { playFlipSound, playRareChime, playRerollSound, vibrate } from "@/lib/soundFx";
 
 interface Props {
   label: string;
@@ -9,6 +10,8 @@ interface Props {
   front: ReactNode;
   rerollsLeft?: number;
   onReroll?: () => void;
+  /** Plays a brighter chime + stronger vibration on reveal instead of the standard flip feedback. */
+  rare?: boolean;
 }
 
 /**
@@ -16,12 +19,31 @@ interface Props {
  * `revealed` prop - no local timers or 3D transforms, which flicker on some
  * mobile browsers when combined with backdrop-filter/blend-mode.
  */
-export default function FlipCard({ label, revealed, onReveal, front, rerollsLeft, onReroll }: Props) {
+export default function FlipCard({ label, revealed, onReveal, front, rerollsLeft, onReroll, rare }: Props) {
+  function handleReveal() {
+    if (revealed) return;
+    if (rare) {
+      playRareChime();
+      vibrate([20, 40, 20, 40, 60]);
+    } else {
+      playFlipSound();
+      vibrate(15);
+    }
+    onReveal();
+  }
+
+  function handleReroll() {
+    if (!revealed) return;
+    playRerollSound();
+    vibrate(12);
+    onReroll?.();
+  }
+
   return (
     <div className="relative aspect-[5/7] w-full">
       <button
         type="button"
-        onClick={() => !revealed && onReveal()}
+        onClick={handleReveal}
         disabled={revealed}
         aria-label={`Reveal ${label}`}
         aria-hidden={revealed}
@@ -35,7 +57,7 @@ export default function FlipCard({ label, revealed, onReveal, front, rerollsLeft
 
       <button
         type="button"
-        onClick={() => revealed && onReroll?.()}
+        onClick={handleReroll}
         disabled={!revealed || !onReroll || !rerollsLeft}
         aria-label={onReroll ? `Reroll ${label}` : undefined}
         className={`absolute inset-0 overflow-hidden rounded-3xl border border-white/15 text-left shadow-xl shadow-black/30 transition-all duration-300 ease-out active:scale-[0.97] disabled:cursor-default disabled:active:scale-100 ${

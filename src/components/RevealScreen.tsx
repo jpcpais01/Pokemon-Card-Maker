@@ -2,6 +2,7 @@
 
 import FlipCard from "./FlipCard";
 import { buildCardFaces, type CardKey } from "@/lib/cardFaces";
+import { playFlipSound, playRareChime, vibrate } from "@/lib/soundFx";
 import type { ArtType, PokemonPick, SpecialForm, Vibe, WeightedOption } from "@/lib/types";
 
 export interface RevealData {
@@ -61,7 +62,17 @@ export default function RevealScreen({
           </button>
           <p className="text-xs font-semibold uppercase tracking-[0.25em] text-amber-300">Your Pack</p>
           <button
-            onClick={onRevealAll}
+            onClick={() => {
+              const anyHiddenRare = cards.some((c) => !c.revealed && c.rare);
+              if (anyHiddenRare) {
+                playRareChime();
+                vibrate([20, 40, 20, 40, 60]);
+              } else {
+                playFlipSound();
+                vibrate(15);
+              }
+              onRevealAll();
+            }}
             disabled={allRevealed}
             className="text-sm font-semibold text-amber-300 active:text-amber-100 disabled:opacity-0"
           >
@@ -83,6 +94,7 @@ export default function RevealScreen({
                 front={card.front}
                 rerollsLeft={rerollsLeft}
                 onReroll={() => onReroll(card.key)}
+                rare={card.rare}
               />
             </div>
           ))}

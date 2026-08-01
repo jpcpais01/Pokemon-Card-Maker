@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import ImageLightbox from "@/components/ImageLightbox";
 import { ratingsTier, ratingsTotal, tierForTotal } from "@/lib/battle/tier";
 import type { BattleRound, BattleRoundPlayerState, CardRatings } from "@/lib/battle/types";
+import { useFavoriteToggle } from "@/lib/favorites";
 
 const CARD_SPOTLIGHT_MS = 3000;
 const COMPARE_MS = 15000;
@@ -40,7 +41,22 @@ export default function RoundResult({
   onReady,
 }: Props) {
   const [phaseIndex, setPhaseIndex] = useState(0);
-  const [fullView, setFullView] = useState<{ src: string; prompt?: string } | null>(null);
+  const [fullView, setFullView] = useState<{ src: string; prompt?: string; pick: BattleRoundPlayerState } | null>(
+    null
+  );
+  const favoriteCardInfo = fullView
+    ? {
+        prompt: fullView.prompt,
+        pokemonNames: fullView.pick.pokemons.map((p) => p.displayName).join(" & "),
+        artType: fullView.pick.artType.label,
+        specialForm: fullView.pick.specialForm.value !== "none" ? fullView.pick.specialForm.label : undefined,
+        vibe: fullView.pick.vibe.label,
+      }
+    : null;
+  const { isFavorited, toggle: toggleFavorite, error: favoriteError } = useFavoriteToggle(
+    fullView?.src ?? null,
+    favoriteCardInfo
+  );
 
   const n = players.length;
   const COMPARE_PHASE = n;
@@ -111,7 +127,7 @@ export default function RoundResult({
             image={p.image}
             winner={p.id === round.winnerId}
             ratings={p.ratings}
-            onOpenFullView={(src, prompt) => setFullView({ src, prompt })}
+            onOpenFullView={(src, prompt) => setFullView({ src, prompt, pick: p.pick })}
           />
         ))}
       </div>
@@ -143,6 +159,9 @@ export default function RoundResult({
           alt="Full size artwork"
           prompt={fullView.prompt}
           onClose={() => setFullView(null)}
+          isFavorited={isFavorited}
+          onToggleFavorite={toggleFavorite}
+          favoriteError={favoriteError}
         />
       )}
     </div>

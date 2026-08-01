@@ -62,6 +62,7 @@ export default function BattlePickPanel({
               front={face.front}
               rerollsLeft={unlimitedRerolls ? Infinity : rerollsLeft}
               onReroll={() => onReroll(face.key)}
+              rare={face.rare}
             />
           </div>
         ))}
