@@ -58,14 +58,29 @@ const SIR_STYLES: { label: string; blurb: string }[] = [
       "the entire scene built from small fragmented geometric color tiles with visible grout lines, gold-tessera backgrounds catching implied light, a Byzantine icon feel. Composition: a frontal, hieratic, almost ceremonial pose framed like religious mosaic art.",
   },
   {
-    label: "Bioluminescent Digital Painterly",
+    label: "Art Deco Geometric",
     blurb:
-      "a dark painterly base overlaid with glowing neon linework and holographic color-shifting highlights, soft volumetric light bloom. Composition: a moody low-light scene lit primarily by the Pokemon's own glow, dramatic rim lighting separating it from the shadowed background.",
+      "bold symmetrical geometric shapes, sleek metallic gold and black accents, radiating sunburst and chevron motifs, glamorous 1920s streamlined elegance. Composition: a strictly symmetrical frontal composition framed by geometric arches or sunburst rays radiating outward from the Pokemon.",
   },
   {
-    label: "Bold Graphic Woodcut Relief",
+    label: "Gouache Storybook",
     blurb:
-      "chunky carved-relief linework with visible gouge marks, strong flat color separated by heavy black contour lines, a tactile print-block texture throughout. Composition: a monumental frontal close-up, the Pokemon filling most of the frame like a carved emblem.",
+      "flat opaque matte gouache color with soft rounded shapes and gentle visible brush texture, warm inviting children's-storybook charm. Composition: a cozy eye-level shot with the Pokemon nestled naturally within a softly simplified, charming environment.",
+  },
+  {
+    label: "Shan Shui Ink Painting",
+    blurb:
+      "sweeping traditional Chinese ink painting technique, soft gradient ink washes bleeding into misty negative space, a single expressive brush-drawn subject amid towering stylized mountains or mist. Composition: a tall dramatic composition with the Pokemon small against vast atmospheric negative space, emphasizing scale and serenity.",
+  },
+  {
+    label: "Retro Pixel Art",
+    blurb:
+      "nostalgic 8-bit/16-bit pixel art technique, chunky visible square pixel blocks, dithered color gradients, a warm early-console color palette. Composition: a bold, iconic front-facing pose centered in the frame like a classic sprite portrait, with a simplified pixelated background.",
+  },
+  {
+    label: "Bronze Relief Sculpture",
+    blurb:
+      "the entire scene rendered as a weathered bronze or oxidized-metal bas-relief sculpture, tactile patina texture, dramatic raking sculptural light catching every raised edge. Composition: a monumental frontal relief-style framing, as if carved into a great metal plaque, lit by dramatic single-source raking light from one side.",
   },
 ];
 
