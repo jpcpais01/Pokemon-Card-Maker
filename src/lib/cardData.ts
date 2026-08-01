@@ -38,7 +38,7 @@ export const ART_TYPES: WeightedOption<ArtType>[] = [
     label: "Special Illustration Rare",
     weight: 13,
     blurb:
-      "Ultra-premium, cinematic full-art illustration with an elaborate background, extra environmental storytelling, and painterly detail.",
+      "Ultra-premium, gallery-quality full-art illustration with an elaborate background and extra environmental storytelling, rendered in one bold, distinctive fine-art technique that makes it look unlike any other card.",
   },
 ];
 
