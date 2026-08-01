@@ -72,6 +72,12 @@ export default function Home() {
           <ModeTile href="/solo/classic" icon="🎴" title="Open a Pack" subtitle="Random art, form & vibe" />
           <ModeTile href="/solo/sir" icon="💎" title="Only SIRs" subtitle="Every pull is a Special Illustration Rare" />
           <ModeTile href="/solo/tagteam" icon="🤝" title="Tag Teams" subtitle="Every pull pairs up two Pokemon" />
+          <ModeTile
+            href="/solo/tagteamsir"
+            icon="👑"
+            title="Tag Team SIRs"
+            subtitle="Every pull is a Special Illustration Rare Tag Team"
+          />
         </div>
 
         <SectionLabel>Battle</SectionLabel>

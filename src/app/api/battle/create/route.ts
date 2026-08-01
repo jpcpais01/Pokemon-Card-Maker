@@ -42,7 +42,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: `Player vote mode needs at least ${MIN_VOTE_PLAYERS} players.` }, { status: 400 });
   }
 
-  const packMode: PackMode = body.packMode === "sir" || body.packMode === "tagteam" ? body.packMode : "classic";
+  const packMode: PackMode =
+    body.packMode === "sir" || body.packMode === "tagteam" || body.packMode === "tagteamsir" ? body.packMode : "classic";
 
   let code = generateRoomCode();
   for (let attempt = 0; attempt < 5 && (await getRoom(code)); attempt++) {
@@ -79,7 +80,7 @@ export async function POST(request: Request) {
     if (pool.length === 0) {
       return NextResponse.json({ error: "No Pokemon found for the selected generations." }, { status: 500 });
     }
-    if (packMode === "tagteam" && pool.length < 2) {
+    if ((packMode === "tagteam" || packMode === "tagteamsir") && pool.length < 2) {
       return NextResponse.json(
         { error: "Need at least 2 Pokemon in the selected generations for a Tag Team." },
         { status: 400 }

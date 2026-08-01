@@ -1,10 +1,10 @@
 export type ArtType = "ex" | "illustration-rare" | "special-illustration-rare";
 
-// Forces every card's artType ("sir") or specialForm ("tagteam") for a whole pack-opening
-// session or battle match; "classic" (the default) leaves both random.
-export type PackMode = "classic" | "sir" | "tagteam";
+// Forces every card's artType ("sir"), specialForm ("tagteam"), or both ("tagteamsir") for a
+// whole pack-opening session or battle match; "classic" (the default) leaves both random.
+export type PackMode = "classic" | "sir" | "tagteam" | "tagteamsir";
 
-// The mood/atmosphere the artwork gets rendered in - always exactly one of these 20, all equally
+// The mood/atmosphere the artwork gets rendered in - always exactly one of these 40, all equally
 // likely; unlike Special Form there is no "none"/default outcome.
 export type Vibe =
   | "cozy"
@@ -26,7 +26,27 @@ export type Vibe =
   | "ominous"
   | "vibrant"
   | "tranquil"
-  | "epic";
+  | "epic"
+  | "regal"
+  | "whimsical"
+  | "haunting"
+  | "radiant"
+  | "stormy"
+  | "intimate"
+  | "explosive"
+  | "frosty"
+  | "sultry"
+  | "solemn"
+  | "curious"
+  | "celestial"
+  | "industrial"
+  | "enchanted"
+  | "desolate"
+  | "jubilant"
+  | "brooding"
+  | "surreal"
+  | "vengeful"
+  | "glorious";
 
 // A single combined pool: special forms (Shiny, Mega, Tag Team, ...) and regional forms
 // (Alolan, Galarian, ...) are mutually exclusive outcomes of the same roll/card, not two

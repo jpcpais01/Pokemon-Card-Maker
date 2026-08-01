@@ -37,7 +37,6 @@ export default function GenSelector({
 
   function toggle(id: number) {
     if (selected.includes(id)) {
-      if (selected.length === 1) return;
       onChange(selected.filter((g) => g !== id));
     } else {
       onChange([...selected, id].sort((a, b) => a - b));
@@ -45,7 +44,7 @@ export default function GenSelector({
   }
 
   function toggleAll() {
-    onChange(allSelected ? [GENERATIONS[0].id] : GENERATIONS.map((g) => g.id));
+    onChange(allSelected ? [] : GENERATIONS.map((g) => g.id));
   }
 
   return (

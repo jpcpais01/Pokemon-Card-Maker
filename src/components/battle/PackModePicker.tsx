@@ -11,6 +11,7 @@ const OPTIONS: { value: PackMode; label: string }[] = [
   { value: "classic", label: "Classic" },
   { value: "sir", label: "Only SIRs" },
   { value: "tagteam", label: "Tag Teams" },
+  { value: "tagteamsir", label: "Tag Team SIRs" },
 ];
 
 export default function PackModePicker({ value, onChange }: Props) {
@@ -19,7 +20,7 @@ export default function PackModePicker({ value, onChange }: Props) {
       <p className="mb-1.5 text-center text-[11px] font-semibold uppercase tracking-wider text-slate-400">
         Game Mode
       </p>
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-2 gap-2">
         {OPTIONS.map((opt) => (
           <button
             key={opt.value}
@@ -44,6 +45,12 @@ export default function PackModePicker({ value, onChange }: Props) {
       {value === "tagteam" && (
         <p className="mt-1.5 text-center text-[11px] leading-relaxed text-slate-500">
           Every pack pairs up two Pokemon - special form is locked in for everyone.
+        </p>
+      )}
+      {value === "tagteamsir" && (
+        <p className="mt-1.5 text-center text-[11px] leading-relaxed text-slate-500">
+          Every pack is a Special Illustration Rare Tag Team - art type and special form are both
+          locked in for everyone.
         </p>
       )}
     </div>
