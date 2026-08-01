@@ -267,7 +267,7 @@ export default function BattleRoomPage() {
 
   if (!playerId) {
     return (
-      <div className="flex min-h-full flex-col items-center justify-center px-5 py-10">
+      <div className="flex min-h-dvh flex-col items-center justify-center px-5 py-10">
         <div className="glass-strong rise-in w-full max-w-sm rounded-[2rem] p-6 text-center shadow-2xl shadow-black/40">
           <p className="text-[11px] font-semibold uppercase tracking-[0.35em] text-amber-300/90">1v1 Battle</p>
           <h1 className="font-display mt-2 text-2xl font-extrabold tracking-tight text-white">You&apos;re Invited!</h1>
@@ -361,7 +361,7 @@ export default function BattleRoomPage() {
           : [];
 
   return (
-    <div className="flex min-h-full flex-col px-5 py-8">
+    <div className="flex min-h-dvh flex-col px-5 py-8">
       <div className="mx-auto w-full max-w-sm flex-1">
         <BattleHeader
           round={room.round}

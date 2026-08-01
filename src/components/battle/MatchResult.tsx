@@ -48,7 +48,7 @@ export default function MatchResult({ players, mvp, vsBot }: Props) {
   const title = tied ? (iAmTiedLeader ? "It's a Tie!" : "You Lose") : iWon ? "You Win! 🏆" : "You Lose";
 
   return (
-    <div className="flex min-h-full flex-col items-center justify-center px-5 py-10">
+    <div className="flex min-h-dvh flex-col items-center justify-center px-5 py-10">
       <div className="glass-strong rise-in w-full max-w-sm rounded-[2rem] p-6 text-center shadow-2xl shadow-black/40">
         <p className="text-[11px] font-semibold uppercase tracking-[0.35em] text-amber-300/90">Match Complete</p>
         <h1 className="font-display mt-2 text-3xl font-extrabold tracking-tight text-white">{title}</h1>
@@ -93,6 +93,12 @@ export default function MatchResult({ players, mvp, vsBot }: Props) {
 
         <Link href={vsBot ? "/bot" : "/battle"} className="btn-primary mt-8 block w-full transition-transform active:scale-[0.98]">
           Play Again
+        </Link>
+        <Link
+          href="/"
+          className="btn-ghost mt-3 block w-full transition-colors active:bg-white/10 active:scale-[0.98]"
+        >
+          ← All Modes
         </Link>
       </div>
 

@@ -61,7 +61,7 @@ export default function RevealScreen({
   }));
 
   return (
-    <div className="flex min-h-full flex-col px-5 py-8">
+    <div className="flex min-h-dvh flex-col px-5 py-8">
       <div className="mx-auto w-full max-w-sm flex-1">
         <div className="glass mb-6 flex items-center justify-between rounded-2xl px-4 py-3">
           <button onClick={onBack} className="text-sm font-semibold text-slate-300 active:text-white">

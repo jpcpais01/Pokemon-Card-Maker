@@ -1,6 +1,8 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { getFavorites } from "@/lib/favorites";
 
 interface ModeTileProps {
   href: string;
@@ -47,14 +49,45 @@ function SectionLabel({ children }: { children: string }) {
 }
 
 export default function Home() {
+  const [favoriteCount, setFavoriteCount] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+    getFavorites().then((favs) => {
+      if (!cancelled) setFavoriteCount(favs.length);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   return (
-    <div className="flex min-h-full flex-col items-center justify-center px-5 py-8">
+    <div className="flex min-h-dvh flex-col items-center justify-center px-5 py-8">
       <div className="glass-strong rise-in w-full max-w-sm rounded-[2rem] p-6 shadow-2xl shadow-black/40">
         <div className="mb-6 text-center">
           <p className="brand-gradient-text text-[11px] font-bold uppercase tracking-[0.35em]">Pack Simulator</p>
           <h1 className="font-display mt-1 text-3xl font-extrabold tracking-tight text-white">Choose Your Mode</h1>
           <p className="mt-1.5 text-sm text-slate-400">One-of-a-kind AI-painted Pokemon TCG cards.</p>
         </div>
+
+        <Link
+          href="/gallery"
+          className="group relative mb-6 flex items-center gap-3.5 overflow-hidden rounded-2xl border border-amber-300/30 bg-amber-400/10 p-4 transition-all active:scale-[0.97]"
+        >
+          <div className="holo-sheen opacity-25" />
+          <span className="brand-gradient relative flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl text-2xl shadow-lg shadow-fuchsia-500/20 transition-transform duration-200 group-active:scale-90">
+            ★
+          </span>
+          <div className="relative min-w-0">
+            <p className="text-base font-bold text-white">My Binder</p>
+            <p className="text-xs text-slate-400">
+              {favoriteCount > 0 ? `${favoriteCount} saved card${favoriteCount === 1 ? "" : "s"}` : "Your saved favorites"}
+            </p>
+          </div>
+          <span className="relative ml-auto flex-shrink-0 text-slate-500 transition-transform duration-150 group-active:translate-x-0.5">
+            ›
+          </span>
+        </Link>
 
         <SectionLabel>Solo</SectionLabel>
         <div className="flex flex-col gap-2.5">

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import GenSelector from "@/components/GenSelector";
 import RevealScreen, { type CardKey, type RevealData, type RevealFlags } from "@/components/RevealScreen";
 import LoadingScreen from "@/components/LoadingScreen";
@@ -272,6 +273,11 @@ export default function SoloPackFlow({ mode }: { mode: SoloMode }) {
         eyebrow={copy.eyebrow}
         title={copy.title}
         subtitle={copy.subtitle}
+        footer={
+          <Link href="/" className="mt-4 block text-center text-sm font-semibold text-slate-400 active:text-white">
+            ← All Modes
+          </Link>
+        }
       />
     );
   }

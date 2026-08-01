@@ -6,7 +6,7 @@ interface Props {
 
 export default function ErrorScreen({ message, onRetry, onStartOver }: Props) {
   return (
-    <div className="flex min-h-full flex-col items-center justify-center px-5">
+    <div className="flex min-h-dvh flex-col items-center justify-center px-5">
       <div className="glass-strong rise-in flex w-full max-w-xs flex-col items-center gap-5 rounded-[2rem] px-6 py-9 text-center shadow-2xl shadow-black/40">
         <span className="text-4xl">⚠️</span>
         <p className="text-sm text-slate-300">{message}</p>

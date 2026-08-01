@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import ImageLightbox from "@/components/ImageLightbox";
 import TraitChip from "@/components/TraitChip";
 import { getFavorites, removeFavoriteByImage, type FavoriteCard } from "@/lib/favorites";
@@ -31,11 +32,18 @@ export default function GalleryPage() {
   const openCard = favorites.find((f) => f.image === openImage) ?? null;
 
   return (
-    <div className="flex min-h-full flex-col px-5 py-8">
+    <div className="flex min-h-dvh flex-col px-5 py-8">
       <div className="mx-auto w-full max-w-sm flex-1">
+        <div className="glass mb-6 flex items-center justify-between rounded-2xl px-4 py-3">
+          <Link href="/" className="text-sm font-semibold text-slate-300 active:text-white">
+            ← Home
+          </Link>
+          <p className="text-xs font-semibold uppercase tracking-[0.25em] text-amber-300">My Binder</p>
+          <span className="w-10" aria-hidden />
+        </div>
+
         <div className="mb-6 text-center">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.35em] text-amber-300/90">My Binder</p>
-          <h1 className="font-display mt-1 text-2xl font-extrabold tracking-tight text-white">
+          <h1 className="font-display text-2xl font-extrabold tracking-tight text-white">
             {favorites.length > 0 ? `${favorites.length} Saved Card${favorites.length === 1 ? "" : "s"}` : "Your Binder"}
           </h1>
         </div>

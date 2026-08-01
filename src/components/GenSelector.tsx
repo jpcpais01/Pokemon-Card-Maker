@@ -48,7 +48,7 @@ export default function GenSelector({
   }
 
   return (
-    <div className="flex min-h-full flex-col items-center justify-center px-5 py-8">
+    <div className="flex min-h-dvh flex-col items-center justify-center px-5 py-8">
       <div className="glass-strong rise-in w-full max-w-sm rounded-[2rem] p-6 shadow-2xl shadow-black/40">
         <div className="mb-7 text-center">
           <p className="text-[11px] font-semibold uppercase tracking-[0.35em] text-amber-300/90">{eyebrow}</p>

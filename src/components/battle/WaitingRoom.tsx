@@ -23,7 +23,7 @@ export default function WaitingRoom({ code, playersJoined, maxPlayers }: Props) 
   }
 
   return (
-    <div className="flex min-h-full flex-col items-center justify-center px-5 py-10">
+    <div className="flex min-h-dvh flex-col items-center justify-center px-5 py-10">
       <div className="glass-strong rise-in w-full max-w-sm rounded-[2rem] p-6 text-center shadow-2xl shadow-black/40">
         <p className="text-[11px] font-semibold uppercase tracking-[0.35em] text-amber-300/90">
           {maxPlayers > 2 ? `${maxPlayers}-Player Battle` : "1v1 Battle"}

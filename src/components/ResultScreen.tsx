@@ -40,7 +40,7 @@ export default function ResultScreen({ image, prompt, data, onRegenerateImage, o
   const isSir = data.artType.label === "Special Illustration Rare";
 
   return (
-    <div className="flex min-h-full flex-col items-center px-5 py-8">
+    <div className="flex min-h-dvh flex-col items-center px-5 py-8">
       <div className="glass-strong rise-in w-full max-w-sm rounded-[2rem] p-5 shadow-2xl shadow-black/40">
         <p className="text-center text-[11px] font-semibold uppercase tracking-[0.3em] text-amber-300/90">
           Your Card

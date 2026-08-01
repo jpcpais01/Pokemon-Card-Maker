@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import GenSelector from "@/components/GenSelector";
 import JudgeModePicker from "@/components/battle/JudgeModePicker";
@@ -96,7 +97,7 @@ export default function BattleLobby() {
 
   if (mode === "join") {
     return (
-      <div className="flex min-h-full flex-col items-center justify-center px-5 py-10">
+      <div className="flex min-h-dvh flex-col items-center justify-center px-5 py-10">
         <form
           onSubmit={handleJoin}
           className="glass-strong rise-in w-full max-w-sm rounded-[2rem] p-6 shadow-2xl shadow-black/40"
@@ -146,7 +147,7 @@ export default function BattleLobby() {
   }
 
   return (
-    <div className="flex min-h-full flex-col items-center justify-center px-5 py-10">
+    <div className="flex min-h-dvh flex-col items-center justify-center px-5 py-10">
       <div className="glass-strong rise-in w-full max-w-sm rounded-[2rem] p-6 shadow-2xl shadow-black/40">
         <div className="mb-8 text-center">
           <p className="text-[11px] font-semibold uppercase tracking-[0.35em] text-amber-300/90">Battle</p>
@@ -169,6 +170,10 @@ export default function BattleLobby() {
             Join Room
           </button>
         </div>
+
+        <Link href="/" className="mt-6 block text-center text-sm font-semibold text-slate-400 active:text-white">
+          ← All Modes
+        </Link>
       </div>
     </div>
   );
