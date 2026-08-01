@@ -53,11 +53,6 @@ const SIR_STYLES: { label: string; blurb: string }[] = [
       "bold flat color blocks with visible halftone dot textures, thick graphic black outlines, high-contrast comic-book energy lines radiating from the action. Composition: a dynamic diagonal action framing with the Pokemon bursting toward the viewer.",
   },
   {
-    label: "Byzantine Mosaic",
-    blurb:
-      "the entire scene built from small fragmented geometric color tiles with visible grout lines, gold-tessera backgrounds catching implied light, a Byzantine icon feel. Composition: a frontal, hieratic, almost ceremonial pose framed like religious mosaic art.",
-  },
-  {
     label: "Art Deco Geometric",
     blurb:
       "bold symmetrical geometric shapes, sleek metallic gold and black accents, radiating sunburst and chevron motifs, glamorous 1920s streamlined elegance. Composition: a strictly symmetrical frontal composition framed by geometric arches or sunburst rays radiating outward from the Pokemon.",
