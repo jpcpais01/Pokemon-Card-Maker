@@ -32,7 +32,7 @@ is hardcoded.
 ## 1v1 Battle mode
 
 At `/battle`, one player creates a room (picking the generations for the
-match) and shares the 6-character code or invite link with a friend. Once
+match) and shares the 3-character code or invite link with a friend. Once
 both are in:
 
 - Both players open a pack **at the same time**, independently — you can't

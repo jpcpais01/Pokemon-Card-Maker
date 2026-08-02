@@ -8,6 +8,7 @@ import JudgeModePicker from "@/components/battle/JudgeModePicker";
 import PackModePicker from "@/components/battle/PackModePicker";
 import PlayerCountPicker from "@/components/battle/PlayerCountPicker";
 import { createRoom, joinRoom } from "@/lib/battle/api";
+import { ROOM_CODE_LENGTH } from "@/lib/battle/roomCode";
 import { storePlayerId } from "@/lib/battle/session";
 import { GENERATIONS } from "@/lib/generations";
 import { MIN_VOTE_PLAYERS, type JudgeMode } from "@/lib/battle/types";
@@ -106,14 +107,14 @@ export default function BattleLobby() {
             <p className="text-[11px] font-semibold uppercase tracking-[0.35em] text-amber-300/90">Battle</p>
             <h1 className="font-display mt-2 text-3xl font-extrabold tracking-tight text-white">Join a Room</h1>
             <p className="mt-2 text-sm leading-relaxed text-slate-400">
-              Enter the 6-character code your friend shared with you.
+              Enter the {ROOM_CODE_LENGTH}-character code your friend shared with you.
             </p>
           </div>
 
           <input
             value={code}
-            onChange={(e) => setCode(e.target.value.toUpperCase().slice(0, 6))}
-            placeholder="ABC123"
+            onChange={(e) => setCode(e.target.value.toUpperCase().slice(0, ROOM_CODE_LENGTH))}
+            placeholder="ABC"
             autoCapitalize="characters"
             autoCorrect="off"
             spellCheck={false}
@@ -128,7 +129,7 @@ export default function BattleLobby() {
 
           <button
             type="submit"
-            disabled={joining || code.trim().length < 4}
+            disabled={joining || code.trim().length < ROOM_CODE_LENGTH}
             className="btn-primary mt-7 w-full transition-transform active:scale-[0.98] disabled:opacity-50"
           >
             {joining ? "Joining..." : "Join Room"}
