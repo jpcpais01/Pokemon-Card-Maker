@@ -43,7 +43,12 @@ export async function POST(request: Request) {
   }
 
   const packMode: PackMode =
-    body.packMode === "sir" || body.packMode === "tagteam" || body.packMode === "tagteamsir" ? body.packMode : "classic";
+    body.packMode === "sir" ||
+    body.packMode === "tagteam" ||
+    body.packMode === "tagteamsir" ||
+    body.packMode === "tripletagteamsir"
+      ? body.packMode
+      : "classic";
 
   let code = generateRoomCode();
   for (let attempt = 0; attempt < 5 && (await getRoom(code)); attempt++) {
@@ -83,6 +88,12 @@ export async function POST(request: Request) {
     if ((packMode === "tagteam" || packMode === "tagteamsir") && pool.length < 2) {
       return NextResponse.json(
         { error: "Need at least 2 Pokemon in the selected generations for a Tag Team." },
+        { status: 400 }
+      );
+    }
+    if (packMode === "tripletagteamsir" && pool.length < 3) {
+      return NextResponse.json(
+        { error: "Need at least 3 Pokemon in the selected generations for a Triple Tag Team." },
         { status: 400 }
       );
     }

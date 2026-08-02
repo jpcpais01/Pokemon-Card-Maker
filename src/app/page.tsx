@@ -115,18 +115,26 @@ export default function Home() {
             tone="brand"
             delay={120}
           />
+          <ModeTile
+            href="/solo/tripletagteamsir"
+            icon="🫂"
+            title="Triple Tag Team SIRs"
+            subtitle="Every pull is a Special Illustration Rare Triple Tag Team"
+            tone="gold"
+            delay={160}
+          />
         </div>
 
         <SectionLabel>Battle</SectionLabel>
         <div className="flex flex-col gap-2.5">
-          <ModeTile href="/battle" icon="⚔️" title="Battle a Friend" subtitle="Create or join a room" tone="gold" delay={160} />
+          <ModeTile href="/battle" icon="⚔️" title="Battle a Friend" subtitle="Create or join a room" tone="gold" delay={200} />
           <ModeTile
             href="/bot"
             icon="🤖"
             title="Battle a Bot"
             subtitle="1-3 CPU opponents, your rules"
             tone="brand"
-            delay={200}
+            delay={240}
           />
         </div>
       </div>

@@ -42,6 +42,13 @@ const MODE_COPY: Record<SoloMode, { eyebrow: string; title: string; subtitle: st
     packEyebrow: "Tag Team SIR Pack",
     forcedKeys: ["artType", "specialForm"],
   },
+  tripletagteamsir: {
+    eyebrow: "Triple Tag Team SIRs",
+    title: "Guaranteed Triple Tag Team SIR",
+    subtitle: "Every pack is a Special Illustration Rare Triple Tag Team trio. Art type and special form are both locked in - vibe and Pokemon are still random.",
+    packEyebrow: "Triple Tag Team SIR Pack",
+    forcedKeys: ["artType", "specialForm"],
+  },
 };
 
 type Stage = "setup" | "reveal" | "prompt" | "image" | "result" | "error";
@@ -92,15 +99,20 @@ export default function SoloPackFlow({ mode }: { mode: SoloMode }) {
       if ((mode === "tagteam" || mode === "tagteamsir") && fetchedPool.length < 2) {
         throw new Error("Need at least 2 Pokemon in the selected generations for a Tag Team.");
       }
+      if (mode === "tripletagteamsir" && fetchedPool.length < 3) {
+        throw new Error("Need at least 3 Pokemon in the selected generations for a Triple Tag Team.");
+      }
 
       const artType =
-        mode === "sir" || mode === "tagteamsir"
+        mode === "sir" || mode === "tagteamsir" || mode === "tripletagteamsir"
           ? ART_TYPES.find((a) => a.value === "special-illustration-rare")!
           : pickWeighted(ART_TYPES);
       const specialForm =
         mode === "tagteam" || mode === "tagteamsir"
           ? SPECIAL_FORMS.find((f) => f.value === "tag-team")!
-          : pickSpecialForm(fetchedPool.length);
+          : mode === "tripletagteamsir"
+            ? SPECIAL_FORMS.find((f) => f.value === "triple-tag-team")!
+            : pickSpecialForm(fetchedPool.length);
       const vibe = pickWeighted(VIBES);
       const count = pokemonCountForSpecialForm(specialForm.value);
 
@@ -144,8 +156,8 @@ export default function SoloPackFlow({ mode }: { mode: SoloMode }) {
 
   function handleReroll(key: CardKey) {
     if (rerollsLeft <= 0) return;
-    if ((mode === "sir" || mode === "tagteamsir") && key === "artType") return;
-    if ((mode === "tagteam" || mode === "tagteamsir") && key === "specialForm") return;
+    if ((mode === "sir" || mode === "tagteamsir" || mode === "tripletagteamsir") && key === "artType") return;
+    if ((mode === "tagteam" || mode === "tagteamsir" || mode === "tripletagteamsir") && key === "specialForm") return;
     setRerollsLeft((n) => n - 1);
 
     if (key === "artType") {

@@ -6,13 +6,15 @@ import type { BattlePlayerPick, BattleRoom, BattleRound, BattleRoundPlayerState 
 
 function rollPlayerPick(pool: PokemonRef[], packMode: PackMode): BattlePlayerPick {
   const artType =
-    packMode === "sir" || packMode === "tagteamsir"
+    packMode === "sir" || packMode === "tagteamsir" || packMode === "tripletagteamsir"
       ? ART_TYPES.find((a) => a.value === "special-illustration-rare")!
       : pickWeighted(ART_TYPES);
   const specialForm =
     packMode === "tagteam" || packMode === "tagteamsir"
       ? SPECIAL_FORMS.find((f) => f.value === "tag-team")!
-      : pickSpecialForm(pool.length);
+      : packMode === "tripletagteamsir"
+        ? SPECIAL_FORMS.find((f) => f.value === "triple-tag-team")!
+        : pickSpecialForm(pool.length);
   const vibe = pickWeighted(VIBES);
   const count = pokemonCountForSpecialForm(specialForm.value);
 

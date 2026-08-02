@@ -66,6 +66,12 @@ export async function POST(request: Request) {
           { status: 500 }
         );
       }
+      if (room.packMode === "tripletagteamsir" && pool.length < 3) {
+        return NextResponse.json(
+          { error: "Need at least 3 Pokemon in this room's generations for a Triple Tag Team." },
+          { status: 500 }
+        );
+      }
       room.rounds = [createRound(room.players, pool, [], room.packMode)];
     }
 

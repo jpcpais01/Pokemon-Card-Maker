@@ -356,7 +356,7 @@ export default function BattleRoomPage() {
       ? ["artType"]
       : room.packMode === "tagteam"
         ? ["specialForm"]
-        : room.packMode === "tagteamsir"
+        : room.packMode === "tagteamsir" || room.packMode === "tripletagteamsir"
           ? ["artType", "specialForm"]
           : [];
 
