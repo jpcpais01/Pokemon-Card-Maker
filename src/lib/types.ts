@@ -78,6 +78,7 @@ export type SpecialForm =
   | "mega"
   | "gold-star"
   | "tag-team"
+  | "triple-tag-team"
   | "ancient"
   | "future"
   | "delta-species"

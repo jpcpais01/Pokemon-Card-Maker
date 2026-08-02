@@ -12,6 +12,7 @@ export const SPECIAL_FORM_ICONS: Record<SpecialForm, string> = {
   mega: "🔆",
   "gold-star": "⭐",
   "tag-team": "🤝",
+  "triple-tag-team": "🫂",
   ancient: "🦴",
   future: "🤖",
   "delta-species": "δ",

@@ -1,7 +1,7 @@
-import { ART_TYPES, SPECIAL_FORMS, VIBES, pickSpecialForm, pickWeighted } from "@/lib/cardData";
+import { ART_TYPES, SPECIAL_FORMS, VIBES, pickSpecialForm, pickWeighted, pokemonCountForSpecialForm } from "@/lib/cardData";
 import type { CardKey } from "@/lib/cardFaces";
 import { pickRandomPokemon, toPokemonPick } from "@/lib/generations";
-import type { PackMode, PokemonRef } from "@/lib/types";
+import type { PackMode, PokemonPick, PokemonRef } from "@/lib/types";
 import type { BattlePlayerPick, BattleRoom, BattleRound, BattleRoundPlayerState } from "./types";
 
 function rollPlayerPick(pool: PokemonRef[], packMode: PackMode): BattlePlayerPick {
@@ -14,7 +14,7 @@ function rollPlayerPick(pool: PokemonRef[], packMode: PackMode): BattlePlayerPic
       ? SPECIAL_FORMS.find((f) => f.value === "tag-team")!
       : pickSpecialForm(pool.length);
   const vibe = pickWeighted(VIBES);
-  const count = specialForm.value === "tag-team" ? 2 : 1;
+  const count = pokemonCountForSpecialForm(specialForm.value);
 
   const chosenIds: number[] = [];
   const pokemons = [];
@@ -64,18 +64,20 @@ export function rerollPlayerCard(
   }
   if (key === "specialForm") {
     const specialForm = pickSpecialForm(pool.length, state.specialForm.value);
-    const wasTagTeam = state.specialForm.value === "tag-team";
-    const isTagTeam = specialForm.value === "tag-team";
+    const prevCount = pokemonCountForSpecialForm(state.specialForm.value);
+    const nextCount = pokemonCountForSpecialForm(specialForm.value);
 
     let pokemons = state.pokemons;
-    if (isTagTeam && !wasTagTeam) {
-      const extra = pickRandomPokemon(
-        pool,
-        state.pokemons.map((p) => p.id)
-      );
-      pokemons = [...state.pokemons, toPokemonPick(extra)];
-    } else if (!isTagTeam && wasTagTeam) {
-      pokemons = state.pokemons.slice(0, 1);
+    if (nextCount > prevCount) {
+      const extra: PokemonPick[] = [];
+      const excludeIds = state.pokemons.map((p) => p.id);
+      for (let i = prevCount; i < nextCount; i++) {
+        const p = pickRandomPokemon(pool, [...excludeIds, ...extra.map((e) => e.id)]);
+        extra.push(toPokemonPick(p));
+      }
+      pokemons = [...state.pokemons, ...extra];
+    } else if (nextCount < prevCount) {
+      pokemons = state.pokemons.slice(0, nextCount);
     }
     return { ...state, specialForm, pokemons };
   }

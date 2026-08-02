@@ -47,7 +47,7 @@ export const ART_TYPES: WeightedOption<ArtType>[] = [
 // non-"none" entry keeps the exact weight it had on its own former axis; "none" absorbs whatever
 // share is left over so the whole table still sums to 100 and reads directly as percentages.
 export const SPECIAL_FORMS: WeightedOption<SpecialForm>[] = [
-  { value: "none", label: "Standard", weight: 57, blurb: "Regular, standard form." },
+  { value: "none", label: "Standard", weight: 55.5, blurb: "Regular, standard form." },
   { value: "shiny", label: "Shiny", weight: 8, blurb: "Rare shiny color palette." },
   { value: "mega", label: "Mega", weight: 4, blurb: "Mega Evolved form, more powerful and elaborate." },
   {
@@ -55,6 +55,12 @@ export const SPECIAL_FORMS: WeightedOption<SpecialForm>[] = [
     label: "Tag Team",
     weight: 3.5,
     blurb: "Tag Team card featuring two Pokemon together as partners in one dynamic scene.",
+  },
+  {
+    value: "triple-tag-team",
+    label: "Triple Tag Team",
+    weight: 1.5,
+    blurb: "Triple Tag Team card featuring three Pokemon together as partners in one dynamic scene.",
   },
   { value: "ancient", label: "Ancient", weight: 3, blurb: "Primal, ancient prehistoric form, like a fossil-era relic." },
   { value: "future", label: "Future", weight: 3, blurb: "Futuristic, bio-mechanical paradox form." },
@@ -71,13 +77,19 @@ export const SPECIAL_FORMS: WeightedOption<SpecialForm>[] = [
   { value: "paldean", label: "Paldean", weight: 2, blurb: "Paldean regional form, Iberian-inspired styling." },
 ];
 
+/** How many Pokemon a given special form's illustration depicts. */
+export function pokemonCountForSpecialForm(specialForm: SpecialForm): number {
+  if (specialForm === "triple-tag-team") return 3;
+  if (specialForm === "tag-team") return 2;
+  return 1;
+}
+
 /**
- * Picks a special form, excluding Tag Team when the Pokemon pool is too small
- * to guarantee two distinct Pokemon (otherwise tag-team could roll the same
- * Pokemon twice).
+ * Picks a special form, excluding Tag Team / Triple Tag Team when the Pokemon pool is too small
+ * to guarantee that many distinct Pokemon (otherwise a pairing could roll the same Pokemon twice).
  */
 export function pickSpecialForm(poolSize: number, exclude?: SpecialForm): WeightedOption<SpecialForm> {
-  const candidates = poolSize < 2 ? SPECIAL_FORMS.filter((f) => f.value !== "tag-team") : SPECIAL_FORMS;
+  const candidates = SPECIAL_FORMS.filter((f) => poolSize >= pokemonCountForSpecialForm(f.value));
   return pickWeighted(candidates, exclude);
 }
 

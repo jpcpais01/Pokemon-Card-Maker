@@ -7,9 +7,9 @@ import RevealScreen, { type CardKey, type RevealData, type RevealFlags } from "@
 import LoadingScreen from "@/components/LoadingScreen";
 import ErrorScreen from "@/components/ErrorScreen";
 import ResultScreen from "@/components/ResultScreen";
-import { ART_TYPES, SPECIAL_FORMS, VIBES, pickSpecialForm, pickWeighted } from "@/lib/cardData";
+import { ART_TYPES, SPECIAL_FORMS, VIBES, pickSpecialForm, pickWeighted, pokemonCountForSpecialForm } from "@/lib/cardData";
 import { GENERATIONS, fetchPokemonForGenerations, pickRandomPokemon, toPokemonPick } from "@/lib/generations";
-import type { PackMode, PokemonRef } from "@/lib/types";
+import type { PackMode, PokemonPick, PokemonRef } from "@/lib/types";
 
 export type SoloMode = PackMode;
 
@@ -102,7 +102,7 @@ export default function SoloPackFlow({ mode }: { mode: SoloMode }) {
           ? SPECIAL_FORMS.find((f) => f.value === "tag-team")!
           : pickSpecialForm(fetchedPool.length);
       const vibe = pickWeighted(VIBES);
-      const count = specialForm.value === "tag-team" ? 2 : 1;
+      const count = pokemonCountForSpecialForm(specialForm.value);
 
       const chosenIds: number[] = [];
       const pokemons = [];
@@ -162,17 +162,22 @@ export default function SoloPackFlow({ mode }: { mode: SoloMode }) {
       setRevealData((prev) => {
         if (!prev) return prev;
         const specialForm = pickSpecialForm(pool.length, prev.specialForm.value);
-        const wasTagTeam = prev.specialForm.value === "tag-team";
-        const isTagTeam = specialForm.value === "tag-team";
+        const prevCount = pokemonCountForSpecialForm(prev.specialForm.value);
+        const nextCount = pokemonCountForSpecialForm(specialForm.value);
 
         let pokemons = prev.pokemons;
-        if (isTagTeam && !wasTagTeam) {
-          const extra = pickRandomPokemon(pool, prev.pokemons.map((p) => p.id));
-          pokemons = [...prev.pokemons, toPokemonPick(extra)];
-          setFlags((f) => (f ? { ...f, pokemons: [...f.pokemons, true] } : f));
-        } else if (!isTagTeam && wasTagTeam) {
-          pokemons = prev.pokemons.slice(0, 1);
-          setFlags((f) => (f ? { ...f, pokemons: f.pokemons.slice(0, 1) } : f));
+        if (nextCount > prevCount) {
+          const extra: PokemonPick[] = [];
+          const excludeIds = prev.pokemons.map((p) => p.id);
+          for (let i = prevCount; i < nextCount; i++) {
+            const p = pickRandomPokemon(pool, [...excludeIds, ...extra.map((e) => e.id)]);
+            extra.push(toPokemonPick(p));
+          }
+          pokemons = [...prev.pokemons, ...extra];
+          setFlags((f) => (f ? { ...f, pokemons: [...f.pokemons, ...extra.map(() => true)] } : f));
+        } else if (nextCount < prevCount) {
+          pokemons = prev.pokemons.slice(0, nextCount);
+          setFlags((f) => (f ? { ...f, pokemons: f.pokemons.slice(0, nextCount) } : f));
         }
 
         return { ...prev, specialForm, pokemons };

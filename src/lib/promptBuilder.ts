@@ -21,12 +21,12 @@ Given a set of card traits, write ONE detailed, vivid text-to-image prompt (220-
 - Describe the camera angle and composition explicitly and specifically - name the shot type (e.g. a low-angle hero shot looking up at the Pokemon, a dynamic three-quarter view, a sweeping wide establishing shot) and how the subject is framed within it. Describe exactly what the Pokemon is physically doing with a specific pose, gesture, or action (mid-leap, coiled to strike, calmly perched, unleashing an attack) - never a static, generic "standing there" description.
 - If a special form is given, never just name it - do not write something like "in its Hisuian form" or "a Gold Star card" as if the label alone explains anything. Concretely describe both (a) exactly what differs about the Pokemon's own body versus its standard form - which specific colors, markings, textures, added or altered features, or silhouette changes - and (b) how the surrounding environment itself reflects that form (an Alolan form calls for a tropical island backdrop, an Ancient form calls for a primal fossil-strewn prehistoric landscape, a Future form calls for a bio-mechanical paradox setting, a Shiny form calls for its distinct alternate color palette catching the light, and so on). Use your own knowledge of how that Pokemon canonically looks in that variant (e.g. Alolan Vulpix's icy-blue fur and crystalline tail, Mega Charizard X's black scales and blue flame, Galarian Ponyta's pastel mane); if no official design exists for that combination, invent a plausible, consistent one in the same visual spirit and describe both its body and its fitting environment in that same concrete detail.
 - A vibe is always given, and it must be the central creative concept the ENTIRE scene is built around, not a lighting filter dropped on top of a generic scene afterward. Design the illustration as if you started FROM the vibe and then fit the Pokemon into that vision: let it decide the actual setting/scenario (not just its lighting), what specific action or pose the Pokemon is caught in, the background details and props, the color palette, and the camera's mood - all pulling in the same direction. Never just state the vibe's name. For example, a "Menacing" vibe isn't a shadow added to a normal pose - it means the whole scene IS a menacing scenario: a foreboding lair or storm-lit ruin, the Pokemon crouched in a predatory stance with narrowed eyes, oppressive low clouds, jagged silhouettes. Weave in any special-form environment cues (e.g. Alolan's tropical setting) as flavor within the vibe's scenario rather than a competing backdrop - but the vibe leads.
-- If TWO Pokemon are given (a Tag Team pairing), you MUST describe BOTH of them individually and explicitly by name, each with its own physical description, before describing their shared action or interaction. Both must appear as two complete, fully distinct, individually recognizable creatures in the same scene - never merge, hybridize, blend, or fuse their features into a single creature, and never omit either one.
+- If MULTIPLE Pokemon are given (a Tag Team pairing of two, or a Triple Tag Team trio of three), you MUST describe EACH of them individually and explicitly by name, each with its own physical description, before describing their shared action or interaction. Every one of them must appear as a complete, fully distinct, individually recognizable creature in the same scene - never merge, hybridize, blend, or fuse any of their features together, and never omit any of them.
 - Match the rendering style to the rarity tier. "ex" and "Illustration Rare" stay within the clean, vibrant, official full-art look described above. "Special Illustration Rare" is the top gallery-quality tier: for it, choose ONE genuinely distinctive fine-art technique and composition idea that you feel best suits this specific Pokemon, vibe, and scene - for example (not an exhaustive or mandatory list) rich oil-painting impasto, ukiyo-e woodblock, a luminous watercolor wash, stained-glass luminosity, sumi-e ink wash, pop art screenprint, gouache storybook, shan shui ink painting, retro pixel art, layered papercut kirigami, a classical marble statue sculpture, bold exaggerated caricature style, or any other technique you judge fits better - and commit to it fully. Never fall back to a generic painterly look. This is not a closing label or a background-only treatment - name the chosen technique early, then let it govern EVERY visual detail anywhere in the prompt, not just the outline/shading and background: the Pokemon's specific markings, colors, and surface textures must be described as that technique would actually render them (not "icy-blue fur" alone, but how sumi-e ink strokes, stained-glass leadlines, or bronze relief tooling would depict that exact fur); the special form's own body changes must be described in that same technique's marks; the vibe's specific props, setting, and light must be built from that technique's characteristic strokes, shapes, or color application; and the composition, camera framing, and lighting behavior must all read as that same medium throughout. Once the technique is chosen, nothing in the described image should read as a flat, untouched "generic Pokemon TCG" rendering - every sentence should carry its fingerprint.
 - Compose the scene for a tall 3:4 portrait frame - favor vertical compositions (full-body poses, tall environments) over wide horizontal ones.
 - Aside from the required "Pokemon TCG artwork style" phrase, never mention other card game terms like "card", "rarity", "border", or "text box" - describe only the illustration artwork itself, full-bleed, no frame.
 - Do not include any Pokemon that was not specified.
-- Accuracy matters most of all: center the entire illustration on exactly the named Pokemon (or Pokemon, for a Tag Team). Never substitute a different species, a similar-looking relative, an evolution, or a pre-evolution - get the exact name and design right, every time.
+- Accuracy matters most of all: center the entire illustration on exactly the named Pokemon (or Pokemon, for a Tag Team or Triple Tag Team). Never substitute a different species, a similar-looking relative, an evolution, or a pre-evolution - get the exact name and design right, every time.
 - You have real room to work with (220-300 words) - use it. Every one of these must get genuine, specific descriptive coverage, not just a passing mention: the Pokemon's physical appearance, the special form's actual body and environment changes, the vibe's full scenario, the camera angle and composition, and - for Special Illustration Rare - the chosen art technique running through every one of those elements, not just the background. Never state a trait's name without describing what it actually looks like. For Special Illustration Rare specifically, since the technique must be woven through every detail rather than mentioned once, it's fine to write toward the upper end of the range or beyond it (up to the 500-word max) if that's what genuine coverage needs.`;
 
 /**
@@ -34,19 +34,25 @@ Given a set of card traits, write ONE detailed, vivid text-to-image prompt (220-
  * explicit restatement of exactly which Pokemon this must depict, always reach the image model
  * even if the drafted prompt drifts from the system prompt's instructions. This is a hard
  * guardrail against the image model substituting a different (often similar-looking) species,
- * and - when two Pokemon are given - against merging them into one creature or dropping one.
+ * and - when multiple Pokemon are given - against merging them into one creature or dropping one.
  */
 export function buildStyleSuffix(pokemonNames: string[]): string {
   const base =
     " Rendered in modern Pokemon TCG artwork style: smooth, glossy, semi-stylized creature design with soft airbrushed shading and crisp clean edges, set against a richly detailed painted background, vibrant saturated colors, professional official video-game-splash-art finish. Not photorealistic, not a photograph, not realistic fur/skin/feather texture, not a 3D render, not a generic fantasy illustration. Borderless, full-bleed artwork only, filling the entire frame edge to edge: no borders, no margins, no card frame, no UI elements, no text, no logos, no watermarks. Make the scene, action, interaction, and camera angle unique and imaginative each time rather than a generic repeated pose - always nice and different.";
 
-  const namesList = pokemonNames.join(" and ");
-
   if (pokemonNames.length < 2) {
-    return `${base} This artwork must depict exactly ${namesList} and only ${namesList} - not a different species, not a similar-looking relative, not an evolution or pre-evolution. Every visual detail must match ${namesList}'s official design precisely.`;
+    const soloName = pokemonNames[0];
+    return `${base} This artwork must depict exactly ${soloName} and only ${soloName} - not a different species, not a similar-looking relative, not an evolution or pre-evolution. Every visual detail must match ${soloName}'s official design precisely.`;
   }
 
-  return `${base} This is a Tag Team illustration - it must clearly show BOTH ${namesList} together as two distinct, fully separate, individually recognizable Pokemon standing or acting side by side. Do not merge, hybridize, or blend ${namesList} into a single creature. Do not omit either one, and do not substitute a different species for either one. Both ${namesList} must be fully visible in the final image, each exactly matching its own official design.`;
+  const namesList =
+    pokemonNames.length === 2
+      ? pokemonNames.join(" and ")
+      : `${pokemonNames.slice(0, -1).join(", ")}, and ${pokemonNames[pokemonNames.length - 1]}`;
+  const groupLabel = pokemonNames.length === 2 ? "Tag Team" : "Triple Tag Team";
+  const allWord = pokemonNames.length === 2 ? "BOTH" : "ALL THREE";
+
+  return `${base} This is a ${groupLabel} illustration - it must clearly show ${allWord} of ${namesList} together as distinct, fully separate, individually recognizable Pokemon standing or acting side by side. Do not merge, hybridize, or blend any of them into a single creature. Do not omit any of them, and do not substitute a different species for any of them. Every one of ${namesList} must be fully visible in the final image, each exactly matching its own official design.`;
 }
 
 /**
@@ -90,7 +96,9 @@ Never omit a key, never leave a rating blank/null/0, and never wrap the object i
 }
 
 export function buildUserPrompt(body: PromptRequestBody): string {
-  const pokemonList = body.pokemons.map((p) => p.name).join(" and ");
+  const names = body.pokemons.map((p) => p.name);
+  const pokemonList =
+    names.length <= 2 ? names.join(" and ") : `${names.slice(0, -1).join(", ")}, and ${names[names.length - 1]}`;
   const lines = [
     `Pokemon: ${pokemonList}`,
     `Special form: ${body.specialForm.label} - ${body.specialForm.blurb}`,
