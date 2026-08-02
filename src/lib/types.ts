@@ -4,7 +4,7 @@ export type ArtType = "ex" | "illustration-rare" | "special-illustration-rare";
 // whole pack-opening session or battle match; "classic" (the default) leaves both random.
 export type PackMode = "classic" | "sir" | "tagteam" | "tagteamsir";
 
-// The mood/atmosphere the artwork gets rendered in - always exactly one of these 40, all equally
+// The mood/atmosphere the artwork gets rendered in - always exactly one of these 60, all equally
 // likely; unlike Special Form there is no "none"/default outcome.
 export type Vibe =
   | "cozy"
@@ -46,7 +46,27 @@ export type Vibe =
   | "brooding"
   | "surreal"
   | "vengeful"
-  | "glorious";
+  | "glorious"
+  | "idyllic"
+  | "feverish"
+  | "reverent"
+  | "vigilant"
+  | "opulent"
+  | "delirious"
+  | "zealous"
+  | "clandestine"
+  | "feral"
+  | "festive"
+  | "primeval"
+  | "austere"
+  | "macabre"
+  | "buoyant"
+  | "volcanic"
+  | "untethered"
+  | "resolute"
+  | "chivalrous"
+  | "voracious"
+  | "prophetic";
 
 // A single combined pool: special forms (Shiny, Mega, Tag Team, ...) and regional forms
 // (Alolan, Galarian, ...) are mutually exclusive outcomes of the same roll/card, not two
