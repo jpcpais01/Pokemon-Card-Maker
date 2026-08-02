@@ -409,35 +409,13 @@ export default function BattleRoomPage() {
         )}
 
         {isGenerating && (
-          <div className="glass-strong rise-in flex flex-col items-center gap-5 rounded-[2rem] px-8 py-12 text-center">
-            <span className="brand-gradient flex h-12 w-12 animate-pulse items-center justify-center rounded-2xl text-2xl shadow-lg shadow-fuchsia-500/20">
-              ✨
-            </span>
-            <div className="h-2 w-full overflow-hidden rounded-full bg-white/10">
-              <div
-                key={round.status}
-                className="progress-fill h-full w-full rounded-full bg-gradient-to-r from-amber-400 to-orange-500"
-              />
-            </div>
-            <p className="text-sm font-medium text-slate-200">{GENERATING_MESSAGES[round.status]}</p>
-
-            {isStuck && (
-              <div className="mt-2 flex w-full flex-col items-center gap-3 border-t border-white/10 pt-5">
-                <p className="text-xs text-amber-300">This is taking longer than expected.</p>
-                <button
-                  type="button"
-                  onClick={handleForceAdvance}
-                  disabled={actionBusy}
-                  className="btn-primary w-full !py-3 transition-transform active:scale-[0.98] disabled:opacity-50"
-                >
-                  Try Again
-                </button>
-                <Link href="/battle" className="text-xs font-semibold text-slate-400 active:text-white">
-                  Leave Match
-                </Link>
-              </div>
-            )}
-          </div>
+          <LoadingScreen
+            message={GENERATING_MESSAGES[round.status]!}
+            stuck={isStuck}
+            onRetry={handleForceAdvance}
+            retryBusy={actionBusy}
+            leaveHref="/battle"
+          />
         )}
 
         {round.status === "done" && (

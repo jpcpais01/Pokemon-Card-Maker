@@ -285,3 +285,103 @@ body {
 .rise-in {
   animation: rise-in 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
+
+/* Full-view "wait" animation (LoadingScreen) - a conjuring/materializing effect built entirely
+   from transform + opacity animations (never background-position or an animated backdrop-filter)
+   so it stays cheap on the GPU compositor no matter how long it plays. */
+
+@keyframes aura-breathe {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.55;
+  }
+  50% {
+    transform: scale(1.15);
+    opacity: 0.85;
+  }
+}
+
+.wait-aura {
+  background: radial-gradient(circle, rgba(251, 191, 36, 0.35) 0%, rgba(217, 70, 239, 0.22) 45%, transparent 72%);
+  filter: blur(40px);
+  animation: aura-breathe 5s ease-in-out infinite;
+}
+
+@keyframes ring-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes ring-spin-reverse {
+  to {
+    transform: rotate(-360deg);
+  }
+}
+
+.wait-ring-outer {
+  background: conic-gradient(
+    from 0deg,
+    transparent 0%,
+    #7c3aed 18%,
+    #d946ef 36%,
+    #06b6d4 54%,
+    #fbbf24 72%,
+    transparent 92%,
+    transparent 100%
+  );
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 3px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 3px));
+  animation: ring-spin 3.2s linear infinite;
+  will-change: transform;
+}
+
+.wait-ring-inner {
+  background: conic-gradient(from 90deg, transparent 0%, #fbbf24 25%, #f59e0b 45%, transparent 70%, transparent 100%);
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 3px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 3px));
+  animation: ring-spin-reverse 2.1s linear infinite;
+  will-change: transform;
+  opacity: 0.8;
+}
+
+@keyframes core-pulse {
+  0%, 100% {
+    transform: scale(0.94);
+    opacity: 0.85;
+  }
+  50% {
+    transform: scale(1.06);
+    opacity: 1;
+  }
+}
+
+.wait-core {
+  background: radial-gradient(circle, #fff8e1 0%, #fcd34d 25%, #f59e0b 55%, transparent 78%);
+  filter: blur(1px);
+  animation: core-pulse 2.4s ease-in-out infinite;
+}
+
+@keyframes particle-rise {
+  0% {
+    transform: translateY(0) scale(0.4);
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  80% {
+    opacity: 0.8;
+  }
+  100% {
+    transform: translateY(-140px) scale(1);
+    opacity: 0;
+  }
+}
+
+.wait-particle {
+  animation-name: particle-rise;
+  animation-timing-function: ease-out;
+  animation-iteration-count: infinite;
+  will-change: transform, opacity;
+}
