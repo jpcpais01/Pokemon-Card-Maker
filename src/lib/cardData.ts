@@ -19,63 +19,135 @@ export function pickWeighted<T extends string>(
   return pool[pool.length - 1];
 }
 
+// Every roll table in this file follows the same shape: the "default" outcome (the one that
+// isn't a special pull) always lands 50% of the time, and the other 50% is split perfectly evenly
+// across every other option - no per-option rarity gradient. A Delta Species pull is exactly as
+// likely as a Shiny pull; Special Illustration Rare is exactly as likely as Illustration Rare.
+const DEFAULT_SHARE = 50;
+
 export const ART_TYPES: WeightedOption<ArtType>[] = [
   {
     value: "ex",
     label: "ex",
-    weight: 55,
+    weight: DEFAULT_SHARE,
     blurb: "Bold, dynamic full-art ex card with an action pose and dramatic lighting.",
   },
   {
     value: "illustration-rare",
     label: "Illustration Rare",
-    weight: 32,
+    weight: 25,
     blurb:
       "Whimsical, wide scenic full-art illustration showing the Pokemon in its natural habitat, storybook charm.",
   },
   {
     value: "special-illustration-rare",
     label: "Special Illustration Rare",
-    weight: 13,
+    weight: 25,
     blurb:
       "Ultra-premium, gallery-quality full-art illustration with an elaborate background and extra environmental storytelling, rendered in one bold, distinctive fine-art technique that makes it look unlike any other card.",
   },
 ];
 
 // One combined pool: special forms (Shiny, Mega, ...) and regional forms (Alolan, Galarian, ...)
-// are mutually exclusive outcomes of a single roll/card now, not two independent traits. Each
-// non-"none" entry keeps the exact weight it had on its own former axis; "none" absorbs whatever
-// share is left over so the whole table still sums to 100 and reads directly as percentages.
+// are mutually exclusive outcomes of a single roll/card. "none" is the 50% default; the other 14
+// entries below split the remaining 50% evenly (50/14 ≈ 3.5714 each) regardless of how rare any
+// individual one might feel - see the DEFAULT_SHARE comment above.
+const OTHER_FORM_SHARE = DEFAULT_SHARE / 14;
+
 export const SPECIAL_FORMS: WeightedOption<SpecialForm>[] = [
-  { value: "none", label: "Standard", weight: 55.5, blurb: "Regular, standard form." },
-  { value: "shiny", label: "Shiny", weight: 8, blurb: "Rare shiny color palette." },
-  { value: "mega", label: "Mega", weight: 4, blurb: "Mega Evolved form, more powerful and elaborate." },
+  { value: "none", label: "Standard", weight: DEFAULT_SHARE, blurb: "Regular, standard form." },
+  { value: "shiny", label: "Shiny", weight: OTHER_FORM_SHARE, blurb: "Rare shiny color palette." },
+  { value: "mega", label: "Mega", weight: OTHER_FORM_SHARE, blurb: "Mega Evolved form, more powerful and elaborate." },
   {
     value: "tag-team",
     label: "Tag Team",
-    weight: 3.5,
+    weight: OTHER_FORM_SHARE,
     blurb: "Tag Team card featuring two Pokemon together as partners in one dynamic scene.",
   },
   {
     value: "triple-tag-team",
     label: "Triple Tag Team",
-    weight: 1.5,
+    weight: OTHER_FORM_SHARE,
     blurb: "Triple Tag Team card featuring three Pokemon together as partners in one dynamic scene.",
   },
-  { value: "ancient", label: "Ancient", weight: 3, blurb: "Primal, ancient prehistoric form, like a fossil-era relic." },
-  { value: "future", label: "Future", weight: 3, blurb: "Futuristic, bio-mechanical paradox form." },
-  { value: "gold-star", label: "Gold Star", weight: 1.5, blurb: "Ultra-rare Gold Star variant, radiant golden accents." },
+  {
+    value: "ancient",
+    label: "Ancient",
+    weight: OTHER_FORM_SHARE,
+    blurb: "Primal, ancient prehistoric form, like a fossil-era relic.",
+  },
+  { value: "future", label: "Future", weight: OTHER_FORM_SHARE, blurb: "Futuristic, bio-mechanical paradox form." },
+  {
+    value: "gold-star",
+    label: "Gold Star",
+    weight: OTHER_FORM_SHARE,
+    blurb: "Ultra-rare Gold Star variant, radiant golden accents.",
+  },
   {
     value: "delta-species",
     label: "Delta Species",
-    weight: 1,
+    weight: OTHER_FORM_SHARE,
     blurb: "Delta Species variant with an unexpected off-type elemental twist, marked with a δ symbol.",
   },
-  { value: "alolan", label: "Alolan", weight: 7.5, blurb: "Alolan regional form, tropical island styling." },
-  { value: "galarian", label: "Galarian", weight: 6, blurb: "Galarian regional form, British-isles inspired styling." },
-  { value: "hisuian", label: "Hisuian", weight: 3.5, blurb: "Hisuian regional form, ancient feudal-Japan inspired styling." },
-  { value: "paldean", label: "Paldean", weight: 2, blurb: "Paldean regional form, Iberian-inspired styling." },
+  { value: "alolan", label: "Alolan", weight: OTHER_FORM_SHARE, blurb: "Alolan regional form, tropical island styling." },
+  {
+    value: "galarian",
+    label: "Galarian",
+    weight: OTHER_FORM_SHARE,
+    blurb: "Galarian regional form, British-isles inspired styling.",
+  },
+  {
+    value: "hisuian",
+    label: "Hisuian",
+    weight: OTHER_FORM_SHARE,
+    blurb: "Hisuian regional form, ancient feudal-Japan inspired styling.",
+  },
+  {
+    value: "paldean",
+    label: "Paldean",
+    weight: OTHER_FORM_SHARE,
+    blurb: "Paldean regional form, Iberian-inspired styling.",
+  },
+  {
+    value: "serialized",
+    label: "Serialized",
+    weight: OTHER_FORM_SHARE,
+    blurb: "A serial-numbered limited print, individually numbered out of a fixed print run.",
+  },
+  {
+    value: "signature",
+    label: "Signature",
+    weight: OTHER_FORM_SHARE,
+    blurb:
+      "A signature edition - the artwork itself includes a small, elegant hand-written signature of the Pokemon's name, like an artist's autograph.",
+  },
 ];
+
+/** The four possible print runs a Serialized pull can come from, each equally likely. */
+const SERIAL_MAX_OPTIONS = [10, 50, 100, 1000] as const;
+
+function rollSerialNumber(): { max: number; number: number } {
+  const max = SERIAL_MAX_OPTIONS[Math.floor(Math.random() * SERIAL_MAX_OPTIONS.length)];
+  const number = 1 + Math.floor(Math.random() * max);
+  return { max, number };
+}
+
+/**
+ * "Serialized" can't have a fixed blurb like every other special form - the exact print number is
+ * rolled per-pull (first the print run size out of {10, 50, 100, 1000}, each equally likely, then
+ * a specific number within that run) and has to reach both the on-card label and the drafting
+ * model. Every other value passes through unchanged.
+ */
+function resolveSpecialForm(form: WeightedOption<SpecialForm>): WeightedOption<SpecialForm> {
+  if (form.value !== "serialized") return form;
+  const { max, number } = rollSerialNumber();
+  const padded = String(number).padStart(String(max).length, "0");
+  return {
+    ...form,
+    label: `Serialized #${padded}/${max}`,
+    blurb: `A serial-numbered limited print - individually numbered ${padded} of only ${max} ever made, the print number reads exactly "${padded}/${max}".`,
+  };
+}
 
 /** How many Pokemon a given special form's illustration depicts. */
 export function pokemonCountForSpecialForm(specialForm: SpecialForm): number {
@@ -90,7 +162,7 @@ export function pokemonCountForSpecialForm(specialForm: SpecialForm): number {
  */
 export function pickSpecialForm(poolSize: number, exclude?: SpecialForm): WeightedOption<SpecialForm> {
   const candidates = SPECIAL_FORMS.filter((f) => poolSize >= pokemonCountForSpecialForm(f.value));
-  return pickWeighted(candidates, exclude);
+  return resolveSpecialForm(pickWeighted(candidates, exclude));
 }
 
 // The mood/atmosphere the illustration is rendered in - all 61 equally likely (weight ~1.639

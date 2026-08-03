@@ -79,7 +79,7 @@ export async function POST(request: Request) {
               pokemons: state.pokemons.map((p) => ({ name: p.displayName })),
             });
             const drafted = await generateText(SYSTEM_PROMPT, userPrompt);
-            state.prompt = `${drafted}${buildStyleSuffix(state.pokemons.map((p) => p.displayName))}`;
+            state.prompt = `${drafted}${buildStyleSuffix(state.pokemons.map((p) => p.displayName), state.specialForm.value)}`;
             state.promptStatus = "ready";
           } catch {
             state.promptStatus = "error";

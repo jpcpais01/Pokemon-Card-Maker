@@ -86,7 +86,9 @@ export type SpecialForm =
   | "alolan"
   | "galarian"
   | "hisuian"
-  | "paldean";
+  | "paldean"
+  | "serialized"
+  | "signature";
 
 export interface WeightedOption<T extends string> {
   value: T;

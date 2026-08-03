@@ -20,6 +20,8 @@ export const SPECIAL_FORM_ICONS: Record<SpecialForm, string> = {
   galarian: "⚔️",
   hisuian: "🏮",
   paldean: "🍇",
+  serialized: "🔢",
+  signature: "✍️",
 };
 
 export const VIBE_ICONS: Record<Vibe, string> = {

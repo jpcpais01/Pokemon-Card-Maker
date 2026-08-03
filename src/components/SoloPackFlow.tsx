@@ -214,7 +214,7 @@ export default function SoloPackFlow({ mode }: { mode: SoloMode }) {
       setStage("prompt");
       const { prompt } = await postJson<{ prompt: string }>("/api/generate-prompt", {
         artType: { label: data.artType.label, blurb: data.artType.blurb },
-        specialForm: { label: data.specialForm.label, blurb: data.specialForm.blurb },
+        specialForm: { value: data.specialForm.value, label: data.specialForm.label, blurb: data.specialForm.blurb },
         vibe: { label: data.vibe.label, blurb: data.vibe.blurb },
         pokemons: data.pokemons.map((p) => ({ name: p.displayName })),
       });

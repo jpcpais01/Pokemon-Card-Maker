@@ -23,7 +23,7 @@ export async function POST(request: Request) {
   try {
     const userPrompt = buildUserPrompt(body);
     const draftedPrompt = await generateText(SYSTEM_PROMPT, userPrompt);
-    const prompt = `${draftedPrompt}${buildStyleSuffix(body.pokemons.map((p) => p.name))}`;
+    const prompt = `${draftedPrompt}${buildStyleSuffix(body.pokemons.map((p) => p.name), body.specialForm.value)}`;
     return NextResponse.json({ prompt });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Failed to generate prompt.";
