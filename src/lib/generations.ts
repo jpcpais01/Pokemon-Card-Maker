@@ -22,6 +22,11 @@ export const GENERATIONS: Generation[] = [
   { id: NICHE_GEN_ID, label: "Niche", region: "Hidden Gems" },
 ];
 
+/** True only when Baddies is the sole selected generation, not just one of several. */
+export function isBaddiesOnlySelection(gens: number[]): boolean {
+  return gens.length === 1 && gens[0] === BADDIES_GEN_ID;
+}
+
 /**
  * A hand-picked pool of ~100 iconic, popular, and fan-favorite Pokemon spanning every generation
  * released so far - selected directly (not fetched) since it isn't a real PokeAPI generation.
@@ -141,45 +146,46 @@ const TOP_100_SPECIES: PokemonRef[] = [
 /** Not fetched from PokeAPI - a hand-picked pool of Pokemon fan communities commonly consider
  *  conventionally attractive/alluring, spanning as many generations as possible. */
 const BADDIES_SPECIES: PokemonRef[] = [
-  { id: 38, name: "ninetales" },
-  { id: 78, name: "rapidash" },
   { id: 282, name: "gardevoir" },
   { id: 475, name: "gallade" },
   { id: 350, name: "milotic" },
-  { id: 359, name: "absol" },
-  { id: 407, name: "roserade" },
-  { id: 196, name: "espeon" },
-  { id: 197, name: "umbreon" },
-  { id: 700, name: "sylveon" },
-  { id: 471, name: "glaceon" },
-  { id: 380, name: "latias" },
-  { id: 381, name: "latios" },
+  { id: 758, name: "salazzle" },
   { id: 428, name: "lopunny" },
-  { id: 429, name: "mismagius" },
-  { id: 478, name: "froslass" },
-  { id: 497, name: "serperior" },
-  { id: 549, name: "lilligant" },
-  { id: 571, name: "zoroark" },
-  { id: 576, name: "gothitelle" },
   { id: 654, name: "braixen" },
   { id: 655, name: "delphox" },
-  { id: 658, name: "greninja" },
-  { id: 461, name: "weavile" },
+  { id: 549, name: "lilligant" },
+  { id: 497, name: "serperior" },
+  { id: 571, name: "zoroark" },
+  { id: 576, name: "gothitelle" },
+  { id: 700, name: "sylveon" },
+  { id: 196, name: "espeon" },
+  { id: 197, name: "umbreon" },
+  { id: 471, name: "glaceon" },
+  { id: 38, name: "ninetales" },
+  { id: 78, name: "rapidash" },
   { id: 671, name: "florges" },
-  { id: 678, name: "meowstic" },
-  { id: 510, name: "liepard" },
-  { id: 727, name: "incineroar" },
-  { id: 730, name: "primarina" },
-  { id: 758, name: "salazzle" },
+  { id: 407, name: "roserade" },
   { id: 763, name: "tsareena" },
-  { id: 807, name: "zeraora" },
+  { id: 730, name: "primarina" },
+  { id: 727, name: "incineroar" },
   { id: 815, name: "cinderace" },
-  { id: 849, name: "toxtricity" },
-  { id: 876, name: "indeedee" },
-  { id: 887, name: "dragapult" },
   { id: 908, name: "meowscarada" },
   { id: 911, name: "skeledirge" },
   { id: 914, name: "quaquaval" },
+  { id: 478, name: "froslass" },
+  { id: 429, name: "mismagius" },
+  { id: 510, name: "liepard" },
+  { id: 658, name: "greninja" },
+  { id: 807, name: "zeraora" },
+  { id: 448, name: "lucario" },
+  { id: 380, name: "latias" },
+  { id: 381, name: "latios" },
+  { id: 461, name: "weavile" },
+  { id: 359, name: "absol" },
+  { id: 876, name: "indeedee" },
+  { id: 818, name: "inteleon" },
+  { id: 182, name: "bellossom" },
+  { id: 257, name: "blaziken" },
 ];
 
 /** Not fetched from PokeAPI - a hand-picked pool of underrated, weird-but-cool, design-forward

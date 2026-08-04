@@ -8,7 +8,13 @@ import LoadingScreen from "@/components/LoadingScreen";
 import ErrorScreen from "@/components/ErrorScreen";
 import ResultScreen from "@/components/ResultScreen";
 import { ART_TYPES, SPECIAL_FORMS, VIBES, pickSpecialForm, pickWeighted, pokemonCountForSpecialForm } from "@/lib/cardData";
-import { GENERATIONS, fetchPokemonForGenerations, pickRandomPokemon, toPokemonPick } from "@/lib/generations";
+import {
+  GENERATIONS,
+  fetchPokemonForGenerations,
+  isBaddiesOnlySelection,
+  pickRandomPokemon,
+  toPokemonPick,
+} from "@/lib/generations";
 import type { PackMode, PokemonPick, PokemonRef } from "@/lib/types";
 
 export type SoloMode = PackMode;
@@ -217,6 +223,7 @@ export default function SoloPackFlow({ mode }: { mode: SoloMode }) {
         specialForm: { value: data.specialForm.value, label: data.specialForm.label, blurb: data.specialForm.blurb },
         vibe: { label: data.vibe.label, blurb: data.vibe.blurb },
         pokemons: data.pokemons.map((p) => ({ name: p.displayName })),
+        baddiesOnly: isBaddiesOnlySelection(gens),
       });
       generatedPrompt = prompt;
       setPromptText(prompt);

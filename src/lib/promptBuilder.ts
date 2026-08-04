@@ -7,6 +7,8 @@ export interface PromptRequestBody {
   specialForm: { value: string; label: string; blurb: string };
   vibe: { label: string; blurb: string };
   pokemons: PokemonInfo[];
+  /** True only when the "Baddies" pseudo-generation is the sole selected generation. */
+  baddiesOnly?: boolean;
 }
 
 export const SYSTEM_PROMPT = `You are an art director for the Pokemon Trading Card Game, specialized in writing text-to-image prompts for full-art holo card illustrations.
@@ -41,8 +43,11 @@ Given a set of card traits, write ONE detailed, vivid text-to-image prompt (220-
  * carve-out: Serialized and Signature are the only special forms that deliberately put text into
  * the artwork, so the suffix has to permit exactly that instead of contradicting what the system
  * prompt just told the drafting model to include.
+ *
+ * `baddiesOnly` guarantees the "Baddies" gen's aesthetic reaches the image model even if the
+ * drafted prompt underplays it - same reasoning as everything else in this function.
  */
-export function buildStyleSuffix(pokemonNames: string[], specialFormValue?: string): string {
+export function buildStyleSuffix(pokemonNames: string[], specialFormValue?: string, baddiesOnly?: boolean): string {
   const textClause =
     specialFormValue === "signature"
       ? "no logos, no watermarks - the one exception is a large, bold, uniquely styled hand-written signature of the Pokemon's own name, swept dramatically across a significant part of the piece as its defining flourish, and nothing else"
@@ -50,8 +55,12 @@ export function buildStyleSuffix(pokemonNames: string[], specialFormValue?: stri
         ? "no logos, no watermarks - the one exception is the single small hand-stamped print number this special form calls for, tucked into one corner and nothing else"
         : "no text, no logos, no watermarks";
 
+  const baddiesClause = baddiesOnly
+    ? " This is a Baddies-generation pull - lean the whole composition girly, cute, glamorous, and alluring: a confident, flattering pose and soft glam styling, while keeping the Pokemon's official design and proportions completely accurate."
+    : "";
+
   const base =
-    ` Rendered in modern Pokemon TCG artwork style: smooth, glossy, semi-stylized creature design with soft airbrushed shading and crisp clean edges, set against a richly detailed painted background, vibrant saturated colors, professional official video-game-splash-art finish. Not photorealistic, not a photograph, not realistic fur/skin/feather texture, not a 3D render, not a generic fantasy illustration. Borderless, full-bleed artwork only, filling the entire frame edge to edge: no borders, no margins, no card frame, no UI elements, ${textClause}. Make the scene, action, interaction, and camera angle unique and imaginative each time rather than a generic repeated pose - always nice and different.`;
+    ` Rendered in modern Pokemon TCG artwork style: smooth, glossy, semi-stylized creature design with soft airbrushed shading and crisp clean edges, set against a richly detailed painted background, vibrant saturated colors, professional official video-game-splash-art finish. Not photorealistic, not a photograph, not realistic fur/skin/feather texture, not a 3D render, not a generic fantasy illustration. Borderless, full-bleed artwork only, filling the entire frame edge to edge: no borders, no margins, no card frame, no UI elements, ${textClause}. Make the scene, action, interaction, and camera angle unique and imaginative each time rather than a generic repeated pose - always nice and different.${baddiesClause}`;
 
   if (pokemonNames.length < 2) {
     const soloName = pokemonNames[0];
@@ -73,7 +82,7 @@ export function buildStyleSuffix(pokemonNames: string[], specialFormValue?: stri
  * to 4 for the free-for-all variants) - the rubric and output-format rules are identical either
  * way, just the number of cards/ratings-keys and the winner enum scale with the letters given.
  */
-export function buildJudgeSystemPrompt(letters: string[]): string {
+export function buildJudgeSystemPrompt(letters: string[], baddiesOnly?: boolean): string {
   const n = letters.length;
   const cardList = letters.map((l) => `Card ${l}`).join(", ").replace(/, ([^,]*)$/, n > 2 ? ", and $1" : " and $1");
   const ratingsKeyList = letters.map((l) => `"card${l}Ratings"`).join(", ");
@@ -83,7 +92,11 @@ export function buildJudgeSystemPrompt(letters: string[]): string {
 
   const modeDescription = n === 2 ? "1-on-1" : `${n}-way free-for-all`;
 
-  return `You are a fair, impartial, and conservative judge for a friendly ${modeDescription} Pokemon TCG art showdown between ${n} AI-generated illustrations, ${cardList}. You will be shown each image plus which Pokemon it depicts.
+  const baddiesContext = baddiesOnly
+    ? `\n\nThis match is drawn entirely from the "Baddies" generation - every card is aiming for a girly, cute, glamorous, alluring baddie aesthetic. Factor in how well each illustration actually nails that confident, stylish, eye-catching charm when you judge, especially for fame and chase.`
+    : "";
+
+  return `You are a fair, impartial, and conservative judge for a friendly ${modeDescription} Pokemon TCG art showdown between ${n} AI-generated illustrations, ${cardList}. You will be shown each image plus which Pokemon it depicts.${baddiesContext}
 
 Look closely at each image individually before scoring - the ${n} cards must almost never end up with identical scores on every single aspect, because independently generated illustrations are essentially never perfectly tied on composition, iconic appeal, collectibility, AND rarity fit all at once. If you find yourself about to give two or more cards the exact same number on every aspect, look again for a real difference (better lighting, a more dynamic pose, a stronger background, cleaner rendering) and reflect it in the scores.
 
@@ -118,6 +131,12 @@ export function buildUserPrompt(body: PromptRequestBody): string {
     `Rarity/art tier: ${body.artType.label} - ${body.artType.blurb}`,
     `Vibe: ${body.vibe.label} - ${body.vibe.blurb}`,
   ];
+
+  if (body.baddiesOnly) {
+    lines.push(
+      `Art direction: every Pokemon pulled from the "Baddies" generation should be composed as a girly, cute, glamorous baddie - a confident, alluring, fashion-forward take on the character (flattering pose, soft glam lighting, stylish charm) while still keeping its official design, proportions, and colors completely accurate.`
+    );
+  }
 
   return lines.join("\n");
 }
