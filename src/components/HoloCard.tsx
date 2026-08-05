@@ -16,12 +16,25 @@ interface Props {
 const MAX_TILT_DEG = 16;
 /** Small enough to compute in a couple of milliseconds, plenty of resolution for a smooth mask. */
 const MASK_SAMPLE_WIDTH = 48;
+/** Steepness of the light/dark separation below - higher pushes bright areas toward full effect
+ *  and dark areas toward none even faster. See `gain()`. */
+const MASK_CONTRAST = 3.4;
+
+/**
+ * Perlin's "gain" S-curve: fixed at 0 -> 0, 0.5 -> 0.5, and 1 -> 1, but bows away from the
+ * straight diagonal line in between - the higher `k`, the more it saturates toward 0 or 1 well
+ * before the input actually reaches the extremes. That's what makes light areas hit full effect
+ * fast and dark areas fall to none fast, instead of a plain linear (and much gentler) ramp.
+ */
+function gain(x: number, k: number): number {
+  return x < 0.5 ? 0.5 * Math.pow(2 * x, k) : 1 - 0.5 * Math.pow(2 * (1 - x), k);
+}
 
 /**
  * Reads the actual artwork's brightness and bakes it into a mask: a white image whose per-pixel
- * alpha is that pixel's luminance. Used as a CSS mask-image on the shine layers so darker parts of
- * the illustration progressively suppress the holo/glare effect instead of shining just as bright
- * as the lightest parts - real foil cards mute the same way over dark ink.
+ * alpha is that pixel's contrast-boosted luminance. Used as a CSS mask-image on the shine layers
+ * so darker parts of the illustration progressively suppress the holo/glare effect instead of
+ * shining just as bright as the lightest parts - real foil cards mute the same way over dark ink.
  */
 function computeLuminanceMask(src: string): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -43,7 +56,7 @@ function computeLuminanceMask(src: string): Promise<string> {
           out.data[i] = 255;
           out.data[i + 1] = 255;
           out.data[i + 2] = 255;
-          out.data[i + 3] = luminance;
+          out.data[i + 3] = gain(luminance / 255, MASK_CONTRAST) * 255;
         }
         ctx.putImageData(out, 0, 0);
         resolve(canvas.toDataURL("image/png"));
