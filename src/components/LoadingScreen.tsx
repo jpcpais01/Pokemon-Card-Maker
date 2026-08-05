@@ -17,27 +17,30 @@ interface Props {
  *  (flagged by react-hooks/purity even inside useMemo), and a fixed scattered-looking layout
  *  reads identically to a random one for decorative particles like these. */
 const PARTICLES = [
-  { left: 18, size: 4, delay: 0, duration: 3.6 },
-  { left: 82, size: 5, delay: 0.4, duration: 4.2 },
-  { left: 34, size: 3, delay: 0.8, duration: 3.2 },
-  { left: 66, size: 6, delay: 1.2, duration: 4.8 },
-  { left: 47, size: 4, delay: 0.2, duration: 3.8 },
-  { left: 24, size: 5, delay: 1.6, duration: 4.4 },
-  { left: 75, size: 3, delay: 2.0, duration: 3.4 },
-  { left: 55, size: 4, delay: 2.4, duration: 4.0 },
-  { left: 12, size: 6, delay: 1.0, duration: 5.0 },
-  { left: 90, size: 3, delay: 0.6, duration: 3.6 },
-  { left: 40, size: 5, delay: 2.8, duration: 4.6 },
-  { left: 60, size: 4, delay: 1.8, duration: 3.9 },
-  { left: 28, size: 3, delay: 3.2, duration: 4.3 },
-  { left: 71, size: 5, delay: 2.6, duration: 3.5 },
+  { left: 18, size: 3, delay: 0, duration: 5.2 },
+  { left: 82, size: 4, delay: 0.7, duration: 6.0 },
+  { left: 34, size: 2, delay: 1.4, duration: 4.6 },
+  { left: 66, size: 4, delay: 2.1, duration: 6.6 },
+  { left: 47, size: 3, delay: 0.3, duration: 5.4 },
+  { left: 24, size: 3, delay: 2.8, duration: 6.2 },
+  { left: 75, size: 2, delay: 3.4, duration: 4.9 },
+  { left: 55, size: 3, delay: 4.0, duration: 5.7 },
+  { left: 12, size: 4, delay: 1.7, duration: 7.0 },
+  { left: 90, size: 2, delay: 1.0, duration: 5.1 },
+  { left: 40, size: 3, delay: 4.6, duration: 6.4 },
+  { left: 60, size: 3, delay: 3.1, duration: 5.5 },
+  { left: 28, size: 2, delay: 5.2, duration: 6.1 },
+  { left: 71, size: 3, delay: 4.3, duration: 4.8 },
 ];
 
 /**
- * Full-viewport "something is being conjured" animation used for every generation wait in the
- * app (solo pack drafting/painting, battle prompting/imaging/judging, initial match load) - no
- * boxed panel, just a materializing core built entirely from transform/opacity animations so it
- * stays smooth regardless of device or how long it plays.
+ * Full-viewport "the card is being painted" animation, used for every generation wait in the app
+ * (solo pack drafting/painting, battle prompting/imaging/judging, initial match load).
+ *
+ * Deliberately depicts the thing being made - a 3:4 card catching a holo sweep, traced by two
+ * arcs with motes drifting past - rather than a generic spinner, so a long wait reads as the
+ * artwork being conjured. No boxed panel; see the `.wait-*` rules in globals.css for why every
+ * layer is transform/opacity only.
  */
 export default function LoadingScreen({ message, stuck, onRetry, retryBusy, leaveHref, leaveLabel = "Leave Match" }: Props) {
   return (
@@ -48,7 +51,7 @@ export default function LoadingScreen({ message, stuck, onRetry, retryBusy, leav
         {PARTICLES.map((p, i) => (
           <span
             key={i}
-            className="wait-particle absolute bottom-[38%] rounded-full bg-gradient-to-b from-amber-200 to-fuchsia-300"
+            className="wait-particle absolute bottom-[34%] rounded-full bg-gradient-to-b from-amber-100/90 to-fuchsia-300/70"
             style={{
               left: `${p.left}%`,
               width: p.size,
@@ -60,11 +63,23 @@ export default function LoadingScreen({ message, stuck, onRetry, retryBusy, leav
         ))}
       </div>
 
-      <div className="relative flex h-44 w-44 flex-shrink-0 items-center justify-center">
-        <div className="wait-ring-outer absolute inset-0 rounded-full" />
-        <div className="wait-ring-inner absolute inset-5 rounded-full" />
-        <div className="wait-core absolute inset-12 rounded-full" />
-        <span className="relative text-4xl drop-shadow-[0_0_12px_rgba(0,0,0,0.4)]">✨</span>
+      <div className="relative flex h-56 w-56 flex-shrink-0 items-center justify-center">
+        <div className="wait-arc absolute inset-0 rounded-full" />
+        <div className="wait-arc-2 absolute inset-[11%] rounded-full" />
+
+        {/* Motes ride rotating frames rather than animating along a path. */}
+        <div className="wait-orbit absolute inset-0">
+          <span className="absolute left-1/2 top-0 h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-amber-200 shadow-[0_0_10px_2px_rgba(251,191,36,0.7)]" />
+        </div>
+        <div className="wait-orbit-rev absolute inset-[11%]">
+          <span className="absolute left-1/2 top-0 h-1 w-1 -translate-x-1/2 -translate-y-1/2 rounded-full bg-cyan-200 shadow-[0_0_9px_2px_rgba(103,232,249,0.65)]" />
+        </div>
+
+        {/* The card being painted - 3:4, matching a real pull. */}
+        <div className="wait-card relative h-[6.5rem] w-[4.875rem] overflow-hidden rounded-lg">
+          <div className="wait-card-glow absolute inset-0" />
+          <div className="wait-card-sheen absolute -inset-1/2" />
+        </div>
       </div>
 
       <p key={message} className="rise-in max-w-[17rem] text-center text-[15px] font-semibold leading-relaxed text-slate-100">

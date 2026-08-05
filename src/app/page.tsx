@@ -12,7 +12,6 @@ interface Feature {
   label: string;
   tagline: string;
   badge?: string;
-  cta: string;
   /** Dropped into public/modes/. Missing files fall through to `gradient`. */
   image: string;
   gradient: string;
@@ -24,7 +23,6 @@ const FEATURED: Feature[] = [
     href: "/solo/classic",
     label: "Classic Pack",
     tagline: "Four random traits, one AI-painted card",
-    cta: "Open a Pack",
     image: "/modes/classic.jpg",
     gradient: "linear-gradient(150deg, #fbbf24 0%, #ea7c0b 45%, #4a1d05 100%)",
   },
@@ -33,7 +31,6 @@ const FEATURED: Feature[] = [
     label: e.label,
     tagline: e.tagline,
     badge: e.badge,
-    cta: "Enter Event",
     image: e.image,
     gradient: e.gradient,
   })),
@@ -102,15 +99,14 @@ export default function Home() {
               }}
             >
               <div className="sheen-drift pointer-events-none absolute -inset-1/2 bg-gradient-to-tr from-transparent via-white/10 to-transparent" />
-              {/* Scrim. The title, tagline and button occupy roughly the bottom
-                  55% of the card, so it stays near-opaque through there and only
-                  releases above - keeping the art vivid up top without ever
-                  letting busy artwork compete with the text. */}
+              {/* Scrim. Stays near-opaque through the bottom ~45% the text
+                  occupies and releases above it, so busy artwork can never
+                  compete with the title while the top of the art stays vivid. */}
               <div
                 className="pointer-events-none absolute inset-0"
                 style={{
                   background:
-                    "linear-gradient(to top, rgb(0 0 0 / 93%) 0%, rgb(0 0 0 / 86%) 32%, rgb(0 0 0 / 58%) 56%, rgb(0 0 0 / 18%) 78%, transparent 100%)",
+                    "linear-gradient(to top, rgb(0 0 0 / 92%) 0%, rgb(0 0 0 / 82%) 26%, rgb(0 0 0 / 48%) 48%, rgb(0 0 0 / 14%) 72%, transparent 100%)",
                 }}
               />
               <div className="relative flex h-[15.5rem] flex-col justify-end p-4">
@@ -126,10 +122,12 @@ export default function Home() {
                   {f.label}
                 </h2>
                 <p className="mt-1.5 text-[12.5px] leading-snug text-white/90">{f.tagline}</p>
-                <div className="btn-primary mt-3.5 w-full !py-3 !text-[14px]">
-                  <Icon name="sparkles" size={16} />
-                  {f.cta}
-                </div>
+                {/* The whole card is the target, so it just needs to say so -
+                    a full-width button inside a tappable card was two
+                    affordances for one action. */}
+                <span className="gold-gradient-text mt-2.5 text-[11px] font-black uppercase tracking-[0.16em]">
+                  Tap to play
+                </span>
               </div>
             </Link>
           ))}
