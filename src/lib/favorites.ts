@@ -12,12 +12,44 @@ const LEGACY_STORAGE_KEY = "pcg-favorites";
 export interface FavoriteCard {
   id: string;
   image: string;
+  /** Small downscaled preview for the gallery grid - rendering this instead of the full-res
+   *  `image` is what keeps a binder full of saved cards from having to decode and paint dozens of
+   *  multi-megapixel images at once. Entries saved before this existed lack one until backfilled
+   *  (see `backfillThumbnail`), so callers should fall back to `image` when it's missing. */
+  thumbnail?: string;
   prompt?: string;
   pokemonNames: string;
   artType: string;
   specialForm?: string;
   vibe: string;
   savedAt: number;
+}
+
+const THUMBNAIL_WIDTH = 320;
+
+/** Downscales a full card image into a small JPEG for the gallery grid - the actual `image` field
+ *  stays full quality for the lightbox, this is purely a lighter stand-in for the grid tile. */
+function generateThumbnail(src: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      try {
+        const w = THUMBNAIL_WIDTH;
+        const h = Math.max(1, Math.round(w * (img.naturalHeight / (img.naturalWidth || 1))));
+        const canvas = document.createElement("canvas");
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) throw new Error("2D canvas context unavailable.");
+        ctx.drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL("image/jpeg", 0.75));
+      } catch (err) {
+        reject(err instanceof Error ? err : new Error("Failed to build thumbnail."));
+      }
+    };
+    img.onerror = () => reject(new Error("Image failed to load for thumbnailing."));
+    img.src = src;
+  });
 }
 
 function openDb(): Promise<IDBDatabase> {
@@ -81,11 +113,15 @@ export async function isImageFavorited(image: string): Promise<boolean> {
   }
 }
 
-export async function addFavorite(card: Omit<FavoriteCard, "id" | "savedAt">): Promise<boolean> {
+export async function addFavorite(card: Omit<FavoriteCard, "id" | "savedAt" | "thumbnail">): Promise<boolean> {
   try {
     if (await isImageFavorited(card.image)) return true;
+    // A missing thumbnail just means this entry falls back to the full image in the grid until
+    // backfilled - not worth failing the whole save over.
+    const thumbnail = await generateThumbnail(card.image).catch(() => undefined);
     const entry: FavoriteCard = {
       ...card,
+      thumbnail,
       id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
       savedAt: Date.now(),
     };
@@ -100,6 +136,31 @@ export async function addFavorite(card: Omit<FavoriteCard, "id" | "savedAt">): P
   } catch {
     // Quota exceeded, storage disabled, or private-browsing restrictions - fail soft.
     return false;
+  }
+}
+
+/** Silently upgrades one entry saved before thumbnails existed - the gallery calls this in the
+ *  background for anything missing one, so a binder self-heals to the fast path over time without
+ *  requiring a risky bulk migration of everyone's existing saved images. */
+export async function backfillThumbnail(fav: FavoriteCard): Promise<string | undefined> {
+  if (fav.thumbnail) return fav.thumbnail;
+  try {
+    const thumbnail = await generateThumbnail(fav.image);
+    const db = await openDb();
+    await new Promise<void>((resolve, reject) => {
+      const tx = db.transaction(STORE_NAME, "readwrite");
+      const store = tx.objectStore(STORE_NAME);
+      const getReq = store.get(fav.id);
+      getReq.onsuccess = () => {
+        const existing = getReq.result as FavoriteCard | undefined;
+        if (existing) store.put({ ...existing, thumbnail });
+      };
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+    return thumbnail;
+  } catch {
+    return undefined;
   }
 }
 

@@ -218,7 +218,12 @@ body {
   width: 100%;
   height: 100%;
   overflow: hidden;
-  touch-action: pan-y;
+  /* `pan-y` used to let the browser's own vertical-scroll gesture race our JS for any touch drag
+     with a vertical component - the moment the browser won that race it fired `pointercancel`,
+     which snapped the tilt back to flat mid-drag (the "resets" / "doesn't turn well" bug). `none`
+     hands every touch on the card to us exclusively, so tracking stays smooth and uninterrupted;
+     tapping to open the lightbox still works fine since touch-action never affects click synthesis. */
+  touch-action: none;
   transition: transform 550ms cubic-bezier(0.16, 1, 0.3, 1);
   will-change: transform;
 }
@@ -244,10 +249,13 @@ body {
 
 /* Rainbow foil - oversized like .holo-sheen so shifting its position (not its gradient) is what
    sweeps different colors across the surface as the "angle" changes. Reserved for the top rarity
-   tier via the `holo` prop; every card still gets the plain glare below. */
+   tier via the `holo` prop; every card still gets the plain glare below.
+   The inset has to comfortably outrun the max translate distance in HoloCard.tsx (currently up to
+   36% of this element's own size) or the layer's edge slides into view at steep tilts, showing a
+   hard seam with part of the card left uncovered. -150% gives it plenty of headroom either way. */
 @utility holo-card-foil {
   position: absolute;
-  inset: -60%;
+  inset: -150%;
   pointer-events: none;
   background-image: linear-gradient(
     115deg,

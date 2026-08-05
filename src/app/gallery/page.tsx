@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import ImageLightbox from "@/components/ImageLightbox";
 import TraitChip from "@/components/TraitChip";
-import { getFavorites, removeFavoriteByImage, type FavoriteCard } from "@/lib/favorites";
+import { backfillThumbnail, getFavorites, removeFavoriteByImage, type FavoriteCard } from "@/lib/favorites";
 
 export default function GalleryPage() {
   const [favorites, setFavorites] = useState<FavoriteCard[]>([]);
@@ -17,6 +17,17 @@ export default function GalleryPage() {
       if (cancelled) return;
       setFavorites(favs);
       setLoaded(true);
+
+      // Self-heal older entries saved before thumbnails existed - runs after the initial paint,
+      // one at a time, and just swaps each tile over to its thumbnail once ready. Doesn't block or
+      // change anything on screen right now, but the binder gets lighter to open every time after.
+      for (const fav of favs) {
+        if (fav.thumbnail) continue;
+        backfillThumbnail(fav).then((thumbnail) => {
+          if (cancelled || !thumbnail) return;
+          setFavorites((prev) => prev.map((f) => (f.id === fav.id ? { ...f, thumbnail } : f)));
+        });
+      }
     });
     return () => {
       cancelled = true;
@@ -72,7 +83,13 @@ export default function GalleryPage() {
                 >
                   <div className="relative aspect-[3/4] w-full bg-black/30">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={f.image} alt={f.pokemonNames} className="h-full w-full object-cover" />
+                    <img
+                      src={f.thumbnail ?? f.image}
+                      alt={f.pokemonNames}
+                      loading="lazy"
+                      decoding="async"
+                      className="h-full w-full object-cover"
+                    />
                     {isSir && <div className="holo-sheen opacity-40" />}
                   </div>
                   <div className="bg-slate-900/90 px-2 py-2 text-center">
