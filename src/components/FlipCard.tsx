@@ -91,28 +91,13 @@ function CardBack({ label, rare }: { label: string; rare?: boolean }) {
   return (
     <div className="relative flex h-full flex-col items-center justify-center gap-2 overflow-hidden bg-gradient-to-br from-[#1a1a2e] via-[#141428] to-[#0a0a14] p-3 text-center">
       {rare && <div className="holo-sheen opacity-25" />}
-      {/* Concentric ring motif - reads as a pack back rather than a blank tile. */}
-      <span
-        aria-hidden
-        className="pointer-events-none absolute left-1/2 top-1/2 h-[130%] w-[130%] -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/[0.05]"
-      />
-      <span
-        aria-hidden
-        className="pointer-events-none absolute left-1/2 top-1/2 h-[95%] w-[95%] -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/[0.07]"
-      />
-      <span
-        className={`relative flex h-10 w-10 items-center justify-center rounded-xl border text-lg ${
-          rare
-            ? "border-amber-300/35 bg-amber-400/15 text-amber-200"
-            : "border-white/10 bg-white/[0.06] text-slate-400"
+      <p
+        className={`relative text-[11px] font-black uppercase tracking-[0.14em] ${
+          rare ? "text-amber-200/90" : "text-slate-300"
         }`}
       >
-        <Icon name="sparkles" size={18} />
-      </span>
-      <div className="relative">
-        <p className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-300">{label}</p>
-        <p className="mt-0.5 text-[9.5px] font-semibold text-slate-600">Tap to reveal</p>
-      </div>
+        {label}
+      </p>
     </div>
   );
 }

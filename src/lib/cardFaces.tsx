@@ -28,20 +28,25 @@ function TraitFace({
   text: string;
 }) {
   return (
-    <div className={`relative flex h-full flex-col justify-end overflow-hidden bg-gradient-to-br p-3 ${gradient}`}>
+    <div
+      className={`relative flex h-full flex-col items-center justify-center overflow-hidden bg-gradient-to-br p-3 ${gradient}`}
+    >
       {/* Soft corner light, so the panel reads as a lit surface rather than a
           flat swatch now that nothing sits on top of it. */}
       <span
         className="pointer-events-none absolute inset-0"
         style={{ background: "radial-gradient(120% 80% at 78% 8%, rgb(255 255 255 / 30%), transparent 62%)" }}
       />
+      {/* Very soft centred shade, so the name keeps its contrast wherever the
+          gradient is lightest behind it. Kept wide and faint - any stronger and
+          it reads as a smudge on the lighter panels rather than as shading. */}
       <span
-        className="pointer-events-none absolute inset-x-0 bottom-0 h-2/3"
-        style={{ background: "linear-gradient(to top, rgb(0 0 0 / 45%), transparent)" }}
+        className="pointer-events-none absolute inset-0"
+        style={{ background: "radial-gradient(85% 62% at 50% 50%, rgb(0 0 0 / 18%), transparent 78%)" }}
       />
-      <div className={`relative ${text}`}>
-        <p className="text-[9px] font-black uppercase tracking-[0.18em] opacity-75">{kicker}</p>
-        <p className="mt-0.5 text-[15px] font-black leading-[1.15] drop-shadow-sm">{label}</p>
+      <div className={`relative text-center ${text}`}>
+        <p className="text-[8.5px] font-black uppercase tracking-[0.18em] opacity-70">{kicker}</p>
+        <p className="mt-1 text-[15px] font-black leading-[1.15] drop-shadow-sm">{label}</p>
       </div>
     </div>
   );
