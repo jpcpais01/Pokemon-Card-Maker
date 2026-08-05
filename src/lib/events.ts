@@ -93,8 +93,13 @@ export const EVENTS: EventDef[] = [
       'Event theme - "Weed": build the whole scene around a warm, blissed-out, psychedelic haze. Work in the trappings wherever they fit naturally - thick smoke drifting and curling through the air, fat sunbeams cutting through it, kaleidoscopic melting color, swirling tie-dye and lava-lamp blobs, big serrated cannabis-leaf shapes woven through the foliage, hanging string lights, curling incense, beanbags and floor cushions, scattered snack piles. The Pokemon should look deeply, contentedly relaxed - heavy-lidded eyes, a lazy grin, sprawled out and completely unbothered. This theme sets the scene and mood; keep the vibe, special form and rarity tier driving the action and rendering as they normally would.',
     styleDirection:
       " This is a Weed event card - the whole scene is bathed in a warm psychedelic haze: thick drifting smoke, kaleidoscopic swirling melted color, serrated cannabis-leaf foliage, and a deeply blissed-out, heavy-lidded, unbothered mood throughout. Keep every Pokemon's official design, proportions and colors completely accurate.",
+    // Named as an aesthetic rather than as the event, for the same reason `promptDirection`
+    // above is: this one is handed to the judge *together with the finished artwork*, and a
+    // vision request that pairs those images with an explicit drug reference gets refused
+    // outright - an empty response, which costs the round its ratings and its score bars.
+    // The look is what the judge has to grade anyway; the label adds nothing.
     judgeContext:
-      'This match is a "Weed" event - every card is aiming for a hazy, psychedelic, blissed-out scene. Factor in how well each illustration actually commits to that drifting-smoke, kaleidoscopic, deeply-relaxed mood, alongside its normal artistic merit.',
+      "Every card in this match is going for the same look: a warm psychedelic haze - thick drifting smoke, kaleidoscopic melted color, lava-lamp swirls, and a deeply relaxed, heavy-lidded, unbothered mood. Factor in how well each illustration actually commits to that atmosphere, alongside its normal artistic merit.",
     image: "/modes/weed.jpg",
     gradient: "linear-gradient(150deg, #a3e635 0%, #4d7c0f 42%, #2e1065 100%)",
     accent: "text-lime-200",

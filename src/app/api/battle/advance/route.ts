@@ -13,6 +13,27 @@ const LETTERS = ["A", "B", "C", "D"];
 
 export const maxDuration = 60;
 
+/**
+ * Judges the round, retrying once with the event context stripped out if the themed attempt
+ * fails.
+ *
+ * An event's framing can be enough on its own for the vision model to refuse the request and
+ * return nothing - and because the round's ratings are what drive the score bars, a refusal
+ * used to cost the whole reveal: no bars, no tiers, just a coin flip and "the judge was
+ * speechless". The artwork is perfectly judgeable either way, so rather than lose the round to
+ * the theme, fall back to the plain rubric. Scores come from the images regardless; all the
+ * theme ever did was tell the judge what the cards were reaching for.
+ */
+async function judgeRound(letters: string[], cards: JudgeCardInput[], theme: EventTheme | undefined) {
+  if (!theme) return judgeMultiBattle(buildJudgeSystemPrompt(letters), cards);
+  try {
+    return await judgeMultiBattle(buildJudgeSystemPrompt(letters, theme), cards);
+  } catch (err) {
+    console.error(`battle/advance: judging failed for the "${theme}" event, retrying unthemed`, err);
+    return judgeMultiBattle(buildJudgeSystemPrompt(letters), cards);
+  }
+}
+
 export async function POST(request: Request) {
   let body: { code?: string; playerId?: string };
   try {
@@ -87,7 +108,8 @@ export async function POST(request: Request) {
             const drafted = await generateText(SYSTEM_PROMPT, userPrompt);
             state.prompt = `${drafted}${buildStyleSuffix(state.pokemons.map((p) => p.displayName), state.specialForm.value, theme)}`;
             state.promptStatus = "ready";
-          } catch {
+          } catch (err) {
+            console.error("battle/advance: prompt drafting failed", err);
             state.promptStatus = "error";
           }
           await saveRoom(room);
@@ -109,7 +131,10 @@ export async function POST(request: Request) {
             const image = await generateImage(state.prompt);
             await saveImage(room.code, room.round, pid, image);
             state.imageStatus = "ready";
-          } catch {
+          } catch (err) {
+            // A card that fails to generate takes the round's ratings with it - judging needs
+            // every image, so one failure here also costs the score bars.
+            console.error("battle/advance: image generation failed", err);
             state.imageStatus = "error";
           }
           await saveRoom(room);
@@ -167,7 +192,7 @@ export async function POST(request: Request) {
             image: images[i]!,
             names: states[i].pokemons.map((p) => p.displayName).join(" & "),
           }));
-          const judged = await judgeMultiBattle(buildJudgeSystemPrompt(letters, theme), cards);
+          const judged = await judgeRound(letters, cards, theme);
           const winnerIndex = letters.indexOf(judged.winnerLetter);
           winnerId = pids[winnerIndex];
           verdict = judged.reason;
@@ -175,7 +200,11 @@ export async function POST(request: Request) {
           pids.forEach((pid, i) => {
             ratings![pid] = judged.ratings[letters[i]];
           });
-        } catch {
+        } catch (err) {
+          // Logged, not swallowed: this branch drops the round's ratings, so the client loses
+          // the whole score-bar stage. Without a line in the log, "the judge isn't working"
+          // has nothing behind it to diagnose.
+          console.error("battle/advance: judging failed, falling back to a coin flip", err);
           winnerId = pids[Math.floor(Math.random() * pids.length)];
           verdict = "The judge was speechless - too close to call, so the coin decided!";
         }
