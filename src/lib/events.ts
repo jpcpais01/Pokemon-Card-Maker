@@ -67,8 +67,8 @@ export const EVENTS: EventDef[] = [
     // Two layers, because a single radial gradient can only make a glowing sun - an
     // eclipse needs the hole. The first paints the moon's black disc and goes fully
     // transparent just past its edge; the second is the corona burning out from exactly
-    // where that disc ends, through the twilight sky. This is the one event still
-    // waiting on art, so the gradient has to carry the card by itself.
+    // where that disc ends, through the twilight sky. Sits under the artwork above,
+    // and stands in for it while it loads or if it ever goes missing.
     gradient:
       "radial-gradient(circle at 50% 35%, #05040c 0 12%, rgba(5,4,12,0) 12.5%), radial-gradient(circle at 50% 35%, #fffdf2 12.2%, #ffeab0 14%, #ffb43c 17.5%, #c2510f 23%, #4b1d5e 44%, #170b2f 70%, #05040f 100%)",
     accent: "text-amber-200",

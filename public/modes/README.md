@@ -10,9 +10,6 @@ Background images for the home carousel cards and the event hero screens.
 | `weed.jpg`       | Weed event card + hero        |
 | `eclipse.jpg`    | Eclipse event card + hero     |
 
-`eclipse.jpg` is not in the repo yet - that event is running on its corona
-gradient alone until art is dropped in at that path.
-
 To swap one out, keep the filename (including the extension), or update
 `image` in `src/lib/events.ts` / `FEATURED` in `src/app/page.tsx` to match.
 
