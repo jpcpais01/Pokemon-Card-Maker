@@ -118,12 +118,12 @@ export default function HoloCard({ src, alt, holo, className, frameClassName }: 
         card.style.transform = `perspective(900px) rotateX(${rx.toFixed(2)}deg) rotateY(${ry.toFixed(2)}deg) scale3d(1.015, 1.015, 1.015)`;
       }
       if (foilRef.current) {
-        foilRef.current.style.transform = `translate3d(${((px - 0.5) * 55).toFixed(1)}%, ${((py - 0.5) * 55).toFixed(1)}%, 0)`;
-        foilRef.current.style.opacity = (0.35 + edge * 0.4).toFixed(2);
+        foilRef.current.style.transform = `translate3d(${((px - 0.5) * 72).toFixed(1)}%, ${((py - 0.5) * 72).toFixed(1)}%, 0)`;
+        foilRef.current.style.opacity = (0.5 + edge * 0.5).toFixed(2);
       }
       if (glareRef.current) {
         glareRef.current.style.transform = `translate3d(${((px - 0.5) * 90).toFixed(1)}%, ${((py - 0.5) * 90).toFixed(1)}%, 0)`;
-        glareRef.current.style.opacity = (0.5 + edge * 0.2).toFixed(2);
+        glareRef.current.style.opacity = (0.6 + edge * 0.35).toFixed(2);
       }
     });
   }, []);
