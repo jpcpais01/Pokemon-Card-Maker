@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import HoloCard from "./HoloCard";
 import ImageLightbox from "./ImageLightbox";
 import TraitChip from "./TraitChip";
 import type { RevealData } from "./RevealScreen";
@@ -56,21 +57,26 @@ export default function ResultScreen({ image, prompt, data, onRegenerateImage, o
         <button
           type="button"
           onClick={() => !regenerating && setFullView(true)}
+          disabled={regenerating}
           aria-label="View full size"
-          className={`group relative mt-5 aspect-[3/4] w-full overflow-hidden rounded-2xl border shadow-xl shadow-black/40 transition-opacity ${
-            isSir ? "border-amber-300/60" : "border-amber-300/40"
-          } ${regenerating ? "opacity-40" : "opacity-100"}`}
+          className={`group relative mt-5 block w-full shadow-xl shadow-black/40 transition-opacity ${
+            regenerating ? "pointer-events-none opacity-40" : "opacity-100"
+          }`}
         >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={image} alt={`${title} illustration`} className="h-full w-full object-cover" />
-          {isSir && !regenerating && <div className="holo-sheen" />}
+          <HoloCard
+            src={image}
+            alt={`${title} illustration`}
+            holo={isSir}
+            className="aspect-[3/4] w-full"
+            frameClassName={`rounded-2xl border ${isSir ? "border-amber-300/60" : "border-amber-300/40"}`}
+          />
           {regenerating && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+            <div className="absolute inset-0 flex items-center justify-center rounded-2xl bg-black/40">
               <span className="h-8 w-8 animate-spin rounded-full border-4 border-white/30 border-t-white" />
             </div>
           )}
           {!regenerating && (
-            <span className="glass absolute bottom-2.5 right-2.5 flex h-8 w-8 items-center justify-center rounded-full text-sm text-white opacity-90 transition-opacity group-active:opacity-100">
+            <span className="glass absolute bottom-2.5 right-2.5 z-10 flex h-8 w-8 items-center justify-center rounded-full text-sm text-white opacity-90 transition-opacity group-active:opacity-100">
               ⤢
             </span>
           )}
@@ -114,6 +120,7 @@ export default function ResultScreen({ image, prompt, data, onRegenerateImage, o
           src={image}
           alt={`${title} illustration`}
           onClose={() => setFullView(false)}
+          holo={isSir}
           isFavorited={isFavorited}
           onToggleFavorite={toggle}
           favoriteError={favoriteError}

@@ -107,6 +107,7 @@ export default function MatchResult({ players, mvp, vsBot }: Props) {
           src={mvp.image}
           alt={mvp.pokemonNames}
           onClose={() => setFullView(false)}
+          holo={mvp.artType === "Special Illustration Rare"}
           isFavorited={isFavorited}
           onToggleFavorite={toggle}
           favoriteError={favoriteError}

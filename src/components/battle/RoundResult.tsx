@@ -159,6 +159,7 @@ export default function RoundResult({
           src={fullView.src}
           alt="Full size artwork"
           onClose={() => setFullView(null)}
+          holo={fullView.pick.artType.label === "Special Illustration Rare"}
           isFavorited={isFavorited}
           onToggleFavorite={toggleFavorite}
           favoriteError={favoriteError}

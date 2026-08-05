@@ -103,6 +103,7 @@ export default function GalleryPage() {
           src={openCard.image}
           alt={openCard.pokemonNames}
           onClose={() => setOpenImage(null)}
+          holo={openCard.artType === "Special Illustration Rare"}
           isFavorited
           onToggleFavorite={() => handleRemove(openCard.image)}
         />

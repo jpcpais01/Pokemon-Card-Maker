@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import HoloCard from "./HoloCard";
 
 interface Props {
   src: string;
@@ -10,6 +11,8 @@ interface Props {
   isFavorited?: boolean;
   onToggleFavorite?: () => void;
   favoriteError?: string | null;
+  /** Full rainbow holo foil, reserved for Special Illustration Rare - matches the tier cue used elsewhere. */
+  holo?: boolean;
 }
 
 function downloadFilename(alt: string): string {
@@ -27,6 +30,7 @@ export default function ImageLightbox({
   isFavorited,
   onToggleFavorite,
   favoriteError,
+  holo,
 }: Props) {
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -76,13 +80,9 @@ export default function ImageLightbox({
       )}
 
       <div className="flex min-h-full flex-col items-center justify-center gap-5 p-4">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={src}
-          alt={alt}
-          onClick={(e) => e.stopPropagation()}
-          className="max-h-[70vh] max-w-full rounded-2xl object-contain shadow-2xl"
-        />
+        <div onClick={(e) => e.stopPropagation()} className="w-full max-w-sm">
+          <HoloCard src={src} alt={alt} holo={holo} className="aspect-[3/4] w-full" frameClassName="rounded-2xl shadow-2xl" />
+        </div>
 
         {favoriteError && (
           <p
