@@ -119,10 +119,9 @@ export default function HoloCard({ src, alt, holo, className, frameClassName }: 
       }
       if (foilRef.current) {
         foilRef.current.style.transform = `translate3d(${((px - 0.5) * 72).toFixed(1)}%, ${((py - 0.5) * 72).toFixed(1)}%, 0)`;
-        // Ramps well past the old ceiling: multiply only ever removes light, so
-        // it needs real strength at a steep tilt for the mismatch-muting to
-        // register, and it can't blow out the way an additive blend would.
-        foilRef.current.style.opacity = (0.42 + edge * 0.48).toFixed(2);
+        // Lower ceiling than the old color-dodge foil needed: hard-light acts on
+        // the art's own colours, so it reads far stronger at the same opacity.
+        foilRef.current.style.opacity = (0.38 + edge * 0.34).toFixed(2);
       }
       if (glareRef.current) {
         glareRef.current.style.transform = `translate3d(${((px - 0.5) * 90).toFixed(1)}%, ${((py - 0.5) * 90).toFixed(1)}%, 0)`;

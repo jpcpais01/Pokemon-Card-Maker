@@ -460,43 +460,38 @@ body {
   position: absolute;
   inset: -150%;
   pointer-events: none;
-  /*
-   * High-key on purpose. multiply is the blend below, and multiply against a
-   * fully saturated colour crushes every non-matching channel to near-black,
-   * which dims the whole card rather than just the mismatched regions. Keeping
-   * every channel well off zero means a matching hue survives almost intact
-   * while a clashing one still loses its strongest channel.
-   */
   background-image: linear-gradient(
     115deg,
     transparent 12%,
-    rgb(255 255 255 / 55%) 25%,
-    rgb(255 138 196) 35%,
-    rgb(201 163 255) 45%,
-    rgb(140 230 247) 54%,
-    rgb(154 238 182) 63%,
-    rgb(255 226 122) 73%,
-    rgb(255 255 255 / 55%) 83%,
+    rgb(255 255 255 / 40%) 25%,
+    rgb(236 72 153 / 80%) 35%,
+    rgb(168 85 247 / 80%) 45%,
+    rgb(6 182 212 / 80%) 54%,
+    rgb(52 211 153 / 80%) 63%,
+    rgb(251 191 36 / 80%) 73%,
+    rgb(255 255 255 / 40%) 83%,
     transparent 92%
   );
   /*
-   * multiply is the only common blend that actually measures agreement between
-   * the foil and the art: the result is high only where BOTH are high, per
-   * channel. A yellow band (high red, high green, low blue) over yellow art
-   * keeps red and green and only kills blue - which was already low, so the
-   * region survives vivid. Over blue art it kills the blue outright and the
-   * region goes visibly dim and desaturated.
+   * hard-light, not color-dodge, is what makes the foil respond to the art
+   * underneath it.
    *
-   * hard-light was tried first and can't be made strict. It screens any channel
-   * above 0.5, and screening lifts the backdrop no matter what's underneath, so
-   * a yellow band brightened blue art instead of muting it - the whole point of
-   * the effect leaked away on exactly the mismatches it was supposed to punish.
+   * Per channel it screens where the foil is bright and multiplies where the
+   * foil is dark. So a pink band (high red, low green) lifts red and crushes
+   * green: over pink art - which is also high-red/low-green - almost nothing
+   * is crushed and the colour stays vivid, while over yellow art - high red
+   * but *also* high green - that green gets multiplied away and the region
+   * goes dim and muddy. Agreement stays bright, disagreement dims, which is
+   * exactly how real foil behaves.
    *
-   * The gradient's transparent and white stops are identity under multiply, so
-   * they leave the artwork untouched; actual specular shine is the separate
-   * `holo-card-glare` layer's job, not this one's.
+   * color-dodge had no such relationship: it divides by the inverse of the
+   * foil, so it blew every hue out toward white equally and the foil read as
+   * a flat wash sitting on top of the art rather than interacting with it.
+   *
+   * The gradient's white bands still blow to pure white here (screen against
+   * white is white), so the specular highlight survives the change.
    */
-  mix-blend-mode: multiply;
+  mix-blend-mode: hard-light;
   opacity: 0;
   transition: opacity 350ms ease-out;
   will-change: transform, opacity;
