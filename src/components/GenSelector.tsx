@@ -3,7 +3,7 @@
 import type { ReactNode } from "react";
 import Screen from "@/components/ui/Screen";
 import Icon from "@/components/ui/Icon";
-import { BADDIES_GEN_ID, GENERATIONS, NICHE_GEN_ID, TOP_100_GEN_ID } from "@/lib/generations";
+import { GENERATIONS } from "@/lib/generations";
 
 interface Props {
   selected: number[];
@@ -21,13 +21,19 @@ interface Props {
   footer?: ReactNode;
   /** Rendered after the gen grid, before the start button - e.g. match settings. */
   extraTop?: ReactNode;
+  /** Shown above the title when this setup is running inside an event, so the
+   *  theme stays visible while you're choosing pools and rules. */
+  eventBanner?: { label: string; blurb: string; gradient: string };
 }
 
-/** The three curated pools aren't real generations, so they get their own group. */
-const CURATED_IDS = new Set<number>([TOP_100_GEN_ID, BADDIES_GEN_ID, NICHE_GEN_ID]);
+/** Curated pools aren't real generations and get their own group. Real generations
+ *  are numbered from 1, so every hand-picked pool uses a zero-or-negative id -
+ *  deriving the split from that means a new pool lands in the right group here
+ *  without this file having to know it exists. */
+const isCurated = (id: number) => id <= 0;
 
-const NUMBERED = GENERATIONS.filter((g) => !CURATED_IDS.has(g.id));
-const CURATED = GENERATIONS.filter((g) => CURATED_IDS.has(g.id));
+const NUMBERED = GENERATIONS.filter((g) => !isCurated(g.id));
+const CURATED = GENERATIONS.filter((g) => isCurated(g.id));
 
 export default function GenSelector({
   selected,
@@ -43,6 +49,7 @@ export default function GenSelector({
   back,
   footer,
   extraTop,
+  eventBanner,
 }: Props) {
   const allSelected = selected.length === GENERATIONS.length;
 
@@ -85,6 +92,22 @@ export default function GenSelector({
     // flow mid-way. The header back arrow is the way out.
     <Screen immersive back={back} title={eyebrow}>
       <div className="screen-pad flex flex-1 flex-col">
+        {eventBanner && (
+          <div
+            className="enter-up relative mb-4 mt-1 overflow-hidden rounded-2xl p-4"
+            style={{ backgroundImage: eventBanner.gradient }}
+          >
+            <div className="sheen-drift pointer-events-none absolute -inset-1/2 bg-gradient-to-tr from-transparent via-white/20 to-transparent" />
+            <p className="relative text-[10px] font-black uppercase tracking-[0.18em] text-white/75">
+              Event
+            </p>
+            <p className="font-display relative mt-0.5 text-xl font-extrabold text-white drop-shadow-sm">
+              {eventBanner.label}
+            </p>
+            <p className="relative mt-1 text-[12px] leading-relaxed text-white/85">{eventBanner.blurb}</p>
+          </div>
+        )}
+
         <div className="enter-up mb-6 mt-1">
           <h1 className="font-display text-[28px] font-extrabold leading-tight tracking-tight text-white">
             {title}

@@ -1,5 +1,10 @@
-import SoloPackFlow from "@/components/SoloPackFlow";
+import { Suspense } from "react";
+import SoloPackRoute from "@/components/SoloPackRoute";
 
-export default function OnlySirsPage() {
-  return <SoloPackFlow mode="sir" />;
+export default function SirPackPage() {
+  return (
+    <Suspense fallback={null}>
+      <SoloPackRoute mode="sir" />
+    </Suspense>
+  );
 }

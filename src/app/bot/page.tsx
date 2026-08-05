@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import GenSelector from "@/components/GenSelector";
 import JudgeModePicker from "@/components/battle/JudgeModePicker";
 import PackModePicker from "@/components/battle/PackModePicker";
@@ -9,16 +9,28 @@ import PlayerCountPicker from "@/components/battle/PlayerCountPicker";
 import UnlimitedRerollsToggle from "@/components/battle/UnlimitedRerollsToggle";
 import { createRoom } from "@/lib/battle/api";
 import { storePlayerId } from "@/lib/battle/session";
+import { getEvent, parseEventTheme } from "@/lib/events";
 import { GENERATIONS } from "@/lib/generations";
 import { MIN_VOTE_PLAYERS, type JudgeMode } from "@/lib/battle/types";
 import type { PackMode } from "@/lib/types";
 
-export default function BattleBotSetupPage() {
+const PACK_MODES: PackMode[] = ["classic", "sir", "tagteam", "tagteamsir", "tripletagteamsir"];
+
+function parsePackMode(value: string | null): PackMode {
+  return PACK_MODES.includes(value as PackMode) ? (value as PackMode) : "classic";
+}
+
+function BotSetup() {
   const router = useRouter();
-  const [gens, setGens] = useState<number[]>(GENERATIONS.map((g) => g.id));
+  const params = useSearchParams();
+  // An event hub hands off here with the theme (and the pack mode already chosen).
+  const theme = parseEventTheme(params.get("theme"));
+  const event = getEvent(theme);
+
+  const [gens, setGens] = useState<number[]>(event ? event.defaultGens : GENERATIONS.map((g) => g.id));
   const [botPlayers, setBotPlayers] = useState(2);
   const [botJudgeMode, setBotJudgeMode] = useState<JudgeMode>("ai");
-  const [botPackMode, setBotPackMode] = useState<PackMode>("classic");
+  const [botPackMode, setBotPackMode] = useState<PackMode>(parsePackMode(params.get("pack")));
   const [botUnlimitedRerolls, setBotUnlimitedRerolls] = useState(false);
   const [starting, setStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -34,7 +46,8 @@ export default function BattleBotSetupPage() {
         botPlayers,
         effectiveJudgeMode,
         botUnlimitedRerolls,
-        botPackMode
+        botPackMode,
+        theme
       );
       storePlayerId(code, playerId);
       router.push(`/battle/${code}`);
@@ -52,12 +65,13 @@ export default function BattleBotSetupPage() {
       onStart={handleStart}
       loading={starting}
       error={error}
-      eyebrow="Battle a Bot"
+      eyebrow={event ? event.label : "Battle a Bot"}
       title="Set Up Your Match"
       subtitle="Pick the pool, how many players, and the match rules."
       buttonLabel="Start Match"
       loadingLabel="Starting match..."
-      back="/battle"
+      back={event ? `/event/${event.slug}` : "/battle"}
+      eventBanner={event ? { label: event.label, blurb: event.blurb, gradient: event.gradient } : undefined}
       extraTop={
         <>
           <PlayerCountPicker value={botPlayers} onChange={setBotPlayers} label="Players (you + bots)" />
@@ -67,5 +81,13 @@ export default function BattleBotSetupPage() {
         </>
       }
     />
+  );
+}
+
+export default function BattleBotSetupPage() {
+  return (
+    <Suspense fallback={null}>
+      <BotSetup />
+    </Suspense>
   );
 }

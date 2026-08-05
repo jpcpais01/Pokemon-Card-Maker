@@ -11,6 +11,7 @@ import {
   MIN_VOTE_PLAYERS,
 } from "@/lib/battle/types";
 import type { BattleRoom, JudgeMode, PackMode } from "@/lib/battle/types";
+import { parseEventTheme } from "@/lib/events";
 import { fetchPokemonForGenerations } from "@/lib/generations";
 
 export async function POST(request: Request) {
@@ -21,6 +22,7 @@ export async function POST(request: Request) {
     judgeMode?: string;
     unlimitedRerolls?: boolean;
     packMode?: string;
+    theme?: string;
   };
   try {
     body = await request.json();
@@ -78,6 +80,7 @@ export async function POST(request: Request) {
     judgeMode,
     unlimitedRerolls,
     packMode,
+    theme: parseEventTheme(body.theme),
   };
 
   if (vsBot) {

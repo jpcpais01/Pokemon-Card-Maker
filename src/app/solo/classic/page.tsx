@@ -1,5 +1,10 @@
-import SoloPackFlow from "@/components/SoloPackFlow";
+import { Suspense } from "react";
+import SoloPackRoute from "@/components/SoloPackRoute";
 
 export default function ClassicPackPage() {
-  return <SoloPackFlow mode="classic" />;
+  return (
+    <Suspense fallback={null}>
+      <SoloPackRoute mode="classic" />
+    </Suspense>
+  );
 }

@@ -1,3 +1,4 @@
+import type { EventTheme } from "@/lib/events";
 import type { CardRatings } from "@/lib/openrouter";
 import type { ArtType, PackMode, PokemonPick, SpecialForm, Vibe, WeightedOption } from "@/lib/types";
 
@@ -94,4 +95,7 @@ export interface BattleRoom {
   /** "classic" (default) leaves art type and special form random; "sir"/"tagteam" force every
    *  player's artType/specialForm for the whole match, matching solo mode's forced-trait packs. */
   packMode?: PackMode;
+  /** Event this match was started from, if any - steers every player's artwork and tells the
+   *  judge what the round is going for. Purely thematic; it changes no game rules. */
+  theme?: EventTheme;
 }

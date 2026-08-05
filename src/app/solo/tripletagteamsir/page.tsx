@@ -1,5 +1,10 @@
-import SoloPackFlow from "@/components/SoloPackFlow";
+import { Suspense } from "react";
+import SoloPackRoute from "@/components/SoloPackRoute";
 
-export default function TripleTagTeamSirPage() {
-  return <SoloPackFlow mode="tripletagteamsir" />;
+export default function TripleTagTeamSirPackPage() {
+  return (
+    <Suspense fallback={null}>
+      <SoloPackRoute mode="tripletagteamsir" />
+    </Suspense>
+  );
 }

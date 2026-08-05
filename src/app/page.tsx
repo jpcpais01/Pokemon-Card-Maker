@@ -4,82 +4,47 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Screen from "@/components/ui/Screen";
 import Icon from "@/components/ui/Icon";
+import { EVENTS } from "@/lib/events";
 import { getFavorites } from "@/lib/favorites";
 
-interface Mode {
+interface Feature {
   href: string;
-  title: string;
-  blurb: string;
-  /** Trait emoji shown on the mode's mini card stack - content, not chrome. */
-  glyph: string;
-  /** Tailwind gradient stops for the tile's color identity. */
-  from: string;
-  to: string;
-  tag?: string;
+  label: string;
+  tagline: string;
+  badge?: string;
+  cta: string;
+  /** Dropped into public/modes/. Missing files fall through to `gradient`. */
+  image: string;
+  gradient: string;
 }
 
-const FEATURED: Mode = {
-  href: "/solo/classic",
-  title: "Classic Pack",
-  blurb: "Four random traits, one AI-painted card",
-  glyph: "🎴",
-  from: "from-amber-400",
-  to: "to-orange-600",
-};
-
-const MODES: Mode[] = [
+/** The normal game, plus every event, as one horizontally-scrolling shelf. */
+const FEATURED: Feature[] = [
   {
-    href: "/solo/sir",
-    title: "Only SIRs",
-    blurb: "Every pull is a Special Illustration Rare",
-    glyph: "💎",
-    from: "from-violet-500",
-    to: "to-fuchsia-600",
-    tag: "Rare",
+    href: "/solo/classic",
+    label: "Classic Pack",
+    tagline: "Four random traits, one AI-painted card",
+    cta: "Open a Pack",
+    image: "/modes/classic.jpg",
+    gradient: "linear-gradient(150deg, #fbbf24 0%, #ea7c0b 45%, #4a1d05 100%)",
   },
-  {
-    href: "/solo/tagteam",
-    title: "Tag Teams",
-    blurb: "Two Pokemon share every illustration",
-    glyph: "🤝",
-    from: "from-cyan-400",
-    to: "to-sky-600",
-  },
-  {
-    href: "/solo/tagteamsir",
-    title: "Tag Team SIRs",
-    blurb: "Two Pokemon, top rarity tier",
-    glyph: "👑",
-    from: "from-rose-400",
-    to: "to-pink-600",
-    tag: "Rare",
-  },
-  {
-    href: "/solo/tripletagteamsir",
-    title: "Triple Tag Team SIRs",
-    blurb: "Three Pokemon on one SIR",
-    glyph: "🫂",
-    from: "from-emerald-400",
-    to: "to-teal-600",
-    tag: "Rare",
-  },
+  ...EVENTS.map((e) => ({
+    href: `/event/${e.slug}`,
+    label: e.label,
+    tagline: e.tagline,
+    badge: e.badge,
+    cta: "Enter Event",
+    image: e.image,
+    gradient: e.gradient,
+  })),
 ];
 
-/** The mini "card" that gives each mode tile a physical, collectible identity. */
-function ModeGlyph({ mode, large }: { mode: Mode; large?: boolean }) {
-  return (
-    <span
-      className={`relative flex flex-shrink-0 items-center justify-center overflow-hidden bg-gradient-to-br ${
-        mode.from
-      } ${mode.to} ${large ? "h-[4.75rem] w-[3.5rem] rounded-xl text-[2rem]" : "h-14 w-[2.6rem] rounded-[0.6rem] text-2xl"}`}
-      style={{ boxShadow: "inset 0 1px 0 rgb(255 255 255 / 45%), 0 8px 20px -8px rgb(0 0 0 / 80%)" }}
-    >
-      {/* Foil sheen across the mini card, matching the holo language used on real pulls. */}
-      <span className="sheen-drift pointer-events-none absolute -inset-1/2 bg-gradient-to-tr from-transparent via-white/35 to-transparent" />
-      <span className="relative drop-shadow-sm">{mode.glyph}</span>
-    </span>
-  );
-}
+const MODES = [
+  { href: "/solo/sir", title: "Only SIRs", blurb: "Every pull is a Special Illustration Rare", tag: "Rare" },
+  { href: "/solo/tagteam", title: "Tag Teams", blurb: "Two Pokemon share every illustration" },
+  { href: "/solo/tagteamsir", title: "Tag Team SIRs", blurb: "Two Pokemon, top rarity tier", tag: "Rare" },
+  { href: "/solo/tripletagteamsir", title: "Triple Tag Team SIRs", blurb: "Three Pokemon on one SIR", tag: "Rare" },
+];
 
 export default function Home() {
   const [favoriteCount, setFavoriteCount] = useState<number | null>(null);
@@ -96,9 +61,8 @@ export default function Home() {
 
   return (
     <Screen bare>
-      <div className="screen-pad flex flex-1 flex-col pt-safe">
-        {/* Brand header */}
-        <header className="enter-up flex items-center justify-between py-3">
+      <div className="flex flex-1 flex-col pt-safe">
+        <header className="screen-pad enter-up flex items-center justify-between py-3">
           <div>
             <h1 className="font-display text-[28px] font-extrabold leading-none tracking-tight text-white">
               Poke<span className="gold-gradient-text">Gen</span>
@@ -115,82 +79,105 @@ export default function Home() {
           </Link>
         </header>
 
-        {/* Featured mode - the primary action on the screen, sized like it. */}
-        <Link
-          href={FEATURED.href}
-          className="card-raised enter-up group relative mt-3 overflow-hidden p-5 transition-transform duration-150 active:scale-[0.985]"
-          style={{ "--d": "60ms" } as React.CSSProperties}
+        {/*
+          Featured shelf. Full-bleed and snap-scrolling so a card is always
+          centered and the next one peeks in at the edge - the peek is what
+          tells you there's more to swipe to without needing dots or arrows.
+        */}
+        <div
+          className="enter-up -mx-0 mt-2 flex snap-x snap-mandatory gap-3 overflow-x-auto px-5 pb-1"
+          style={{ "--d": "60ms", scrollPaddingLeft: "1.25rem" } as React.CSSProperties}
         >
-          <div
-            aria-hidden
-            className="glow-pulse pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full bg-amber-400/25 blur-3xl"
-          />
-          <div className="relative flex items-center gap-4">
-            <ModeGlyph mode={FEATURED} large />
-            <div className="min-w-0 flex-1">
-              <p className="section-label text-amber-300/80">Start here</p>
-              <p className="font-display mt-1 text-2xl font-extrabold leading-tight text-white">
-                {FEATURED.title}
-              </p>
-              <p className="mt-1 text-[13px] leading-snug text-slate-400">{FEATURED.blurb}</p>
-            </div>
-          </div>
-          <div className="btn-primary relative mt-4 w-full">
-            <Icon name="sparkles" size={17} />
-            Open a Pack
-          </div>
-        </Link>
-
-        {/* Other solo modes */}
-        <p className="section-label enter-up mb-2.5 mt-7" style={{ "--d": "120ms" } as React.CSSProperties}>
-          More ways to pull
-        </p>
-        <div className="flex flex-col gap-2.5">
-          {MODES.map((mode, i) => (
+          {FEATURED.map((f, i) => (
             <Link
-              key={mode.href}
-              href={mode.href}
-              className="card enter-up group flex items-center gap-3.5 p-3 transition-transform duration-150 active:scale-[0.98]"
-              style={{ "--d": `${160 + i * 55}ms` } as React.CSSProperties}
+              key={f.href}
+              href={f.href}
+              className="group relative w-[85%] flex-shrink-0 snap-start overflow-hidden rounded-3xl border border-white/12 transition-transform duration-150 active:scale-[0.985]"
+              style={{
+                backgroundImage: `url("${f.image}"), ${f.gradient}`,
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+                boxShadow: "inset 0 1px 0 rgb(255 255 255 / 14%), 0 20px 40px -20px rgb(0 0 0 / 90%)",
+                animationDelay: `${60 + i * 60}ms`,
+              }}
             >
-              <ModeGlyph mode={mode} />
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <p className="truncate text-[15px] font-bold text-white">{mode.title}</p>
-                  {mode.tag && <span className="chip chip-violet chip-sm!">{mode.tag}</span>}
-                </div>
-                <p className="mt-0.5 truncate text-[12.5px] text-slate-400">{mode.blurb}</p>
-              </div>
-              <Icon
-                name="chevron-right"
-                size={18}
-                className="flex-shrink-0 text-slate-600 transition-transform duration-150 group-active:translate-x-0.5"
+              <div className="sheen-drift pointer-events-none absolute -inset-1/2 bg-gradient-to-tr from-transparent via-white/18 to-transparent" />
+              {/* Scrim so the title stays readable over whatever art lands here. */}
+              <div
+                className="pointer-events-none absolute inset-0"
+                style={{
+                  background:
+                    "linear-gradient(to top, rgb(0 0 0 / 78%) 0%, rgb(0 0 0 / 30%) 45%, rgb(0 0 0 / 5%) 100%)",
+                }}
               />
+              <div className="relative flex h-[15.5rem] flex-col justify-end p-4">
+                {f.badge && (
+                  <span className="mb-2 self-start rounded-full bg-black/50 px-2.5 py-1 text-[9.5px] font-black uppercase tracking-[0.14em] text-white backdrop-blur-sm">
+                    {f.badge}
+                  </span>
+                )}
+                <h2 className="font-display text-[1.7rem] font-extrabold leading-none tracking-tight text-white drop-shadow-md">
+                  {f.label}
+                </h2>
+                <p className="mt-1.5 text-[12.5px] leading-snug text-white/85 drop-shadow-sm">{f.tagline}</p>
+                <div className="btn-primary mt-3.5 w-full !py-3 !text-[14px]">
+                  <Icon name="sparkles" size={16} />
+                  {f.cta}
+                </div>
+              </div>
             </Link>
           ))}
         </div>
 
-        {/* Battle cross-link - lives on its own tab, but the hand-off belongs here too. */}
-        <Link
-          href="/battle"
-          className="card enter-up group mt-7 flex items-center gap-3.5 overflow-hidden p-4 transition-transform duration-150 active:scale-[0.98]"
-          style={{ "--d": "380ms" } as React.CSSProperties}
-        >
-          <span className="brand-gradient flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl text-white shadow-lg shadow-fuchsia-500/25">
-            <Icon name="swords" size={21} />
-          </span>
-          <div className="min-w-0 flex-1">
-            <p className="text-[15px] font-bold text-white">Card Showdown</p>
-            <p className="mt-0.5 truncate text-[12.5px] text-slate-400">
-              Battle friends or bots — an AI judges every round
-            </p>
+        <div className="screen-pad">
+          <p className="section-label enter-up mb-2.5 mt-7" style={{ "--d": "160ms" } as React.CSSProperties}>
+            More ways to pull
+          </p>
+          <div className="flex flex-col gap-2.5">
+            {MODES.map((mode, i) => (
+              <Link
+                key={mode.href}
+                href={mode.href}
+                className="card enter-up group flex items-center gap-3 p-4 transition-transform duration-150 active:scale-[0.98]"
+                style={{ "--d": `${200 + i * 55}ms` } as React.CSSProperties}
+              >
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <p className="truncate text-[15px] font-bold text-white">{mode.title}</p>
+                    {mode.tag && <span className="chip chip-violet chip-sm!">{mode.tag}</span>}
+                  </div>
+                  <p className="mt-0.5 truncate text-[12.5px] text-slate-400">{mode.blurb}</p>
+                </div>
+                <Icon
+                  name="chevron-right"
+                  size={18}
+                  className="flex-shrink-0 text-slate-600 transition-transform duration-150 group-active:translate-x-0.5"
+                />
+              </Link>
+            ))}
           </div>
-          <Icon
-            name="chevron-right"
-            size={18}
-            className="flex-shrink-0 text-slate-600 transition-transform duration-150 group-active:translate-x-0.5"
-          />
-        </Link>
+
+          <Link
+            href="/battle"
+            className="card enter-up group mt-7 flex items-center gap-3.5 overflow-hidden p-4 transition-transform duration-150 active:scale-[0.98]"
+            style={{ "--d": "420ms" } as React.CSSProperties}
+          >
+            <span className="brand-gradient flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl text-white shadow-lg shadow-fuchsia-500/25">
+              <Icon name="swords" size={21} />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-[15px] font-bold text-white">Card Showdown</p>
+              <p className="mt-0.5 truncate text-[12.5px] text-slate-400">
+                Battle friends or bots — an AI judges every round
+              </p>
+            </div>
+            <Icon
+              name="chevron-right"
+              size={18}
+              className="flex-shrink-0 text-slate-600 transition-transform duration-150 group-active:translate-x-0.5"
+            />
+          </Link>
+        </div>
       </div>
     </Screen>
   );

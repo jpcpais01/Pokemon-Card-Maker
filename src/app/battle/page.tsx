@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import GenSelector from "@/components/GenSelector";
 import Screen from "@/components/ui/Screen";
@@ -12,20 +12,32 @@ import PlayerCountPicker from "@/components/battle/PlayerCountPicker";
 import { createRoom, joinRoom } from "@/lib/battle/api";
 import { ROOM_CODE_LENGTH } from "@/lib/battle/roomCode";
 import { storePlayerId } from "@/lib/battle/session";
+import { getEvent, parseEventTheme } from "@/lib/events";
 import { GENERATIONS } from "@/lib/generations";
 import { BATTLE_ROUNDS, MIN_VOTE_PLAYERS, type JudgeMode } from "@/lib/battle/types";
 import type { PackMode } from "@/lib/types";
 
 type Mode = "menu" | "create" | "join";
 
-export default function BattleLobby() {
-  const router = useRouter();
-  const [mode, setMode] = useState<Mode>("menu");
+const PACK_MODES: PackMode[] = ["classic", "sir", "tagteam", "tagteamsir", "tripletagteamsir"];
 
-  const [gens, setGens] = useState<number[]>(GENERATIONS.map((g) => g.id));
+function parsePackMode(value: string | null): PackMode {
+  return PACK_MODES.includes(value as PackMode) ? (value as PackMode) : "classic";
+}
+
+function BattleLobby() {
+  const router = useRouter();
+  const params = useSearchParams();
+  // An event hub hands off here with ?create=1 so the room-setup step opens directly.
+  const theme = parseEventTheme(params.get("theme"));
+  const event = getEvent(theme);
+
+  const [mode, setMode] = useState<Mode>(params.get("create") === "1" ? "create" : "menu");
+
+  const [gens, setGens] = useState<number[]>(event ? event.defaultGens : GENERATIONS.map((g) => g.id));
   const [maxPlayers, setMaxPlayers] = useState(2);
   const [judgeMode, setJudgeMode] = useState<JudgeMode>("ai");
-  const [packMode, setPackMode] = useState<PackMode>("classic");
+  const [packMode, setPackMode] = useState<PackMode>(parsePackMode(params.get("pack")));
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
 
@@ -38,7 +50,7 @@ export default function BattleLobby() {
     setCreating(true);
     try {
       const effectiveJudgeMode = maxPlayers >= MIN_VOTE_PLAYERS ? judgeMode : "ai";
-      const { code, playerId } = await createRoom(gens, false, maxPlayers, effectiveJudgeMode, false, packMode);
+      const { code, playerId } = await createRoom(gens, false, maxPlayers, effectiveJudgeMode, false, packMode, theme);
       storePlayerId(code, playerId);
       router.push(`/battle/${code}`);
     } catch (err) {
@@ -73,12 +85,13 @@ export default function BattleLobby() {
         onStart={handleCreate}
         loading={creating}
         error={createError}
-        eyebrow="Create Room"
+        eyebrow={event ? event.label : "Create Room"}
         title="Set the Rules"
         subtitle="Pick the pool everyone pulls from, then how the match plays out."
         buttonLabel="Create Room"
         loadingLabel="Creating room..."
-        back={() => setMode("menu")}
+        back={event ? `/event/${event.slug}` : () => setMode("menu")}
+        eventBanner={event ? { label: event.label, blurb: event.blurb, gradient: event.gradient } : undefined}
         extraTop={
           <>
             <PlayerCountPicker value={maxPlayers} onChange={setMaxPlayers} />
@@ -228,5 +241,13 @@ export default function BattleLobby() {
         </div>
       </div>
     </Screen>
+  );
+}
+
+export default function BattleLobbyPage() {
+  return (
+    <Suspense fallback={null}>
+      <BattleLobby />
+    </Suspense>
   );
 }

@@ -1,4 +1,5 @@
 import type { CardKey } from "@/lib/cardFaces";
+import type { EventTheme } from "@/lib/events";
 import type { PackMode } from "@/lib/types";
 import type { BattleRoom, JudgeMode } from "./types";
 
@@ -26,7 +27,8 @@ export function createRoom(
   maxPlayers = 2,
   judgeMode: JudgeMode = "ai",
   unlimitedRerolls = false,
-  packMode: PackMode = "classic"
+  packMode: PackMode = "classic",
+  theme?: EventTheme
 ) {
   return postJson<{ code: string; playerId: string }>("/api/battle/create", {
     gens,
@@ -35,6 +37,7 @@ export function createRoom(
     judgeMode,
     unlimitedRerolls,
     packMode,
+    theme,
   });
 }
 

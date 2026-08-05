@@ -6,6 +6,8 @@ export const TOP_100_GEN_ID = 0;
 export const BADDIES_GEN_ID = -1;
 /** Not a real generation - a curated pool of underrated, weird, or design-forward Pokemon that rarely get the spotlight. */
 export const NICHE_GEN_ID = -2;
+/** Not a real generation - a curated pool of water/beach/summer Pokemon for the Pool Party event. */
+export const POOL_PARTY_GEN_ID = -3;
 
 export const GENERATIONS: Generation[] = [
   { id: 1, label: "Gen I", region: "Kanto" },
@@ -20,6 +22,7 @@ export const GENERATIONS: Generation[] = [
   { id: TOP_100_GEN_ID, label: "Best 100", region: "Fan Favorites" },
   { id: BADDIES_GEN_ID, label: "Baddies", region: "Iconic & Alluring" },
   { id: NICHE_GEN_ID, label: "Niche", region: "Hidden Gems" },
+  { id: POOL_PARTY_GEN_ID, label: "Pool Party", region: "Beach & Summer" },
 ];
 
 /** True only when Baddies is the sole selected generation, not just one of several. */
@@ -232,6 +235,59 @@ const NICHE_SPECIES: PokemonRef[] = [
   { id: 738, name: "vikavolt" },
 ];
 
+/** Not fetched from PokeAPI - a hand-picked pool of water, beach and summer Pokemon for the
+ *  Pool Party event: the ones that actually look at home in a pool, on a float, or on the sand. */
+const POOL_PARTY_SPECIES: PokemonRef[] = [
+  { id: 7, name: "squirtle" },
+  { id: 9, name: "blastoise" },
+  { id: 54, name: "psyduck" },
+  { id: 55, name: "golduck" },
+  { id: 61, name: "poliwhirl" },
+  { id: 79, name: "slowpoke" },
+  { id: 86, name: "seel" },
+  { id: 87, name: "dewgong" },
+  { id: 98, name: "krabby" },
+  { id: 99, name: "kingler" },
+  { id: 116, name: "horsea" },
+  { id: 118, name: "goldeen" },
+  { id: 120, name: "staryu" },
+  { id: 121, name: "starmie" },
+  { id: 131, name: "lapras" },
+  { id: 134, name: "vaporeon" },
+  { id: 158, name: "totodile" },
+  { id: 183, name: "marill" },
+  { id: 184, name: "azumarill" },
+  { id: 194, name: "wooper" },
+  { id: 195, name: "quagsire" },
+  { id: 222, name: "corsola" },
+  { id: 226, name: "mantine" },
+  { id: 258, name: "mudkip" },
+  { id: 260, name: "swampert" },
+  { id: 270, name: "lotad" },
+  { id: 272, name: "ludicolo" },
+  { id: 278, name: "wingull" },
+  { id: 279, name: "pelipper" },
+  { id: 320, name: "wailmer" },
+  { id: 341, name: "corphish" },
+  { id: 350, name: "milotic" },
+  { id: 363, name: "spheal" },
+  { id: 393, name: "piplup" },
+  { id: 395, name: "empoleon" },
+  { id: 418, name: "buizel" },
+  { id: 419, name: "floatzel" },
+  { id: 456, name: "finneon" },
+  { id: 501, name: "oshawott" },
+  { id: 594, name: "alomomola" },
+  { id: 656, name: "froakie" },
+  { id: 658, name: "greninja" },
+  { id: 728, name: "popplio" },
+  { id: 730, name: "primarina" },
+  { id: 816, name: "sobble" },
+  { id: 818, name: "inteleon" },
+  { id: 912, name: "quaxly" },
+  { id: 914, name: "quaquaval" },
+];
+
 const genCache = new Map<number, Promise<PokemonRef[]>>();
 
 /** A handful of species whose kebab-case PokeAPI name doesn't title-case cleanly. */
@@ -277,6 +333,7 @@ async function fetchGeneration(genId: number): Promise<PokemonRef[]> {
   if (genId === TOP_100_GEN_ID) return TOP_100_SPECIES;
   if (genId === BADDIES_GEN_ID) return BADDIES_SPECIES;
   if (genId === NICHE_GEN_ID) return NICHE_SPECIES;
+  if (genId === POOL_PARTY_GEN_ID) return POOL_PARTY_SPECIES;
   const res = await fetch(`https://pokeapi.co/api/v2/generation/${genId}`);
   if (!res.ok) throw new Error(`Failed to load generation ${genId}`);
   const data = await res.json();

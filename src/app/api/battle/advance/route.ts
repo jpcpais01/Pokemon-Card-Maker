@@ -4,6 +4,7 @@ import { normalizeRoomCode } from "@/lib/battle/roomCode";
 import { getImage, getRoom, lockKey, saveImage, saveRoom } from "@/lib/battle/rooms";
 import { acquireLock, releaseLock } from "@/lib/battle/store";
 import { isBotPlayerId, type BattleRound } from "@/lib/battle/types";
+import type { EventTheme } from "@/lib/events";
 import { isBaddiesOnlySelection } from "@/lib/generations";
 import { generateImage, generateText, judgeMultiBattle, type JudgeCardInput } from "@/lib/openrouter";
 import { SYSTEM_PROMPT, buildJudgeSystemPrompt, buildStyleSuffix, buildUserPrompt } from "@/lib/promptBuilder";
@@ -54,7 +55,9 @@ export async function POST(request: Request) {
   try {
     const room = await getRoom(code);
     if (!room) return NextResponse.json({ error: "Room not found." }, { status: 404 });
-    const baddiesOnly = isBaddiesOnlySelection(room.gens);
+    // An explicit event theme wins; otherwise a Baddies-only pool still implies that look.
+    const theme: EventTheme | undefined =
+      room.theme ?? (isBaddiesOnlySelection(room.gens) ? "baddies" : undefined);
 
     const currentRound = room.rounds[room.rounds.length - 1];
     if (
@@ -79,10 +82,10 @@ export async function POST(request: Request) {
               specialForm: state.specialForm,
               vibe: state.vibe,
               pokemons: state.pokemons.map((p) => ({ name: p.displayName })),
-              baddiesOnly,
+              theme,
             });
             const drafted = await generateText(SYSTEM_PROMPT, userPrompt);
-            state.prompt = `${drafted}${buildStyleSuffix(state.pokemons.map((p) => p.displayName), state.specialForm.value, baddiesOnly)}`;
+            state.prompt = `${drafted}${buildStyleSuffix(state.pokemons.map((p) => p.displayName), state.specialForm.value, theme)}`;
             state.promptStatus = "ready";
           } catch {
             state.promptStatus = "error";
@@ -164,7 +167,7 @@ export async function POST(request: Request) {
             image: images[i]!,
             names: states[i].pokemons.map((p) => p.displayName).join(" & "),
           }));
-          const judged = await judgeMultiBattle(buildJudgeSystemPrompt(letters, baddiesOnly), cards);
+          const judged = await judgeMultiBattle(buildJudgeSystemPrompt(letters, theme), cards);
           const winnerIndex = letters.indexOf(judged.winnerLetter);
           winnerId = pids[winnerIndex];
           verdict = judged.reason;

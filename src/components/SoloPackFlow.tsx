@@ -14,6 +14,7 @@ import {
   pickRandomPokemon,
   toPokemonPick,
 } from "@/lib/generations";
+import { getEvent, type EventTheme } from "@/lib/events";
 import type { PackMode, PokemonPick, PokemonRef } from "@/lib/types";
 
 export type SoloMode = PackMode;
@@ -71,11 +72,14 @@ async function postJson<T>(url: string, body: unknown): Promise<T> {
   return data as T;
 }
 
-export default function SoloPackFlow({ mode }: { mode: SoloMode }) {
+export default function SoloPackFlow({ mode, theme }: { mode: SoloMode; theme?: EventTheme }) {
   const copy = MODE_COPY[mode];
+  const event = getEvent(theme);
 
   const [stage, setStage] = useState<Stage>("setup");
-  const [gens, setGens] = useState<number[]>(GENERATIONS.map((g) => g.id));
+  // Inside an event, start from that event's own pool rather than everything -
+  // it's the pull that actually fits the theme. Still fully editable.
+  const [gens, setGens] = useState<number[]>(event ? event.defaultGens : GENERATIONS.map((g) => g.id));
   const [poolLoading, setPoolLoading] = useState(false);
   const [poolError, setPoolError] = useState<string | null>(null);
 
@@ -222,7 +226,8 @@ export default function SoloPackFlow({ mode }: { mode: SoloMode }) {
         specialForm: { value: data.specialForm.value, label: data.specialForm.label, blurb: data.specialForm.blurb },
         vibe: { label: data.vibe.label, blurb: data.vibe.blurb },
         pokemons: data.pokemons.map((p) => ({ name: p.displayName })),
-        baddiesOnly: isBaddiesOnlySelection(gens),
+        // An explicit event wins; otherwise a Baddies-only pool still implies that look.
+        theme: theme ?? (isBaddiesOnlySelection(gens) ? "baddies" : undefined),
       });
       generatedPrompt = prompt;
       setPromptText(prompt);
@@ -293,10 +298,11 @@ export default function SoloPackFlow({ mode }: { mode: SoloMode }) {
         onStart={handleOpenPack}
         loading={poolLoading}
         error={poolError}
-        eyebrow={copy.eyebrow}
+        eyebrow={event ? event.label : copy.eyebrow}
         title={copy.title}
         subtitle={copy.subtitle}
-        back="/"
+        back={event ? `/event/${event.slug}` : "/"}
+        eventBanner={event ? { label: event.label, blurb: event.blurb, gradient: event.gradient } : undefined}
       />
     );
   }
@@ -314,7 +320,7 @@ export default function SoloPackFlow({ mode }: { mode: SoloMode }) {
         rerollsLeft={rerollsLeft}
         onReroll={handleReroll}
         forcedKeys={copy.forcedKeys}
-        eyebrow={copy.packEyebrow}
+        eyebrow={event ? event.label : copy.packEyebrow}
       />
     );
   }
