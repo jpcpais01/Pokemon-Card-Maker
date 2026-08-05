@@ -1,4 +1,4 @@
-import { BADDIES_GEN_ID, POOL_PARTY_GEN_ID } from "./generations";
+import { BADDIES_GEN_ID, POOL_PARTY_GEN_ID, WEED_GEN_ID } from "./generations";
 
 /**
  * An "event" is a theme layered on top of a normal game, not a replacement for
@@ -7,7 +7,7 @@ import { BADDIES_GEN_ID, POOL_PARTY_GEN_ID } from "./generations";
  * pull from. All it does is steer the artwork - and, in battle, tell the judge
  * what the match is going for.
  */
-export type EventTheme = "pool-party" | "baddies";
+export type EventTheme = "pool-party" | "baddies" | "weed";
 
 export interface EventDef {
   slug: EventTheme;
@@ -76,6 +76,28 @@ export const EVENTS: EventDef[] = [
     image: "/modes/baddies.jpg",
     gradient: "linear-gradient(150deg, #f472b6 0%, #be185d 45%, #3b0a2a 100%)",
     accent: "text-pink-200",
+  },
+  {
+    slug: "weed",
+    label: "Weed",
+    tagline: "Hazy, psychedelic, permanently chill",
+    blurb:
+      "Every card gets hazy, trippy and deeply chilled out. Play it however you like - solo, against bots, or against a friend, in any pack mode. Only the artwork changes.",
+    badge: "420",
+    defaultGens: [WEED_GEN_ID],
+    // Written as an atmosphere rather than as anyone consuming anything: it's the
+    // look people actually want from this, it keeps the Pokemon in character, and
+    // it sails past the image model's content filter instead of tripping it and
+    // failing the generation outright.
+    promptDirection:
+      'Event theme - "Weed": build the whole scene around a warm, blissed-out, psychedelic haze. Work in the trappings wherever they fit naturally - thick smoke drifting and curling through the air, fat sunbeams cutting through it, kaleidoscopic melting color, swirling tie-dye and lava-lamp blobs, big serrated cannabis-leaf shapes woven through the foliage, hanging string lights, curling incense, beanbags and floor cushions, scattered snack piles. The Pokemon should look deeply, contentedly relaxed - heavy-lidded eyes, a lazy grin, sprawled out and completely unbothered. This theme sets the scene and mood; keep the vibe, special form and rarity tier driving the action and rendering as they normally would.',
+    styleDirection:
+      " This is a Weed event card - the whole scene is bathed in a warm psychedelic haze: thick drifting smoke, kaleidoscopic swirling melted color, serrated cannabis-leaf foliage, and a deeply blissed-out, heavy-lidded, unbothered mood throughout. Keep every Pokemon's official design, proportions and colors completely accurate.",
+    judgeContext:
+      'This match is a "Weed" event - every card is aiming for a hazy, psychedelic, blissed-out scene. Factor in how well each illustration actually commits to that drifting-smoke, kaleidoscopic, deeply-relaxed mood, alongside its normal artistic merit.',
+    image: "/modes/weed.jpg",
+    gradient: "linear-gradient(150deg, #a3e635 0%, #4d7c0f 42%, #2e1065 100%)",
+    accent: "text-lime-200",
   },
 ];
 

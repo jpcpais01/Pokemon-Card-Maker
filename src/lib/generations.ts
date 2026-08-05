@@ -8,6 +8,8 @@ export const BADDIES_GEN_ID = -1;
 export const NICHE_GEN_ID = -2;
 /** Not a real generation - a curated pool of water/beach/summer Pokemon for the Pool Party event. */
 export const POOL_PARTY_GEN_ID = -3;
+/** Not a real generation - a curated pool of leafy, sleepy, hazy Pokemon for the Weed event. */
+export const WEED_GEN_ID = -4;
 
 export const GENERATIONS: Generation[] = [
   { id: 1, label: "Gen I", region: "Kanto" },
@@ -23,6 +25,7 @@ export const GENERATIONS: Generation[] = [
   { id: BADDIES_GEN_ID, label: "Baddies", region: "Iconic & Alluring" },
   { id: NICHE_GEN_ID, label: "Niche", region: "Hidden Gems" },
   { id: POOL_PARTY_GEN_ID, label: "Pool Party", region: "Beach & Summer" },
+  { id: WEED_GEN_ID, label: "Weed", region: "Leafy & Hazy" },
 ];
 
 /** True only when Baddies is the sole selected generation, not just one of several. */
@@ -288,6 +291,59 @@ const POOL_PARTY_SPECIES: PokemonRef[] = [
   { id: 914, name: "quaquaval" },
 ];
 
+/** Not fetched from PokeAPI - a hand-picked pool for the Weed event: the leafy ones, the
+ *  perpetually half-asleep ones, the ones trailing gas or spores, and the few whose canon
+ *  is already a bit trippy. */
+const WEED_SPECIES: PokemonRef[] = [
+  { id: 1, name: "bulbasaur" },
+  { id: 3, name: "venusaur" },
+  { id: 39, name: "jigglypuff" },
+  { id: 43, name: "oddish" },
+  { id: 44, name: "gloom" },
+  { id: 45, name: "vileplume" },
+  { id: 54, name: "psyduck" },
+  { id: 69, name: "bellsprout" },
+  { id: 71, name: "victreebel" },
+  { id: 79, name: "slowpoke" },
+  { id: 80, name: "slowbro" },
+  { id: 92, name: "gastly" },
+  { id: 93, name: "haunter" },
+  { id: 94, name: "gengar" },
+  { id: 96, name: "drowzee" },
+  { id: 97, name: "hypno" },
+  { id: 102, name: "exeggcute" },
+  { id: 103, name: "exeggutor" },
+  { id: 109, name: "koffing" },
+  { id: 110, name: "weezing" },
+  { id: 114, name: "tangela" },
+  { id: 143, name: "snorlax" },
+  { id: 182, name: "bellossom" },
+  { id: 187, name: "hoppip" },
+  { id: 189, name: "jumpluff" },
+  { id: 192, name: "sunflora" },
+  { id: 270, name: "lotad" },
+  { id: 272, name: "ludicolo" },
+  { id: 275, name: "shiftry" },
+  { id: 285, name: "shroomish" },
+  { id: 286, name: "breloom" },
+  { id: 287, name: "slakoth" },
+  { id: 289, name: "slaking" },
+  { id: 315, name: "roselia" },
+  { id: 327, name: "spinda" },
+  { id: 357, name: "tropius" },
+  { id: 465, name: "tangrowth" },
+  { id: 517, name: "munna" },
+  { id: 518, name: "musharna" },
+  { id: 547, name: "whimsicott" },
+  { id: 590, name: "foongus" },
+  { id: 591, name: "amoonguss" },
+  { id: 755, name: "morelull" },
+  { id: 756, name: "shiinotic" },
+  { id: 775, name: "komala" },
+  { id: 928, name: "smoliv" },
+  { id: 930, name: "arboliva" },
+];
+
 const genCache = new Map<number, Promise<PokemonRef[]>>();
 
 /** A handful of species whose kebab-case PokeAPI name doesn't title-case cleanly. */
@@ -334,6 +390,7 @@ async function fetchGeneration(genId: number): Promise<PokemonRef[]> {
   if (genId === BADDIES_GEN_ID) return BADDIES_SPECIES;
   if (genId === NICHE_GEN_ID) return NICHE_SPECIES;
   if (genId === POOL_PARTY_GEN_ID) return POOL_PARTY_SPECIES;
+  if (genId === WEED_GEN_ID) return WEED_SPECIES;
   const res = await fetch(`https://pokeapi.co/api/v2/generation/${genId}`);
   if (!res.ok) throw new Error(`Failed to load generation ${genId}`);
   const data = await res.json();
