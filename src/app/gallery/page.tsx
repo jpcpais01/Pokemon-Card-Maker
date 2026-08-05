@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import ImageLightbox from "@/components/ImageLightbox";
 import TraitChip from "@/components/TraitChip";
+import Screen from "@/components/ui/Screen";
+import Icon from "@/components/ui/Icon";
 import { backfillThumbnail, getFavorites, removeFavoriteByImage, type FavoriteCard } from "@/lib/favorites";
 
 export default function GalleryPage() {
@@ -41,34 +43,40 @@ export default function GalleryPage() {
   }
 
   const openCard = favorites.find((f) => f.image === openImage) ?? null;
+  const sirCount = favorites.filter((f) => f.artType === "Special Illustration Rare").length;
 
   return (
-    <div className="flex min-h-dvh flex-col px-5 py-8">
-      <div className="mx-auto w-full max-w-sm flex-1">
-        <div className="glass mb-6 flex items-center justify-between rounded-2xl px-4 py-3">
-          <Link href="/" className="text-sm font-semibold text-slate-300 active:text-white">
-            ← Home
-          </Link>
-          <p className="text-xs font-semibold uppercase tracking-[0.25em] text-amber-300">My Binder</p>
-          <span className="w-10" aria-hidden />
-        </div>
-
-        <div className="mb-6 text-center">
-          <h1 className="font-display text-2xl font-extrabold tracking-tight text-white">
-            {favorites.length > 0 ? `${favorites.length} Saved Card${favorites.length === 1 ? "" : "s"}` : "Your Binder"}
+    <Screen bare>
+      <div className="screen-pad flex flex-1 flex-col pt-safe">
+        <header className="enter-up py-3">
+          <h1 className="font-display text-[28px] font-extrabold leading-none tracking-tight text-white">
+            My Binder
           </h1>
-        </div>
+          <p className="mt-1.5 text-[13px] text-slate-400">
+            {favorites.length > 0
+              ? `${favorites.length} card${favorites.length === 1 ? "" : "s"} saved${
+                  sirCount > 0 ? ` · ${sirCount} SIR${sirCount === 1 ? "" : "s"}` : ""
+                }`
+              : "Cards you star show up here"}
+          </p>
+        </header>
 
         {!loaded ? null : favorites.length === 0 ? (
-          <div className="glass-strong rise-in mt-4 rounded-2xl px-6 py-10 text-center">
-            <p className="text-3xl text-slate-600">☆</p>
-            <p className="mt-3 text-sm font-semibold text-slate-300">No favorites yet</p>
-            <p className="mt-1.5 text-xs leading-relaxed text-slate-500">
-              Tap the star in a card&apos;s full view to save it here.
+          <div className="card-raised pop-in mt-6 flex flex-col items-center px-6 py-12 text-center">
+            <span className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.05] text-slate-500">
+              <Icon name="binder" size={28} />
+            </span>
+            <p className="font-display text-xl font-extrabold text-white">Your binder is empty</p>
+            <p className="mt-1.5 max-w-[16rem] text-[13px] leading-relaxed text-slate-400">
+              Open a pack, then tap the star on any card you want to keep.
             </p>
+            <Link href="/" className="btn-primary mt-6 w-full max-w-[14rem]">
+              <Icon name="sparkles" size={16} />
+              Open a Pack
+            </Link>
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-3">
+          <div className="mt-2 grid grid-cols-2 gap-3">
             {favorites.map((f, i) => {
               const isSir = f.artType === "Special Illustration Rare";
               return (
@@ -76,12 +84,12 @@ export default function GalleryPage() {
                   key={f.id}
                   type="button"
                   onClick={() => setOpenImage(f.image)}
-                  style={{ animationDelay: `${Math.min(i, 8) * 35}ms` }}
-                  className={`rise-in overflow-hidden rounded-2xl border-2 text-left transition-transform active:scale-[0.97] ${
-                    isSir ? "border-amber-300/50" : "border-white/10"
+                  style={{ "--d": `${Math.min(i, 10) * 45}ms` } as React.CSSProperties}
+                  className={`enter-up card overflow-hidden !rounded-2xl p-0 text-left transition-transform duration-150 active:scale-[0.97] ${
+                    isSir ? "!border-amber-300/45" : ""
                   }`}
                 >
-                  <div className="relative aspect-[3/4] w-full bg-black/30">
+                  <div className="relative aspect-[3/4] w-full bg-black/40">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={f.thumbnail ?? f.image}
@@ -91,13 +99,15 @@ export default function GalleryPage() {
                       className="h-full w-full object-cover"
                     />
                     {isSir && <div className="holo-sheen opacity-40" />}
+                    {isSir && (
+                      <span className="absolute left-1.5 top-1.5 rounded-full bg-black/55 px-1.5 py-0.5 text-[8.5px] font-black uppercase tracking-wider text-amber-300 backdrop-blur-sm">
+                        SIR
+                      </span>
+                    )}
                   </div>
-                  <div className="bg-slate-900/90 px-2 py-2 text-center">
-                    <p className="truncate text-xs font-bold text-white">{f.pokemonNames}</p>
-                    <div className="mt-1 flex flex-wrap justify-center gap-1">
-                      <TraitChip tone="gold" small>
-                        {f.artType}
-                      </TraitChip>
+                  <div className="px-2 py-2">
+                    <p className="truncate text-center text-[12px] font-bold text-white">{f.pokemonNames}</p>
+                    <div className="mt-1.5 flex flex-wrap justify-center gap-1">
                       {f.specialForm && (
                         <TraitChip tone="violet" small>
                           {f.specialForm}
@@ -125,6 +135,6 @@ export default function GalleryPage() {
           onToggleFavorite={() => handleRemove(openCard.image)}
         />
       )}
-    </div>
+    </Screen>
   );
 }

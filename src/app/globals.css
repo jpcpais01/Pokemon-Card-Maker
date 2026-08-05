@@ -5,6 +5,46 @@
   --font-display: var(--font-baloo);
 }
 
+/*
+ * ---------------------------------------------------------------------------
+ * Design tokens
+ * ---------------------------------------------------------------------------
+ * One source of truth for the app's color/elevation language. Surfaces are
+ * expressed as translucent whites over the near-black base rather than opaque
+ * hex values, so every panel picks up the ambient aurora behind it and the
+ * whole app reads as one continuous material instead of stacked flat boxes.
+ */
+:root {
+  --bg: #07070c;
+  --bg-raised: #0d0d15;
+
+  /* Accents. Gold is the "premium collectible" primary; violet/cyan carry the
+     holo language; emerald is reserved for wins and positive state. */
+  --gold: #ffc94b;
+  --gold-deep: #f59e0b;
+  --violet: #a855f7;
+  --cyan: #22d3ee;
+  --emerald: #34d399;
+
+  --text: #f4f4f8;
+  --text-dim: #a1a1b5;
+  --text-faint: #6b6b80;
+
+  /* Elevation ladder - each step is a slightly brighter fill + border. */
+  --surface-1: rgb(255 255 255 / 4%);
+  --surface-2: rgb(255 255 255 / 6.5%);
+  --surface-3: rgb(255 255 255 / 10%);
+  --line: rgb(255 255 255 / 9%);
+  --line-strong: rgb(255 255 255 / 16%);
+
+  /* Motion - one spring-ish curve used everywhere so the app feels coherent. */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* Chrome heights, so content can reserve space without magic numbers. */
+  --tabbar-h: 4.25rem;
+}
+
 html {
   -webkit-text-size-adjust: 100%;
   overscroll-behavior-y: none;
@@ -12,7 +52,8 @@ html {
 
 body {
   font-family: var(--font-sans), system-ui, sans-serif;
-  background-color: #05060f;
+  background-color: var(--bg);
+  color: var(--text);
 }
 
 * {
@@ -37,65 +78,106 @@ body {
   inset: 0;
   pointer-events: none;
   z-index: 1;
-  opacity: 0.035;
+  opacity: 0.03;
   background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
   background-size: 180px 180px;
 }
 
-/* Glass surface used across cards, panels and buttons. backdrop-filter blur/saturate is one of the
-   most expensive things a browser can do per-frame, and it gets re-sampled continuously while the
-   animated background blobs move behind it - keep the radius modest (still reads as "frosted",
-   just cheaper to recompute) rather than the much heavier blur a static mockup can afford. */
-@utility glass {
-  background-color: rgb(255 255 255 / 5%);
-  backdrop-filter: blur(14px) saturate(130%);
-  -webkit-backdrop-filter: blur(14px) saturate(130%);
-  border: 1px solid rgb(255 255 255 / 10%);
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 8%),
-    0 1px 2px rgb(0 0 0 / 20%);
+/*
+ * ---------------------------------------------------------------------------
+ * Surfaces
+ * ---------------------------------------------------------------------------
+ * `card` is the workhorse panel. `card-raised` is for the one hero element on
+ * a screen. `glass` is reserved for chrome that genuinely floats *over*
+ * scrolling content (tab bar, sticky headers, overlay buttons) - it's the only
+ * place the expensive backdrop-filter earns its cost, since ordinary panels
+ * sit on a static background where a plain translucent fill looks identical.
+ */
+@utility card {
+  background-color: var(--surface-1);
+  border: 1px solid var(--line);
+  border-radius: 1.5rem;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 6%);
 }
 
-@utility glass-strong {
-  background-color: rgb(255 255 255 / 8%);
-  backdrop-filter: blur(18px) saturate(140%);
-  -webkit-backdrop-filter: blur(18px) saturate(140%);
-  border: 1px solid rgb(255 255 255 / 14%);
+@utility card-raised {
+  background-image: linear-gradient(160deg, rgb(255 255 255 / 9%) 0%, rgb(255 255 255 / 4%) 100%);
+  border: 1px solid var(--line-strong);
+  border-radius: 1.75rem;
   box-shadow:
     inset 0 1px 0 rgb(255 255 255 / 12%),
-    0 12px 32px -10px rgb(0 0 0 / 50%);
+    0 24px 48px -24px rgb(0 0 0 / 90%);
 }
 
-/* Brand gradient - matches the app icon (violet -> fuchsia -> cyan) and is reused as the "holo"
-   accent everywhere a premium/rare moment needs a second color language beyond the amber CTA. */
+@utility glass {
+  background-color: rgb(10 10 17 / 92%);
+  backdrop-filter: blur(20px) saturate(150%);
+  -webkit-backdrop-filter: blur(20px) saturate(150%);
+  border: 1px solid var(--line);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 7%);
+}
+
+/* Kept as an alias so any surface that still wants the heavier frosted look
+   (overlay sheets, lightbox chrome) reads the same as the tab bar. */
+@utility glass-strong {
+  background-color: rgb(14 14 24 / 82%);
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  border: 1px solid var(--line-strong);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 10%),
+    0 24px 48px -20px rgb(0 0 0 / 80%);
+}
+
+/* Holo accent gradient - the violet -> fuchsia -> cyan refraction language used
+   for every "rare / premium / AI" moment, matching the app icon. */
 @utility brand-gradient {
   background-image: linear-gradient(135deg, #7c3aed 0%, #d946ef 55%, #06b6d4 100%);
 }
 
 @utility brand-gradient-text {
-  background-image: linear-gradient(135deg, #a78bfa 0%, #f0abfc 55%, #67e8f9 100%);
+  background-image: linear-gradient(135deg, #c4b5fd 0%, #f0abfc 50%, #67e8f9 100%);
   background-clip: text;
   -webkit-background-clip: text;
   color: transparent;
 }
 
-/* Primary CTA - gold-foil gradient with a soft inner highlight/lowlight so it reads as a raised,
-   slightly metallic button rather than a flat fill. */
+@utility gold-gradient-text {
+  background-image: linear-gradient(135deg, #fff2cc 0%, #ffc94b 50%, #f59e0b 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+}
+
+/*
+ * ---------------------------------------------------------------------------
+ * Buttons
+ * ---------------------------------------------------------------------------
+ */
+
+/* Primary CTA - gold foil with a highlight/lowlight pair so it reads as a raised
+   metallic key rather than a flat fill, plus a slow sweep that keeps the most
+   important control on screen feeling alive. */
 @utility btn-primary {
   position: relative;
   overflow: hidden;
-  display: block;
-  border-radius: 1.25rem;
-  padding: 1rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 1.125rem;
+  padding: 1.0625rem 1.5rem;
   text-align: center;
   font-weight: 800;
-  font-size: 1rem;
-  color: #241304;
-  background-image: linear-gradient(135deg, #ffe08a 0%, #fcd34d 30%, #f59e0b 65%, #ea580c 100%);
+  font-size: 0.9375rem;
+  letter-spacing: 0.01em;
+  color: #2a1705;
+  background-image: linear-gradient(135deg, #ffe9a8 0%, #ffc94b 38%, #f59e0b 72%, #ea7c0b 100%);
   box-shadow:
-    0 14px 32px -12px rgb(245 158 11 / 60%),
-    inset 0 1px 0 rgb(255 255 255 / 50%),
-    inset 0 -2px 6px rgb(120 53 15 / 35%);
+    0 12px 30px -10px rgb(245 158 11 / 55%),
+    inset 0 1px 0 rgb(255 255 255 / 55%),
+    inset 0 -2px 6px rgb(120 53 15 / 30%);
+  transition: transform 140ms var(--ease-out), filter 140ms ease-out;
 
   &::after {
     content: "";
@@ -105,9 +187,14 @@ body {
     height: 100%;
     width: 35%;
     background-image: linear-gradient(90deg, transparent, rgb(255 255 255 / 55%), transparent);
-    animation: shine-sweep 4.5s ease-in-out infinite;
+    animation: shine-sweep 5s ease-in-out infinite;
     animation-delay: 1.2s;
     pointer-events: none;
+  }
+
+  &:active:not(:disabled) {
+    transform: scale(0.975);
+    filter: brightness(1.06);
   }
 }
 
@@ -120,53 +207,154 @@ body {
   }
 }
 
-/* Secondary/ghost action - same frosted glass language as panels, so buttons feel cut from the
-   same material as the surfaces they sit on. */
+/* Secondary action - cut from the same surface material as panels. */
 @utility btn-ghost {
-  display: block;
-  border-radius: 1.25rem;
-  padding: 0.875rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 1.125rem;
+  padding: 0.9375rem 1.5rem;
   text-align: center;
-  font-weight: 600;
+  font-weight: 700;
   font-size: 0.875rem;
-  color: rgb(226 232 240);
-  background-color: rgb(255 255 255 / 6%);
-  backdrop-filter: blur(12px) saturate(125%);
-  -webkit-backdrop-filter: blur(12px) saturate(125%);
-  border: 1px solid rgb(255 255 255 / 12%);
+  color: var(--text);
+  background-color: var(--surface-2);
+  border: 1px solid var(--line);
+  transition: transform 140ms var(--ease-out), background-color 140ms ease-out;
+
+  &:active:not(:disabled) {
+    transform: scale(0.975);
+    background-color: var(--surface-3);
+  }
 }
 
-/* Small pill tags for card traits (art type / special form / vibe / generation) - one shared base
-   plus a tone modifier instead of the same three-class combo repeated at every call site. */
+/* Tertiary - text-weight action for back links and low-stakes toggles. */
+@utility btn-quiet {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  border-radius: 0.875rem;
+  padding: 0.625rem 0.875rem;
+  font-weight: 600;
+  font-size: 0.8125rem;
+  color: var(--text-dim);
+  transition: color 140ms ease-out;
+
+  &:active:not(:disabled) {
+    color: var(--text);
+  }
+}
+
+/*
+ * ---------------------------------------------------------------------------
+ * Segmented control - one shared implementation for every "pick one of N"
+ * setting (players, game mode, judge, rerolls, generations). Previously each
+ * picker hand-rolled the same amber-selected-button markup.
+ * ---------------------------------------------------------------------------
+ */
+@utility seg {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 1rem;
+  border: 1px solid var(--line);
+  background-color: var(--surface-1);
+  padding: 0.75rem 0.5rem;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--text-dim);
+  text-align: center;
+  transition: transform 140ms var(--ease-out), background-color 140ms, border-color 140ms, color 140ms;
+
+  &:active {
+    transform: scale(0.96);
+  }
+}
+
+/* Deliberately restrained: most of these grids start with everything selected,
+   so a loud fill would turn the whole screen amber and stop communicating
+   anything. The check badge carries the state; this just lifts the surface. */
+@utility seg-on {
+  border-color: rgb(255 201 75 / 32%);
+  background-color: rgb(255 201 75 / 7%);
+  color: #ffe0a3;
+}
+
+/*
+ * ---------------------------------------------------------------------------
+ * Chips - small trait pills (art type / special form / vibe / generation)
+ * ---------------------------------------------------------------------------
+ */
 @utility chip {
   display: inline-flex;
   align-items: center;
+  gap: 0.25rem;
   border-radius: 9999px;
-  padding: 0.25rem 0.7rem;
+  padding: 0.25rem 0.625rem;
   font-size: 0.6875rem;
   font-weight: 700;
   letter-spacing: 0.01em;
+  border: 1px solid transparent;
+  white-space: nowrap;
 }
 
 @utility chip-gold {
-  background-color: rgb(251 191 36 / 15%);
-  color: rgb(252 211 77);
+  background-color: rgb(255 201 75 / 12%);
+  border-color: rgb(255 201 75 / 22%);
+  color: #ffd97a;
 }
 
 @utility chip-violet {
-  background-color: rgb(192 132 252 / 15%);
-  color: rgb(216 180 254);
+  background-color: rgb(168 85 247 / 14%);
+  border-color: rgb(168 85 247 / 26%);
+  color: #d8b4fe;
 }
 
 @utility chip-teal {
-  background-color: rgb(45 212 191 / 15%);
-  color: rgb(94 234 212);
+  background-color: rgb(34 211 238 / 12%);
+  border-color: rgb(34 211 238 / 24%);
+  color: #7dd3fc;
 }
 
 /* Compact variant for chips packed into tight grid tiles. */
 @utility chip-sm {
   padding: 0.125rem 0.4rem;
   font-size: 0.5625rem;
+}
+
+/*
+ * ---------------------------------------------------------------------------
+ * Layout helpers
+ * ---------------------------------------------------------------------------
+ */
+
+/* Standard screen gutter + max width. Content is full-bleed to the device edge
+   on phones (with a comfortable gutter) rather than boxed in a floating panel. */
+@utility screen-pad {
+  width: 100%;
+  max-width: 30rem;
+  margin-inline: auto;
+  padding-inline: 1.25rem;
+}
+
+/* Bottom padding that clears the tab bar plus the home indicator. */
+@utility pb-tabbar {
+  padding-bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom) + 1.5rem);
+}
+
+@utility pt-safe {
+  padding-top: calc(env(safe-area-inset-top) + 0.75rem);
+}
+
+/* Section heading above a group of controls/tiles. */
+@utility section-label {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--text-faint);
 }
 
 /* Rotating diagonal rainbow sheen laid over rare-card fronts and premium moments - the classic
@@ -311,12 +499,105 @@ body {
   }
 }
 
+/* Ambient aurora behind everything. Heavier blur and lower opacity than the old
+   "blobs" so it reads as depth in the room rather than colored balls you can
+   pick out individually - the panels above it are translucent, so this is what
+   gives every surface its faint color cast. */
 .blob {
   position: absolute;
   border-radius: 9999px;
-  filter: blur(60px);
-  animation: blob-float 22s ease-in-out infinite;
+  filter: blur(90px);
+  animation: blob-float 26s ease-in-out infinite;
   will-change: transform;
+}
+
+/*
+ * ---------------------------------------------------------------------------
+ * Motion
+ * ---------------------------------------------------------------------------
+ */
+
+/* Staggered entrance for lists/grids. Callers set --d for the per-item delay. */
+@keyframes enter-up {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.enter-up {
+  animation: enter-up 520ms var(--ease-out) both;
+  animation-delay: var(--d, 0ms);
+}
+
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.pop-in {
+  animation: pop-in 420ms var(--ease-spring) both;
+  animation-delay: var(--d, 0ms);
+}
+
+/* Slow drifting highlight for hero surfaces - transform-only so it composites
+   on the GPU like every other ambient effect in this file. */
+@keyframes sheen-drift {
+  0%, 100% {
+    transform: translate3d(-18%, -12%, 0);
+  }
+  50% {
+    transform: translate3d(18%, 12%, 0);
+  }
+}
+
+.sheen-drift {
+  animation: sheen-drift 9s ease-in-out infinite;
+  will-change: transform;
+}
+
+/* Soft breathing glow, used to draw the eye to the primary action on a screen. */
+@keyframes glow-pulse {
+  0%, 100% {
+    opacity: 0.45;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.06);
+  }
+}
+
+.glow-pulse {
+  animation: glow-pulse 3.6s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .enter-up,
+  .pop-in,
+  .rise-in,
+  .spotlight-in {
+    animation-duration: 1ms;
+    animation-delay: 0ms;
+  }
+
+  .blob,
+  .sheen-drift,
+  .glow-pulse,
+  .victory-pulse {
+    animation: none;
+  }
 }
 
 @keyframes progress-fill {

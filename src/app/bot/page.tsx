@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import GenSelector from "@/components/GenSelector";
 import JudgeModePicker from "@/components/battle/JudgeModePicker";
@@ -55,9 +54,10 @@ export default function BattleBotSetupPage() {
       error={error}
       eyebrow="Battle a Bot"
       title="Set Up Your Match"
-      subtitle="Pick which generations can appear, how many players, and the match rules."
+      subtitle="Pick the pool, how many players, and the match rules."
       buttonLabel="Start Match"
       loadingLabel="Starting match..."
+      back="/battle"
       extraTop={
         <>
           <PlayerCountPicker value={botPlayers} onChange={setBotPlayers} label="Players (you + bots)" />
@@ -65,11 +65,6 @@ export default function BattleBotSetupPage() {
           {botPlayers >= MIN_VOTE_PLAYERS && <JudgeModePicker value={botJudgeMode} onChange={setBotJudgeMode} />}
           <UnlimitedRerollsToggle value={botUnlimitedRerolls} onChange={setBotUnlimitedRerolls} />
         </>
-      }
-      footer={
-        <Link href="/" className="mt-4 block text-center text-sm font-semibold text-slate-400 active:text-white">
-          ← All Modes
-        </Link>
       }
     />
   );

@@ -53,12 +53,30 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${geistSans.variable} ${baloo.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col bg-[#05060f] text-slate-100">
+      <body className="flex min-h-full flex-col">
+        {/* Ambient aurora. Anchored to the top third and heavily blurred so it
+            behaves like light in the room - every translucent panel above picks
+            up a faint cast from it - rather than distinct colored shapes. */}
         <div aria-hidden className="pointer-events-none fixed inset-0 overflow-hidden">
-          <div className="blob h-72 w-72 bg-amber-500/30" style={{ top: "-4rem", left: "-3rem" }} />
-          <div className="blob h-80 w-80 bg-violet-600/25" style={{ top: "18%", right: "-5rem", animationDelay: "-7s" }} />
-          <div className="blob h-72 w-72 bg-teal-500/20" style={{ bottom: "-3rem", left: "10%", animationDelay: "-14s" }} />
-          <div className="blob h-64 w-64 bg-fuchsia-500/15" style={{ bottom: "12%", right: "5%", animationDelay: "-3s" }} />
+          <div
+            className="blob h-[26rem] w-[26rem] bg-amber-500/22"
+            style={{ top: "-9rem", left: "-7rem" }}
+          />
+          <div
+            className="blob h-[24rem] w-[24rem] bg-violet-600/22"
+            style={{ top: "-4rem", right: "-8rem", animationDelay: "-9s" }}
+          />
+          <div
+            className="blob h-[22rem] w-[22rem] bg-cyan-500/12"
+            style={{ top: "38%", left: "-6rem", animationDelay: "-17s" }}
+          />
+          <div
+            className="blob h-[20rem] w-[20rem] bg-fuchsia-500/12"
+            style={{ bottom: "-4rem", right: "-4rem", animationDelay: "-4s" }}
+          />
+          {/* Vignette floor: keeps the lower half of long screens from glowing
+              and gives the fixed tab bar a clean dark field to sit against. */}
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#07070c]/55 to-[#07070c]" />
         </div>
         <div aria-hidden className="grain" />
         <div className="relative z-10 flex flex-1 flex-col">{children}</div>

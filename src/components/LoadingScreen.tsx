@@ -41,7 +41,7 @@ const PARTICLES = [
  */
 export default function LoadingScreen({ message, stuck, onRetry, retryBusy, leaveHref, leaveLabel = "Leave Match" }: Props) {
   return (
-    <div className="fixed inset-0 z-40 flex flex-col items-center justify-center gap-10 overflow-hidden bg-[#05060f] px-6">
+    <div className="fixed inset-0 z-40 flex flex-col items-center justify-center gap-10 overflow-hidden bg-[#07070c] px-6">
       <div aria-hidden className="wait-aura pointer-events-none absolute left-1/2 top-1/2 h-96 w-96 -translate-x-1/2 -translate-y-1/2 rounded-full" />
 
       <div aria-hidden className="pointer-events-none absolute inset-0">
@@ -67,7 +67,7 @@ export default function LoadingScreen({ message, stuck, onRetry, retryBusy, leav
         <span className="relative text-4xl drop-shadow-[0_0_12px_rgba(0,0,0,0.4)]">✨</span>
       </div>
 
-      <p key={message} className="rise-in max-w-xs text-center text-base font-semibold leading-relaxed text-slate-100">
+      <p key={message} className="rise-in max-w-[17rem] text-center text-[15px] font-semibold leading-relaxed text-slate-100">
         {message}
       </p>
 
@@ -80,13 +80,13 @@ export default function LoadingScreen({ message, stuck, onRetry, retryBusy, leav
                 type="button"
                 onClick={onRetry}
                 disabled={retryBusy}
-                className="btn-primary !px-6 !py-2.5 transition-transform active:scale-[0.98] disabled:opacity-50"
+                className="btn-primary !px-6 !py-2.5 disabled:opacity-50"
               >
                 Try Again
               </button>
             )}
             {leaveHref && (
-              <Link href={leaveHref} className="text-xs font-semibold text-slate-400 active:text-white">
+              <Link href={leaveHref} className="btn-quiet">
                 {leaveLabel}
               </Link>
             )}

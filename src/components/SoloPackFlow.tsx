@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import Link from "next/link";
 import GenSelector from "@/components/GenSelector";
 import RevealScreen, { type CardKey, type RevealData, type RevealFlags } from "@/components/RevealScreen";
 import LoadingScreen from "@/components/LoadingScreen";
@@ -21,38 +20,38 @@ export type SoloMode = PackMode;
 
 const MODE_COPY: Record<SoloMode, { eyebrow: string; title: string; subtitle: string; packEyebrow: string; forcedKeys: CardKey[] }> = {
   classic: {
-    eyebrow: "PokeGen",
-    title: "Open a Pack",
-    subtitle: "Choose which generations can appear, then open your pack for four random traits.",
+    eyebrow: "Classic Pack",
+    title: "Choose Your Pool",
+    subtitle: "Pick which Pokemon can show up, then open your pack for four random traits.",
     packEyebrow: "Your Pack",
     forcedKeys: [],
   },
   sir: {
     eyebrow: "Only SIRs",
     title: "Guaranteed SIR",
-    subtitle: "Every pack is a Special Illustration Rare. Art type is locked in - form, vibe, and Pokemon are still random.",
+    subtitle: "Art type is locked to Special Illustration Rare. Form, vibe and Pokemon are still random.",
     packEyebrow: "SIR Pack",
     forcedKeys: ["artType"],
   },
   tagteam: {
     eyebrow: "Tag Teams",
     title: "Guaranteed Tag Team",
-    subtitle: "Every pack pairs up two Pokemon as a Tag Team. Special form is locked in - art type, vibe, and Pokemon are still random.",
+    subtitle: "Every pack pairs up two Pokemon. Art type, vibe and Pokemon are still random.",
     packEyebrow: "Tag Team Pack",
     forcedKeys: ["specialForm"],
   },
   tagteamsir: {
     eyebrow: "Tag Team SIRs",
     title: "Guaranteed Tag Team SIR",
-    subtitle: "Every pack is a Special Illustration Rare Tag Team pairing. Art type and special form are both locked in - vibe and Pokemon are still random.",
+    subtitle: "Two Pokemon at the top rarity tier. Vibe and Pokemon are still random.",
     packEyebrow: "Tag Team SIR Pack",
     forcedKeys: ["artType", "specialForm"],
   },
   tripletagteamsir: {
-    eyebrow: "Triple Tag Team SIRs",
-    title: "Guaranteed Triple Tag Team SIR",
-    subtitle: "Every pack is a Special Illustration Rare Triple Tag Team trio. Art type and special form are both locked in - vibe and Pokemon are still random.",
-    packEyebrow: "Triple Tag Team SIR Pack",
+    eyebrow: "Triple Tag SIRs",
+    title: "Guaranteed Triple Tag SIR",
+    subtitle: "Three Pokemon on one Special Illustration Rare. Vibe and Pokemon are still random.",
+    packEyebrow: "Triple Tag Team Pack",
     forcedKeys: ["artType", "specialForm"],
   },
 };
@@ -297,11 +296,7 @@ export default function SoloPackFlow({ mode }: { mode: SoloMode }) {
         eyebrow={copy.eyebrow}
         title={copy.title}
         subtitle={copy.subtitle}
-        footer={
-          <Link href="/" className="mt-4 block text-center text-sm font-semibold text-slate-400 active:text-white">
-            ← All Modes
-          </Link>
-        }
+        back="/"
       />
     );
   }

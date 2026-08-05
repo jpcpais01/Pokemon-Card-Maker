@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Icon from "@/components/ui/Icon";
 
 interface Props {
   code: string;
@@ -23,29 +24,54 @@ export default function WaitingRoom({ code, playersJoined, maxPlayers }: Props) 
   }
 
   return (
-    <div className="flex min-h-dvh flex-col items-center justify-center px-5 py-10">
-      <div className="glass-strong rise-in w-full max-w-sm rounded-[2rem] p-6 text-center shadow-2xl shadow-black/40">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.35em] text-amber-300/90">
+    <div className="flex min-h-dvh flex-col items-center justify-center px-6 py-10">
+      <div className="card-raised pop-in w-full max-w-sm p-6 text-center">
+        <p className="section-label text-amber-300/80">
           {maxPlayers > 2 ? `${maxPlayers}-Player Battle` : "1v1 Battle"}
         </p>
         <h1 className="font-display mt-2 text-2xl font-extrabold tracking-tight text-white">
-          {playersJoined} of {maxPlayers} joined...
+          Waiting for players
         </h1>
 
-        <div className="relative mt-6 overflow-hidden rounded-2xl border border-amber-300/30 bg-amber-400/10 py-6">
-          <div className="holo-sheen opacity-25" />
-          <p className="relative text-[11px] font-semibold uppercase tracking-wider text-amber-300/80">Room Code</p>
-          <p className="relative mt-1 text-4xl font-black tracking-[0.3em] text-white">{code}</p>
+        {/* Seat indicators - concrete "who's here" state instead of a bare count. */}
+        <div className="mt-4 flex items-center justify-center gap-2">
+          {Array.from({ length: maxPlayers }, (_, i) => {
+            const filled = i < playersJoined;
+            return (
+              <span
+                key={i}
+                className={`flex h-9 w-9 items-center justify-center rounded-full border transition-colors duration-300 ${
+                  filled
+                    ? "border-amber-300/50 bg-amber-400/15 text-amber-300"
+                    : "border-white/10 bg-white/[0.04] text-slate-600"
+                }`}
+              >
+                <Icon name={filled ? "check" : "plus"} size={15} strokeWidth={2.6} />
+              </span>
+            );
+          })}
+        </div>
+        <p className="mt-2 text-[12.5px] text-slate-400">
+          {playersJoined} of {maxPlayers} joined
+        </p>
+
+        <div className="relative mt-6 overflow-hidden rounded-2xl border border-amber-300/25 bg-amber-400/[0.07] py-6">
+          <div className="holo-sheen opacity-20" />
+          <p className="section-label relative text-amber-300/70">Room Code</p>
+          <p className="font-display relative mt-1.5 text-[2.75rem] font-black leading-none tracking-[0.3em] text-white">
+            {code}
+          </p>
         </div>
 
-        <button type="button" onClick={copyLink} className="btn-primary mt-5 w-full transition-transform active:scale-[0.98]">
+        <button type="button" onClick={copyLink} className="btn-primary mt-5 w-full">
+          <Icon name={copied ? "check" : "share"} size={17} />
           {copied ? "Link copied!" : "Copy Invite Link"}
         </button>
 
         <div className="mt-6 flex items-center justify-center gap-1.5">
-          <span className="h-2 w-2 animate-bounce rounded-full bg-amber-400 [animation-delay:-0.3s]" />
-          <span className="h-2 w-2 animate-bounce rounded-full bg-amber-400 [animation-delay:-0.15s]" />
-          <span className="h-2 w-2 animate-bounce rounded-full bg-amber-400" />
+          <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-amber-400 [animation-delay:-0.3s]" />
+          <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-amber-400 [animation-delay:-0.15s]" />
+          <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-amber-400" />
         </div>
       </div>
     </div>

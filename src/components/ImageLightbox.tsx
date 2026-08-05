@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import HoloCard from "./HoloCard";
+import Icon from "@/components/ui/Icon";
 
 interface Props {
   src: string;
@@ -51,43 +52,56 @@ export default function ImageLightbox({
       aria-modal="true"
       aria-label={alt}
       onClick={onClose}
-      className="fixed inset-0 z-50 overflow-y-auto bg-black/90 backdrop-blur-sm"
+      className="fixed inset-0 z-50 overflow-y-auto bg-black/92 backdrop-blur-md"
     >
-      <button
-        type="button"
-        onClick={onClose}
-        aria-label="Close full view"
-        className="glass fixed right-4 top-[calc(env(safe-area-inset-top)+1rem)] z-10 flex h-10 w-10 items-center justify-center rounded-full text-lg text-white active:scale-95"
+      <div
+        className="flex items-center justify-between px-4"
+        style={{ paddingTop: "calc(env(safe-area-inset-top) + 0.75rem)" }}
       >
-        ✕
-      </button>
+        {onToggleFavorite ? (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleFavorite();
+            }}
+            aria-label={isFavorited ? "Remove from binder" : "Save to binder"}
+            aria-pressed={isFavorited}
+            className={`glass flex h-10 w-10 items-center justify-center rounded-full transition-colors active:scale-95 ${
+              isFavorited ? "text-amber-300" : "text-white"
+            }`}
+          >
+            <Icon name={isFavorited ? "star-filled" : "star"} size={19} />
+          </button>
+        ) : (
+          <span className="h-10 w-10" />
+        )}
 
-      {onToggleFavorite && (
         <button
           type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            onToggleFavorite();
-          }}
-          aria-label={isFavorited ? "Remove from favorites" : "Save to favorites"}
-          aria-pressed={isFavorited}
-          className={`glass fixed left-4 top-[calc(env(safe-area-inset-top)+1rem)] z-10 flex h-10 w-10 items-center justify-center rounded-full text-lg transition-colors active:scale-95 ${
-            isFavorited ? "text-amber-300" : "text-white"
-          }`}
+          onClick={onClose}
+          aria-label="Close full view"
+          className="glass flex h-10 w-10 items-center justify-center rounded-full text-white active:scale-95"
         >
-          {isFavorited ? "★" : "☆"}
+          <Icon name="close" size={18} />
         </button>
-      )}
+      </div>
 
-      <div className="flex min-h-full flex-col items-center justify-center gap-5 p-4">
+      <div className="flex min-h-[calc(100%-4rem)] flex-col items-center justify-center gap-5 px-5 pb-8 pt-2">
         <div onClick={(e) => e.stopPropagation()} className="w-full max-w-sm">
-          <HoloCard src={src} alt={alt} holo={holo} className="aspect-[3/4] w-full" frameClassName="rounded-2xl shadow-2xl" />
+          <HoloCard
+            src={src}
+            alt={alt}
+            holo={holo}
+            className="aspect-[3/4] w-full"
+            frameClassName="rounded-2xl border border-white/12"
+          />
         </div>
 
         {favoriteError && (
           <p
             onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-md rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2 text-center text-xs text-red-300"
+            className="w-full max-w-sm rounded-2xl border border-red-500/25 bg-red-500/10 px-4 py-2.5 text-center text-[12px] text-red-300"
           >
             {favoriteError}
           </p>
@@ -97,9 +111,10 @@ export default function ImageLightbox({
           href={src}
           download={downloadFilename(alt)}
           onClick={(e) => e.stopPropagation()}
-          className="btn-primary flex items-center justify-center gap-2 !py-3 active:scale-95"
+          className="btn-primary w-full max-w-sm"
         >
-          ⤓ Download Image
+          <Icon name="download" size={17} />
+          Save Image
         </a>
       </div>
     </div>

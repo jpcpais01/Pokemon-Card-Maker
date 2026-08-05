@@ -1,6 +1,8 @@
 "use client";
 
 import FlipCard from "./FlipCard";
+import Screen from "@/components/ui/Screen";
+import Icon from "@/components/ui/Icon";
 import { buildCardFaces, type CardKey } from "@/lib/cardFaces";
 import { playFlipSound, playRareChime, vibrate } from "@/lib/soundFx";
 import type { ArtType, PokemonPick, SpecialForm, Vibe, WeightedOption } from "@/lib/types";
@@ -60,15 +62,17 @@ export default function RevealScreen({
     rare: forcedKeys.includes(face.key) ? false : face.rare,
   }));
 
+  const revealedCount = cards.filter((c) => c.revealed).length;
+
   return (
-    <div className="flex min-h-dvh flex-col px-5 py-8">
-      <div className="mx-auto w-full max-w-sm flex-1">
-        <div className="glass mb-6 flex items-center justify-between rounded-2xl px-4 py-3">
-          <button onClick={onBack} className="text-sm font-semibold text-slate-300 active:text-white">
-            ← Gens
-          </button>
-          <p className="text-xs font-semibold uppercase tracking-[0.25em] text-amber-300">{eyebrow}</p>
+    <Screen
+      immersive
+      back={onBack}
+      title={eyebrow}
+      action={
+        !allRevealed ? (
           <button
+            type="button"
             onClick={() => {
               const anyHiddenRare = cards.some((c) => !c.revealed && c.rare);
               if (anyHiddenRare) {
@@ -80,20 +84,45 @@ export default function RevealScreen({
               }
               onRevealAll();
             }}
-            disabled={allRevealed}
-            className="text-sm font-semibold text-amber-300 active:text-amber-100 disabled:opacity-0"
+            className="btn-quiet -mr-2 !px-2 !text-amber-300"
           >
             Reveal all
           </button>
+        ) : null
+      }
+    >
+      <div className="screen-pad flex flex-1 flex-col">
+        {/* Progress rail - turns "tap four cards" into a visible objective. */}
+        <div className="mb-5 flex items-center gap-3">
+          <div className="flex flex-1 gap-1.5">
+            {cards.map((c) => (
+              <span
+                key={String(c.key)}
+                className={`h-1 flex-1 rounded-full transition-all duration-300 ${
+                  c.revealed ? "bg-amber-300" : "bg-white/12"
+                }`}
+              />
+            ))}
+          </div>
+          <span className="text-[11px] font-bold tabular-nums text-slate-400">
+            {revealedCount}/{cards.length}
+          </span>
+          <span
+            className={`chip chip-sm! ${rerollsLeft > 0 ? "chip-gold" : "chip-teal opacity-50"}`}
+            title="Rerolls left"
+          >
+            <Icon name="reroll" size={10} strokeWidth={2.6} />
+            {rerollsLeft}
+          </span>
         </div>
 
-        <p className="mb-4 text-center text-xs font-semibold text-slate-400">
-          <span className="text-amber-300">↻ {rerollsLeft}</span> reroll{rerollsLeft === 1 ? "" : "s"} left
-        </p>
-
-        <div className="flex flex-wrap justify-center gap-4">
-          {cards.map((card) => (
-            <div key={card.key} className="w-[calc(50%-0.5rem)]">
+        <div className="grid grid-cols-2 gap-3.5">
+          {cards.map((card, i) => (
+            <div
+              key={card.key}
+              className="pop-in"
+              style={{ "--d": `${i * 70}ms` } as React.CSSProperties}
+            >
               <FlipCard
                 label={card.label}
                 revealed={card.revealed}
@@ -106,18 +135,33 @@ export default function RevealScreen({
             </div>
           ))}
         </div>
+
+        <p className="mt-5 text-center text-[11.5px] leading-relaxed text-slate-500">
+          {allRevealed
+            ? rerollsLeft > 0
+              ? "Not happy with a trait? Tap it to reroll."
+              : "No rerolls left — time to paint it."
+            : "Tap each card to reveal what you pulled."}
+        </p>
       </div>
 
-      <div className="mx-auto mt-8 w-full max-w-sm">
-        <button
-          type="button"
-          onClick={onGenerate}
-          disabled={!allRevealed}
-          className="btn-primary w-full transition-transform active:scale-[0.98] disabled:pointer-events-none disabled:opacity-0"
+      <div className="sticky bottom-0 z-20 mt-6">
+        <div className="pointer-events-none absolute inset-x-0 -top-8 h-8 bg-gradient-to-t from-[#07070c] to-transparent" />
+        <div
+          className="screen-pad relative bg-[#07070c]"
+          style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 0.875rem)" }}
         >
-          Generate Card Artwork
-        </button>
+          <button
+            type="button"
+            onClick={onGenerate}
+            disabled={!allRevealed}
+            className="btn-primary w-full transition-opacity duration-300 disabled:pointer-events-none disabled:opacity-0"
+          >
+            <Icon name="sparkles" size={17} />
+            Paint the Artwork
+          </button>
+        </div>
       </div>
-    </div>
+    </Screen>
   );
 }

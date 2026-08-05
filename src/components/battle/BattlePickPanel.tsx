@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import FlipCard from "@/components/FlipCard";
+import Icon from "@/components/ui/Icon";
 import { buildCardFaces, type CardKey } from "@/lib/cardFaces";
 import type { BattlePlayerPick } from "@/lib/battle/types";
 
@@ -42,23 +43,34 @@ export default function BattlePickPanel({
 
   const allRevealed = faces.every((face) => revealed[String(face.key)]);
 
+  const revealedCount = faces.filter((f) => locked || revealed[String(f.key)]).length;
+
   return (
     <div>
-      <p className="mb-4 text-center text-xs font-semibold text-slate-400">
-        {unlimitedRerolls ? (
-          <>
-            <span className="text-amber-300">↻ ∞</span> rerolls
-          </>
-        ) : (
-          <>
-            <span className="text-amber-300">↻ {rerollsLeft}</span> reroll{rerollsLeft === 1 ? "" : "s"} left
-          </>
-        )}
-      </p>
+      {/* Same progress rail as solo reveal, so the two flows feel like one game. */}
+      <div className="mb-4 flex items-center gap-3">
+        <div className="flex flex-1 gap-1.5">
+          {faces.map((f) => (
+            <span
+              key={String(f.key)}
+              className={`h-1 flex-1 rounded-full transition-all duration-300 ${
+                locked || revealed[String(f.key)] ? "bg-amber-300" : "bg-white/12"
+              }`}
+            />
+          ))}
+        </div>
+        <span className="text-[11px] font-bold tabular-nums text-slate-400">
+          {revealedCount}/{faces.length}
+        </span>
+        <span className={`chip chip-sm! ${unlimitedRerolls || rerollsLeft > 0 ? "chip-gold" : "chip-teal opacity-50"}`}>
+          <Icon name="reroll" size={10} strokeWidth={2.6} />
+          {unlimitedRerolls ? "∞" : rerollsLeft}
+        </span>
+      </div>
 
-      <div className="flex flex-wrap justify-center gap-4">
-        {faces.map((face) => (
-          <div key={face.key} className="w-[calc(50%-0.5rem)]">
+      <div className="grid grid-cols-2 gap-3.5">
+        {faces.map((face, i) => (
+          <div key={face.key} className="pop-in" style={{ "--d": `${i * 70}ms` } as React.CSSProperties}>
             <FlipCard
               label={face.label}
               revealed={locked || !!revealed[String(face.key)]}
@@ -76,9 +88,16 @@ export default function BattlePickPanel({
         type="button"
         onClick={onLock}
         disabled={!allRevealed || locked || busy}
-        className="btn-primary mt-8 w-full transition-transform active:scale-[0.98] disabled:opacity-50"
+        className="btn-primary mt-6 w-full disabled:opacity-50"
       >
-        {locked ? "Waiting for opponent..." : "Lock In"}
+        {locked ? (
+          "Waiting for opponent..."
+        ) : (
+          <>
+            <Icon name="check" size={17} />
+            Lock In
+          </>
+        )}
       </button>
     </div>
   );

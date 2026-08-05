@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import ImageLightbox from "@/components/ImageLightbox";
 import TraitChip from "@/components/TraitChip";
+import Icon from "@/components/ui/Icon";
 import { ratingsTier, ratingsTotal, tierForTotal } from "@/lib/battle/tier";
 import type { BattleRound, BattleRoundPlayerState, CardRatings } from "@/lib/battle/types";
 import { useFavoriteToggle } from "@/lib/favorites";
@@ -134,7 +135,7 @@ export default function RoundResult({
       </div>
 
       {round.verdict && (
-        <p className="glass mt-4 rounded-xl p-3 text-center text-xs italic leading-relaxed text-slate-300">
+        <p className="card mt-4 p-3.5 text-center text-[12px] italic leading-relaxed text-slate-300">
           &ldquo;{round.verdict}&rdquo;
         </p>
       )}
@@ -143,7 +144,7 @@ export default function RoundResult({
         type="button"
         onClick={onReady}
         disabled={myReady || readyBusy}
-        className="btn-primary mt-6 w-full transition-transform active:scale-[0.98] disabled:opacity-50"
+        className="btn-primary mt-6 w-full disabled:opacity-50"
       >
         {myReady
           ? allOthersReady
@@ -234,7 +235,7 @@ function CardSpotlight({
         </div>
 
         {isVictory && verdict && (
-          <p className="glass max-w-xs rounded-xl p-3 text-center text-xs italic leading-relaxed text-slate-300">
+          <p className="card max-w-xs p-3.5 text-center text-[12px] italic leading-relaxed text-slate-300">
             &ldquo;{verdict}&rdquo;
           </p>
         )}
@@ -506,8 +507,8 @@ function ResultCard({
           </span>
         )}
         {image && (
-          <span className="glass absolute bottom-1.5 right-1.5 flex h-6 w-6 items-center justify-center rounded-full text-xs text-white">
-            ⤢
+          <span className="glass absolute bottom-1.5 right-1.5 flex h-6 w-6 items-center justify-center rounded-full text-white">
+            <Icon name="expand" size={12} />
           </span>
         )}
       </button>

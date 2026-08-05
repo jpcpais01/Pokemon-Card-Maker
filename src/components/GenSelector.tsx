@@ -1,7 +1,9 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { GENERATIONS } from "@/lib/generations";
+import Screen from "@/components/ui/Screen";
+import Icon from "@/components/ui/Icon";
+import { BADDIES_GEN_ID, GENERATIONS, NICHE_GEN_ID, TOP_100_GEN_ID } from "@/lib/generations";
 
 interface Props {
   selected: number[];
@@ -14,10 +16,18 @@ interface Props {
   subtitle?: string;
   buttonLabel?: string;
   loadingLabel?: string;
+  /** Back target for the header - a route string or a handler. */
+  back?: string | (() => void);
   footer?: ReactNode;
-  /** Rendered after the gen grid/select-all, before the error/start button - e.g. a player-count picker. */
+  /** Rendered after the gen grid, before the start button - e.g. match settings. */
   extraTop?: ReactNode;
 }
+
+/** The three curated pools aren't real generations, so they get their own group. */
+const CURATED_IDS = new Set<number>([TOP_100_GEN_ID, BADDIES_GEN_ID, NICHE_GEN_ID]);
+
+const NUMBERED = GENERATIONS.filter((g) => !CURATED_IDS.has(g.id));
+const CURATED = GENERATIONS.filter((g) => CURATED_IDS.has(g.id));
 
 export default function GenSelector({
   selected,
@@ -25,11 +35,12 @@ export default function GenSelector({
   onStart,
   loading,
   error,
-  eyebrow = "PokeGen",
-  title = "Open a Pack",
-  subtitle = "Choose which generations can appear, then open your pack for four random traits.",
+  eyebrow = "Pack Setup",
+  title = "Choose Your Pool",
+  subtitle = "Pick which Pokemon can show up in your pack.",
   buttonLabel = "Open Pack",
   loadingLabel = "Loading Pokedex...",
+  back,
   footer,
   extraTop,
 }: Props) {
@@ -47,64 +58,102 @@ export default function GenSelector({
     onChange(allSelected ? [] : GENERATIONS.map((g) => g.id));
   }
 
+  function renderGen(gen: (typeof GENERATIONS)[number]) {
+    const active = selected.includes(gen.id);
+    return (
+      <button
+        key={gen.id}
+        type="button"
+        onClick={() => toggle(gen.id)}
+        aria-pressed={active}
+        className={`seg relative flex-col !py-3 ${active ? "seg-on" : ""}`}
+      >
+        <span className="text-[13px] font-bold leading-tight">{gen.label}</span>
+        <span className="mt-0.5 text-[10px] font-semibold leading-tight opacity-70">{gen.region}</span>
+        {active && (
+          <span className="absolute right-1.5 top-1.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-amber-300/85 text-[#2a1705]">
+            <Icon name="check" size={9} strokeWidth={4} />
+          </span>
+        )}
+      </button>
+    );
+  }
+
   return (
-    <div className="flex min-h-dvh flex-col items-center justify-center px-5 py-8">
-      <div className="glass-strong rise-in w-full max-w-sm rounded-[2rem] p-6 shadow-2xl shadow-black/40">
-        <div className="mb-7 text-center">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.35em] text-amber-300/90">{eyebrow}</p>
-          <h1 className="font-display mt-2 text-3xl font-extrabold tracking-tight text-white">{title}</h1>
-          <p className="mt-2 text-sm leading-relaxed text-slate-400">{subtitle}</p>
+    // Immersive: this is a drill-in setup flow with its own sticky CTA, so the
+    // tab bar would both collide with that CTA and invite you to abandon the
+    // flow mid-way. The header back arrow is the way out.
+    <Screen immersive back={back} title={eyebrow}>
+      <div className="screen-pad flex flex-1 flex-col">
+        <div className="enter-up mb-6 mt-1">
+          <h1 className="font-display text-[28px] font-extrabold leading-tight tracking-tight text-white">
+            {title}
+          </h1>
+          <p className="mt-1.5 text-[13.5px] leading-relaxed text-slate-400">{subtitle}</p>
         </div>
 
-        <div className="grid grid-cols-3 gap-2.5">
-          {GENERATIONS.map((gen) => {
-            const active = selected.includes(gen.id);
-            return (
-              <button
-                key={gen.id}
-                type="button"
-                onClick={() => toggle(gen.id)}
-                aria-pressed={active}
-                className={`flex flex-col items-center justify-center rounded-2xl border px-2 py-3 transition-all duration-200 active:scale-95 ${
-                  active
-                    ? "border-amber-300/70 bg-amber-400/15 text-amber-200 shadow-[0_0_20px_-4px_rgba(251,191,36,0.5)]"
-                    : "border-white/10 bg-white/[0.03] text-slate-500"
-                }`}
-              >
-                <span className="text-xs font-bold uppercase tracking-wide">{gen.label}</span>
-                <span className="mt-0.5 text-[11px] opacity-80">{gen.region}</span>
-              </button>
-            );
-          })}
+        <div className="enter-up" style={{ "--d": "60ms" } as React.CSSProperties}>
+          <div className="mb-2.5 flex items-center justify-between">
+            <p className="section-label">Generations</p>
+            <button
+              type="button"
+              onClick={toggleAll}
+              className="text-[12px] font-bold text-amber-300 transition-opacity active:opacity-60"
+            >
+              {allSelected ? "Clear all" : "Select all"}
+            </button>
+          </div>
+          <div className="grid grid-cols-3 gap-2">{NUMBERED.map(renderGen)}</div>
         </div>
 
-        <button
-          type="button"
-          onClick={toggleAll}
-          className="glass mt-3 w-full rounded-xl py-2.5 text-xs font-semibold text-slate-300 transition-colors active:bg-white/10 active:scale-[0.98]"
-        >
-          {allSelected ? "Deselect all" : "Select all generations"}
-        </button>
+        <div className="enter-up mt-5" style={{ "--d": "120ms" } as React.CSSProperties}>
+          <p className="section-label mb-2.5">Curated pools</p>
+          <div className="grid grid-cols-3 gap-2">{CURATED.map(renderGen)}</div>
+        </div>
 
-        {extraTop}
+        {extraTop && (
+          <div className="enter-up mt-6 flex flex-col gap-5" style={{ "--d": "180ms" } as React.CSSProperties}>
+            {extraTop}
+          </div>
+        )}
 
         {error && (
-          <p className="mt-4 rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2 text-center text-sm text-red-300">
+          <p className="mt-5 rounded-2xl border border-red-500/25 bg-red-500/10 px-4 py-3 text-center text-[13px] text-red-300">
             {error}
           </p>
         )}
 
-        <button
-          type="button"
-          onClick={onStart}
-          disabled={loading || selected.length === 0}
-          className="btn-primary mt-7 w-full transition-transform active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40"
-        >
-          {loading ? loadingLabel : buttonLabel}
-        </button>
-
         {footer}
       </div>
-    </div>
+
+      {/* Sticky action rail - the primary CTA stays reachable no matter how far
+          the settings list scrolls, instead of stranding it at the page bottom. */}
+      <div className="sticky bottom-0 z-20 mt-7">
+        <div className="pointer-events-none absolute inset-x-0 -top-8 h-8 bg-gradient-to-t from-[#07070c] to-transparent" />
+        <div
+          className="screen-pad relative bg-[#07070c]"
+          style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 0.875rem)" }}
+        >
+          <button
+            type="button"
+            onClick={onStart}
+            disabled={loading || selected.length === 0}
+            className="btn-primary w-full disabled:pointer-events-none disabled:opacity-40"
+          >
+            {loading ? (
+              loadingLabel
+            ) : (
+              <>
+                <Icon name="sparkles" size={17} />
+                {buttonLabel}
+              </>
+            )}
+          </button>
+          {selected.length === 0 && (
+            <p className="mt-2 text-center text-[11px] text-slate-500">Select at least one pool to continue.</p>
+          )}
+        </div>
+      </div>
+    </Screen>
   );
 }

@@ -1,9 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import GenSelector from "@/components/GenSelector";
+import Screen from "@/components/ui/Screen";
+import Icon from "@/components/ui/Icon";
 import JudgeModePicker from "@/components/battle/JudgeModePicker";
 import PackModePicker from "@/components/battle/PackModePicker";
 import PlayerCountPicker from "@/components/battle/PlayerCountPicker";
@@ -11,7 +13,7 @@ import { createRoom, joinRoom } from "@/lib/battle/api";
 import { ROOM_CODE_LENGTH } from "@/lib/battle/roomCode";
 import { storePlayerId } from "@/lib/battle/session";
 import { GENERATIONS } from "@/lib/generations";
-import { MIN_VOTE_PLAYERS, type JudgeMode } from "@/lib/battle/types";
+import { BATTLE_ROUNDS, MIN_VOTE_PLAYERS, type JudgeMode } from "@/lib/battle/types";
 import type { PackMode } from "@/lib/types";
 
 type Mode = "menu" | "create" | "join";
@@ -71,11 +73,12 @@ export default function BattleLobby() {
         onStart={handleCreate}
         loading={creating}
         error={createError}
-        eyebrow="Battle"
-        title="Create a Room"
-        subtitle="Pick which generations everyone can pull from and how many players, then share the room code."
+        eyebrow="Create Room"
+        title="Set the Rules"
+        subtitle="Pick the pool everyone pulls from, then how the match plays out."
         buttonLabel="Create Room"
         loadingLabel="Creating room..."
+        back={() => setMode("menu")}
         extraTop={
           <>
             <PlayerCountPicker value={maxPlayers} onChange={setMaxPlayers} />
@@ -83,46 +86,38 @@ export default function BattleLobby() {
             {maxPlayers >= MIN_VOTE_PLAYERS && <JudgeModePicker value={judgeMode} onChange={setJudgeMode} />}
           </>
         }
-        footer={
-          <button
-            type="button"
-            onClick={() => setMode("menu")}
-            className="mt-4 block w-full text-center text-sm font-semibold text-slate-400 active:text-white"
-          >
-            ← Back
-          </button>
-        }
       />
     );
   }
 
   if (mode === "join") {
     return (
-      <div className="flex min-h-dvh flex-col items-center justify-center px-5 py-10">
-        <form
-          onSubmit={handleJoin}
-          className="glass-strong rise-in w-full max-w-sm rounded-[2rem] p-6 shadow-2xl shadow-black/40"
-        >
-          <div className="mb-7 text-center">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.35em] text-amber-300/90">Battle</p>
-            <h1 className="font-display mt-2 text-3xl font-extrabold tracking-tight text-white">Join a Room</h1>
-            <p className="mt-2 text-sm leading-relaxed text-slate-400">
-              Enter the {ROOM_CODE_LENGTH}-character code your friend shared with you.
+      <Screen immersive back={() => setMode("menu")} title="Join Room">
+        <form onSubmit={handleJoin} className="screen-pad flex flex-1 flex-col">
+          <div className="enter-up mb-7 mt-1">
+            <h1 className="font-display text-[28px] font-extrabold leading-tight tracking-tight text-white">
+              Enter the Code
+            </h1>
+            <p className="mt-1.5 text-[13.5px] leading-relaxed text-slate-400">
+              Type the {ROOM_CODE_LENGTH}-character code your friend shared with you.
             </p>
           </div>
 
           <input
             value={code}
             onChange={(e) => setCode(e.target.value.toUpperCase().slice(0, ROOM_CODE_LENGTH))}
-            placeholder="ABC"
+            placeholder={"–".repeat(ROOM_CODE_LENGTH)}
             autoCapitalize="characters"
             autoCorrect="off"
             spellCheck={false}
-            className="w-full rounded-2xl border border-white/15 bg-white/[0.04] px-4 py-4 text-center text-2xl font-black tracking-[0.3em] text-white placeholder:text-slate-600 focus:border-amber-300/60 focus:outline-none"
+            autoFocus
+            aria-label="Room code"
+            className="enter-up card w-full py-6 text-center font-display text-[2.5rem] font-black tracking-[0.35em] text-white placeholder:text-slate-700 focus:border-amber-300/50 focus:outline-none"
+            style={{ "--d": "60ms" } as React.CSSProperties}
           />
 
           {joinError && (
-            <p className="mt-4 rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2 text-center text-sm text-red-300">
+            <p className="mt-4 rounded-2xl border border-red-500/25 bg-red-500/10 px-4 py-3 text-center text-[13px] text-red-300">
               {joinError}
             </p>
           )}
@@ -130,52 +125,108 @@ export default function BattleLobby() {
           <button
             type="submit"
             disabled={joining || code.trim().length < ROOM_CODE_LENGTH}
-            className="btn-primary mt-7 w-full transition-transform active:scale-[0.98] disabled:opacity-50"
+            className="btn-primary mt-6 w-full disabled:pointer-events-none disabled:opacity-40"
           >
             {joining ? "Joining..." : "Join Room"}
           </button>
-
-          <button
-            type="button"
-            onClick={() => setMode("menu")}
-            className="mt-4 block w-full text-center text-sm font-semibold text-slate-400 active:text-white"
-          >
-            ← Back
-          </button>
         </form>
-      </div>
+      </Screen>
     );
   }
 
   return (
-    <div className="flex min-h-dvh flex-col items-center justify-center px-5 py-10">
-      <div className="glass-strong rise-in w-full max-w-sm rounded-[2rem] p-6 shadow-2xl shadow-black/40">
-        <div className="mb-8 text-center">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.35em] text-amber-300/90">Battle</p>
-          <h1 className="font-display mt-2 text-3xl font-extrabold tracking-tight text-white">Card Showdown</h1>
-          <p className="mt-2 text-sm leading-relaxed text-slate-400">
-            Open packs against 1-3 friends. Five rounds, an AI judge picks the better card each round, most points
-            wins.
+    <Screen bare>
+      <div className="screen-pad flex flex-1 flex-col pt-safe">
+        <header className="enter-up py-3">
+          <h1 className="font-display text-[28px] font-extrabold leading-none tracking-tight text-white">
+            Card Showdown
+          </h1>
+          <p className="mt-1.5 text-[13px] text-slate-400">
+            {BATTLE_ROUNDS} rounds. Best card each round takes the point.
+          </p>
+        </header>
+
+        {/* Versus hero - makes the mode feel like an event, not a menu item. */}
+        <div
+          className="card-raised enter-up relative mt-3 overflow-hidden p-6"
+          style={{ "--d": "60ms" } as React.CSSProperties}
+        >
+          <div
+            aria-hidden
+            className="glow-pulse pointer-events-none absolute -left-16 -top-16 h-48 w-48 rounded-full bg-violet-500/25 blur-3xl"
+          />
+          <div
+            aria-hidden
+            className="glow-pulse pointer-events-none absolute -bottom-16 -right-16 h-48 w-48 rounded-full bg-amber-400/25 blur-3xl"
+            style={{ animationDelay: "-1.8s" }}
+          />
+          <div className="relative flex items-center justify-center gap-5">
+            <span className="flex h-16 w-16 items-center justify-center rounded-2xl border border-violet-400/30 bg-violet-500/15 text-3xl">
+              🎴
+            </span>
+            <span className="font-display text-2xl font-black text-slate-500">VS</span>
+            <span className="flex h-16 w-16 items-center justify-center rounded-2xl border border-amber-300/30 bg-amber-400/15 text-3xl">
+              🎴
+            </span>
+          </div>
+          <p className="relative mt-4 text-center text-[13px] leading-relaxed text-slate-400">
+            Everyone opens a pack from the same pool. An AI judge — or the players — pick the winner.
           </p>
         </div>
 
-        <div className="flex flex-col gap-3">
-          <button type="button" onClick={() => setMode("create")} className="btn-primary w-full transition-transform active:scale-[0.98]">
-            Create Room
+        <p className="section-label enter-up mb-2.5 mt-7" style={{ "--d": "120ms" } as React.CSSProperties}>
+          Start a match
+        </p>
+
+        <div className="flex flex-col gap-2.5">
+          <button
+            type="button"
+            onClick={() => setMode("create")}
+            className="card enter-up group flex items-center gap-3.5 p-4 text-left transition-transform duration-150 active:scale-[0.98]"
+            style={{ "--d": "160ms" } as React.CSSProperties}
+          >
+            <span className="brand-gradient flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl text-white shadow-lg shadow-fuchsia-500/25">
+              <Icon name="users" size={20} />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-[15px] font-bold text-white">Battle a Friend</p>
+              <p className="mt-0.5 text-[12.5px] text-slate-400">Create a room and share the code</p>
+            </div>
+            <Icon name="chevron-right" size={18} className="flex-shrink-0 text-slate-600" />
           </button>
+
           <button
             type="button"
             onClick={() => setMode("join")}
-            className="btn-ghost w-full transition-colors active:bg-white/10 active:scale-[0.98]"
+            className="card enter-up group flex items-center gap-3.5 p-4 text-left transition-transform duration-150 active:scale-[0.98]"
+            style={{ "--d": "215ms" } as React.CSSProperties}
           >
-            Join Room
+            <span className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.06] text-slate-300">
+              <Icon name="plus" size={20} />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-[15px] font-bold text-white">Join a Room</p>
+              <p className="mt-0.5 text-[12.5px] text-slate-400">Enter a friend&apos;s code</p>
+            </div>
+            <Icon name="chevron-right" size={18} className="flex-shrink-0 text-slate-600" />
           </button>
-        </div>
 
-        <Link href="/" className="mt-6 block text-center text-sm font-semibold text-slate-400 active:text-white">
-          ← All Modes
-        </Link>
+          <Link
+            href="/bot"
+            className="card enter-up group flex items-center gap-3.5 p-4 transition-transform duration-150 active:scale-[0.98]"
+            style={{ "--d": "270ms" } as React.CSSProperties}
+          >
+            <span className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl border border-cyan-400/25 bg-cyan-500/12 text-cyan-300">
+              <Icon name="bot" size={20} />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-[15px] font-bold text-white">Battle a Bot</p>
+              <p className="mt-0.5 text-[12.5px] text-slate-400">1–3 CPU opponents, play instantly</p>
+            </div>
+            <Icon name="chevron-right" size={18} className="flex-shrink-0 text-slate-600" />
+          </Link>
+        </div>
       </div>
-    </div>
+    </Screen>
   );
 }

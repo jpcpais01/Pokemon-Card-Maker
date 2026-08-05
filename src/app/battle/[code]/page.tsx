@@ -267,16 +267,24 @@ export default function BattleRoomPage() {
 
   if (!playerId) {
     return (
-      <div className="flex min-h-dvh flex-col items-center justify-center px-5 py-10">
-        <div className="glass-strong rise-in w-full max-w-sm rounded-[2rem] p-6 text-center shadow-2xl shadow-black/40">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.35em] text-amber-300/90">1v1 Battle</p>
-          <h1 className="font-display mt-2 text-2xl font-extrabold tracking-tight text-white">You&apos;re Invited!</h1>
-          <p className="mt-2 text-sm text-slate-400">
-            Join room <span className="font-bold text-amber-300">{code}</span> for a card showdown.
-          </p>
+      <div className="flex min-h-dvh flex-col items-center justify-center px-6 py-10">
+        <div className="card-raised pop-in w-full max-w-sm p-6 text-center">
+          <p className="section-label text-amber-300/80">Card Showdown</p>
+          <h1 className="font-display mt-2 text-[1.75rem] font-extrabold tracking-tight text-white">
+            You&apos;re Invited
+          </h1>
+          <p className="mt-2 text-[13.5px] text-slate-400">Join this room for a card showdown.</p>
+
+          <div className="relative mt-5 overflow-hidden rounded-2xl border border-amber-300/25 bg-amber-400/[0.07] py-5">
+            <div className="holo-sheen opacity-20" />
+            <p className="section-label relative text-amber-300/70">Room Code</p>
+            <p className="font-display relative mt-1.5 text-[2.5rem] font-black leading-none tracking-[0.3em] text-white">
+              {code}
+            </p>
+          </div>
 
           {joinError && (
-            <p className="mt-4 rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-300">
+            <p className="mt-4 rounded-2xl border border-red-500/25 bg-red-500/10 px-4 py-3 text-[13px] text-red-300">
               {joinError}
             </p>
           )}
@@ -285,12 +293,12 @@ export default function BattleRoomPage() {
             type="button"
             onClick={handleJoinHere}
             disabled={joining}
-            className="btn-primary mt-6 w-full transition-transform active:scale-[0.98] disabled:opacity-50"
+            className="btn-primary mt-5 w-full disabled:opacity-50"
           >
             {joining ? "Joining..." : "Join Room"}
           </button>
-          <Link href="/battle" className="mt-4 block text-center text-sm font-semibold text-slate-400 active:text-white">
-            ← Back to Lobby
+          <Link href="/battle" className="btn-quiet mt-2 w-full">
+            Back to Lobby
           </Link>
         </div>
       </div>
@@ -361,8 +369,8 @@ export default function BattleRoomPage() {
           : [];
 
   return (
-    <div className="flex min-h-dvh flex-col px-5 py-8">
-      <div className="mx-auto w-full max-w-sm flex-1">
+    <div className="flex min-h-dvh flex-col pb-8" style={{ paddingTop: "calc(env(safe-area-inset-top) + 1rem)" }}>
+      <div className="screen-pad flex-1">
         <BattleHeader
           round={room.round}
           myScore={myScore}
