@@ -105,20 +105,24 @@ function armUnlock() {
     window.removeEventListener("pointerdown", unlock);
     window.removeEventListener("keydown", unlock);
     unlockArmed = false;
-    if (wantsMusic) startMusic(false);
+    if (wantsMusic) startMusic();
   };
   window.addEventListener("pointerdown", unlock, { once: true });
   window.addEventListener("keydown", unlock, { once: true });
 }
 
-function startMusic(restart: boolean) {
+function startMusic() {
   ensureElements();
   const el = music;
   if (!el) return;
-  if (restart) el.currentTime = 0;
-  // Fading in from wherever the volume currently sits means an interrupted fade-out
-  // (leave a game, come straight back) picks up smoothly instead of clipping.
-  if (el.paused) el.volume = 0;
+  // Only a genuinely stopped track goes back to the top. Moving between menus never
+  // pauses it, so this can't fire there - it's for the first play and for coming back
+  // out of a game, where resuming mid-phrase would sound like a glitch rather than a
+  // return to the menu theme.
+  if (el.paused) {
+    el.currentTime = 0;
+    el.volume = 0;
+  }
   el.play().then(
     () => fadeTo(MUSIC_VOLUME, FADE_IN_MS),
     () => armUnlock()
@@ -128,11 +132,10 @@ function startMusic(restart: boolean) {
 /**
  * Tells the audio layer whether the current screen is a menu.
  *
- * `restart` replays from the top - the home screen asks for that, so arriving at it
- * always opens on the theme's first bar, while moving between other menu screens
- * just lets the loop keep running.
+ * Every menu shares one continuous loop: navigating among them only ever keeps the
+ * music running, never restarts it. Only leaving for a game stops it.
  */
-export function setMenuMusic(on: boolean, restart = false) {
+export function setMenuMusic(on: boolean) {
   wantsMusic = on;
   if (typeof window === "undefined") return;
   ensureElements();
@@ -140,7 +143,9 @@ export function setMenuMusic(on: boolean, restart = false) {
   if (!el) return;
 
   if (on) {
-    if (el.paused || restart) startMusic(restart);
+    // A fade-out that hasn't finished yet is just turned around, which keeps a quick
+    // bounce out of a game and back smooth instead of clipping to silence first.
+    if (el.paused) startMusic();
     else fadeTo(MUSIC_VOLUME, FADE_IN_MS);
     return;
   }

@@ -29,9 +29,9 @@ export default function AppAudio() {
 
   useEffect(() => {
     // Solo routes are left alone here - SoloPackFlow drives those from its stage,
-    // and stepping on it from the route would restart the music mid-pack.
+    // and stepping on it from the route would cut the music off mid-pack.
     if (pathname.startsWith("/solo/")) return;
-    setMenuMusic(!isGameRoute(pathname), pathname === "/");
+    setMenuMusic(!isGameRoute(pathname));
   }, [pathname]);
 
   useEffect(() => {
