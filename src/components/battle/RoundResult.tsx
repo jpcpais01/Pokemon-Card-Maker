@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import ImageLightbox from "@/components/ImageLightbox";
 import TraitChip from "@/components/TraitChip";
 import Icon from "@/components/ui/Icon";
-import { ratingsTier, ratingsTotal, tierForTotal } from "@/lib/battle/tier";
+import { MAJOR_TIER_MARKS, ratingsTier, ratingsTotal, tierForTotal } from "@/lib/battle/tier";
 import type { BattleRound, BattleRoundPlayerState, CardRatings } from "@/lib/battle/types";
 import { useFavoriteToggle } from "@/lib/favorites";
 
@@ -196,7 +196,7 @@ function CardSpotlight({
   return (
     <div
       onClick={onSkip}
-      className="fixed inset-0 z-40 flex cursor-pointer flex-col items-center justify-center gap-5 bg-[#05060f] px-6 py-10"
+      className="fixed inset-0 z-40 flex cursor-pointer flex-col items-center justify-center gap-5 bg-[#07070c] px-6 py-10"
     >
       <div key={phaseKey} className="spotlight-in flex w-full flex-col items-center gap-5">
         {isVictory ? (
@@ -314,13 +314,17 @@ function RatingsBattle({ players, onSkip }: { players: RoundResultPlayerInfo[]; 
       isDuo={isDuo}
       accent={BAR_ACCENTS[i % BAR_ACCENTS.length]}
       ahead={revealed && totals[i] === maxTotal && leaderCount === 1}
+      trailing={revealed && totals[i] !== maxTotal}
       index={i}
       onSettled={handleSettled}
     />
   ));
   if (isDuo) {
     columns.splice(1, 0, (
-      <span key="vs" className="mb-40 text-2xl font-black text-slate-500">
+      <span
+        key="vs"
+        className="font-display mb-44 shrink-0 text-xl font-black tracking-tight text-slate-600"
+      >
         VS
       </span>
     ));
@@ -329,11 +333,40 @@ function RatingsBattle({ players, onSkip }: { players: RoundResultPlayerInfo[]; 
   return (
     <div
       onClick={onSkip}
-      className="fixed inset-0 z-40 flex cursor-pointer flex-col items-center justify-center gap-10 bg-[#05060f] px-6 py-10"
+      className="fixed inset-0 z-40 flex cursor-pointer flex-col items-center justify-center overflow-hidden bg-[#07070c] px-5"
     >
-      <div className={`flex w-full max-w-sm items-end justify-center ${isDuo ? "gap-6" : "gap-3"}`}>{columns}</div>
+      {/* Stage lighting. A pool of light overhead and a darker floor give the
+          columns somewhere to stand, instead of floating on flat black. */}
+      <div aria-hidden className="pointer-events-none absolute inset-0">
+        <div className="glow-pulse absolute left-1/2 top-[6%] h-[26rem] w-[26rem] -translate-x-1/2 rounded-full bg-amber-400/12 blur-3xl" />
+        <div
+          className="absolute inset-x-0 bottom-0 h-1/2"
+          style={{ background: "linear-gradient(to top, rgb(0 0 0 / 75%), transparent)" }}
+        />
+        <div
+          className="absolute inset-0"
+          style={{ background: "radial-gradient(120% 75% at 50% 45%, transparent 45%, rgb(0 0 0 / 65%) 100%)" }}
+        />
+      </div>
 
-      <p className="text-xs font-semibold text-slate-600">Tap to skip →</p>
+      <header className="enter-up relative mb-8 text-center">
+        <p className="section-label text-amber-300/70">Round Score</p>
+        <h2 className="font-display mt-1.5 text-[1.6rem] font-extrabold leading-none tracking-tight text-white">
+          {revealed ? (leaderCount > 1 ? "Dead Heat" : "We Have a Winner") : "The Judge Scores"}
+        </h2>
+      </header>
+
+      <div className={`relative flex w-full max-w-sm items-end justify-center ${isDuo ? "gap-5" : "gap-2.5"}`}>
+        {columns}
+      </div>
+
+      <p
+        className={`relative mt-9 text-[11px] font-semibold transition-opacity duration-500 ${
+          revealed ? "opacity-0" : "text-slate-600 opacity-100"
+        }`}
+      >
+        Tap to skip →
+      </p>
     </div>
   );
 }
@@ -345,6 +378,7 @@ function RatingBar({
   grown,
   accent,
   ahead,
+  trailing,
   isDuo,
   index,
   onSettled,
@@ -355,6 +389,7 @@ function RatingBar({
   grown: boolean;
   accent: BarAccent;
   ahead: boolean;
+  trailing: boolean;
   isDuo: boolean;
   index: number;
   onSettled: (index: number) => void;
@@ -395,27 +430,85 @@ function RatingBar({
   const imageBottomPx = Math.min((pct / 100) * trackHeightPx, trackHeightPx - imageSizePx);
 
   return (
-    <div className="flex flex-col items-center gap-3">
-      <p className={`font-bold uppercase tracking-[0.2em] text-slate-400 ${isDuo ? "text-xs" : "text-[10px]"}`}>
+    <div
+      className={`bar-enter flex min-w-0 flex-1 flex-col items-center gap-2.5 transition-all duration-700 ${
+        trailing ? "opacity-55 saturate-[0.65]" : "opacity-100"
+      }`}
+      style={{ "--d": `${index * 110}ms` } as React.CSSProperties}
+    >
+      <p
+        className={`truncate font-bold uppercase tracking-[0.18em] transition-colors duration-500 ${
+          ahead ? accent.text : "text-slate-400"
+        } ${isDuo ? "text-[11px]" : "text-[9px]"}`}
+      >
         {label}
       </p>
 
-      <div className={`relative ${isDuo ? "h-[26rem] w-32" : "h-64 w-20"}`}>
-        <div className="absolute inset-0 overflow-hidden rounded-3xl border border-white/15 bg-white/5">
+      <div className={`relative ${isDuo ? "h-[26rem] w-full max-w-[8rem]" : "h-64 w-full max-w-[5rem]"}`}>
+        {/* Accent floodlight behind the column, brightening as the bar climbs. */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -inset-x-8 -inset-y-4 rounded-full blur-2xl transition-opacity duration-500"
+          style={{ background: accent.glow, opacity: grown ? 0.05 + (pct / 100) * 0.16 : 0 }}
+        />
+
+        <div className="absolute inset-0 overflow-hidden rounded-2xl border border-white/12 bg-black/40">
+          {/* Tier reference marks - they turn the climb into a race past named
+              thresholds instead of a bar growing to an arbitrary height. */}
+          {MAJOR_TIER_MARKS.map((mark) => {
+            const cleared = currentTotal >= mark.min;
+            return (
+              <div
+                key={mark.label}
+                className="pointer-events-none absolute inset-x-0 flex items-center gap-1 px-1.5"
+                style={{ bottom: `${(mark.min / MAX_RATINGS_TOTAL) * 100}%` }}
+              >
+                <span
+                  className={`h-px flex-1 transition-colors duration-300 ${
+                    cleared ? "bg-white/25" : "bg-white/10"
+                  }`}
+                />
+                <span
+                  className={`text-[8px] font-black leading-none transition-colors duration-300 ${
+                    cleared ? "text-white/70" : "text-white/25"
+                  }`}
+                >
+                  {mark.label}
+                </span>
+              </div>
+            );
+          })}
+
           <div
-            className={`absolute inset-x-0 bottom-0 rounded-t-2xl bg-gradient-to-t ${accent.grad} ${ahead ? "victory-pulse" : ""}`}
+            className={`absolute inset-x-0 bottom-0 overflow-hidden rounded-t-xl bg-gradient-to-t ${accent.grad} ${
+              ahead ? "victory-pulse" : ""
+            }`}
             style={{
               height: `${pct}%`,
-              boxShadow: grown ? `0 0 40px -4px ${accent.glow}` : "none",
+              boxShadow: grown ? `0 0 34px -6px ${accent.glow}` : "none",
             }}
-          />
+          >
+            <div aria-hidden className="bar-energy absolute -inset-x-2 -top-4 bottom-0" />
+          </div>
+
+          {/* Leading edge - the part the eye actually tracks while it climbs. */}
+          {grown && (
+            <div
+              aria-hidden
+              className="bar-cap pointer-events-none absolute inset-x-0 h-[3px] rounded-full bg-white"
+              style={{ bottom: `calc(${pct}% - 1.5px)`, boxShadow: `0 0 14px 3px ${accent.glow}` }}
+            />
+          )}
         </div>
 
         <div
-          className={`absolute left-1/2 -translate-x-1/2 overflow-hidden rounded-2xl border-2 bg-black/40 shadow-lg ${accent.border} ${
+          className={`absolute left-1/2 -translate-x-1/2 overflow-hidden rounded-xl border-2 bg-black/40 transition-shadow duration-500 ${accent.border} ${
             isDuo ? "h-24 w-24" : "h-14 w-14"
           }`}
-          style={{ bottom: `${imageBottomPx}px` }}
+          style={{
+            bottom: `${imageBottomPx}px`,
+            boxShadow: ahead ? `0 0 30px -4px ${accent.glow}` : "0 10px 22px -10px rgb(0 0 0 / 90%)",
+          }}
         >
           {image && (
             // eslint-disable-next-line @next/next/no-img-element
@@ -424,13 +517,27 @@ function RatingBar({
         </div>
       </div>
 
-      <p
-        className={`font-black transition-opacity duration-300 ${grown ? "opacity-100" : "opacity-0"} ${accent.text} ${
-          isDuo ? "text-4xl" : "text-2xl"
-        }`}
-      >
-        {currentTier}
-      </p>
+      {/* Live total + tier. The number is what makes the climb legible; the tier
+          letter is keyed so it replays its pop every time the bar crosses a
+          threshold, turning each upgrade into its own small beat. */}
+      <div className="flex flex-col items-center">
+        <p
+          className={`font-display tabular-nums font-black leading-none transition-opacity duration-300 ${
+            grown ? "opacity-100" : "opacity-0"
+          } ${accent.text} ${isDuo ? "text-[2.4rem]" : "text-[1.6rem]"}`}
+          style={{ textShadow: `0 0 22px ${accent.glow}` }}
+        >
+          {Math.round(currentTotal)}
+        </p>
+        <p
+          key={currentTier}
+          className={`tier-pop mt-0.5 font-black uppercase leading-none tracking-[0.14em] transition-opacity duration-300 ${
+            grown ? "opacity-100" : "opacity-0"
+          } ${ahead ? accent.text : "text-slate-400"} ${isDuo ? "text-[11px]" : "text-[9px]"}`}
+        >
+          Tier {currentTier}
+        </p>
+      </div>
     </div>
   );
 }

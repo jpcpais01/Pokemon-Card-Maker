@@ -16,6 +16,16 @@ const TIER_THRESHOLDS: { min: number; label: string }[] = [
   { min: 0, label: "F" },
 ];
 
+/** The headline tiers only, for drawing reference marks up a score track - the full
+ *  12-step ladder is far too dense to label on a bar a few hundred pixels tall. */
+export const MAJOR_TIER_MARKS: { min: number; label: string }[] = [
+  { min: 36, label: "S" },
+  { min: 32, label: "A" },
+  { min: 26, label: "B" },
+  { min: 20, label: "C" },
+  { min: 11, label: "D" },
+];
+
 export function ratingsTotal(ratings: CardRatings): number {
   return ratings.art + ratings.fame + ratings.chase + ratings.rarity;
 }

@@ -668,6 +668,94 @@ body {
   animation: spotlight-in 480ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+/*
+ * ---------------------------------------------------------------------------
+ * Battle score bars (RoundResult)
+ * ---------------------------------------------------------------------------
+ */
+
+/* Energy running up the inside of a filling bar, so a bar that's mid-climb reads
+   as charging rather than as a static coloured block that happens to be resizing. */
+@keyframes bar-energy {
+  to {
+    transform: translateY(12px);
+  }
+}
+
+.bar-energy {
+  background-image: repeating-linear-gradient(
+    0deg,
+    rgb(255 255 255 / 0%) 0 8px,
+    rgb(255 255 255 / 6%) 8px 12px
+  );
+  animation: bar-energy 700ms linear infinite;
+  will-change: transform;
+}
+
+/* Bright leading edge at the top of the fill - the part your eye actually tracks
+   while the bar grows. */
+@keyframes cap-flare {
+  0%, 100% {
+    opacity: 0.7;
+    transform: scaleY(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scaleY(1.6);
+  }
+}
+
+.bar-cap {
+  animation: cap-flare 1.05s ease-in-out infinite;
+  will-change: opacity, transform;
+}
+
+/* Tier label punch. Scale only, never opacity: the label re-keys on every tier
+   change, and anything that fades from zero leaves it invisible for most of a
+   fast climb. */
+@keyframes tier-pop {
+  from {
+    transform: scale(1.35);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+.tier-pop {
+  animation: tier-pop 340ms var(--ease-spring) both;
+}
+
+/* Column entrance - each bar rises into frame on a stagger. */
+@keyframes bar-enter {
+  from {
+    opacity: 0;
+    transform: translateY(26px) scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.bar-enter {
+  animation: bar-enter 620ms var(--ease-out) both;
+  animation-delay: var(--d, 0ms);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bar-energy,
+  .bar-cap,
+  .tier-pop {
+    animation: none;
+  }
+
+  .bar-enter {
+    animation-duration: 1ms;
+    animation-delay: 0ms;
+  }
+}
+
 @keyframes victory-pulse {
   0%, 100% {
     transform: scale(1);
