@@ -1,5 +1,4 @@
 import type { ReactNode } from "react";
-import { ART_TYPE_ICONS, SPECIAL_FORM_ICONS, VIBE_ICONS } from "@/lib/icons";
 import type { ArtType, PokemonPick, SpecialForm, Vibe, WeightedOption } from "@/lib/types";
 
 export type CardKey = "artType" | "specialForm" | "vibe" | number;
@@ -13,18 +12,16 @@ export interface CardFace {
 }
 
 /**
- * Shared front face for the three trait cards. Each is a color-coded panel with
- * the trait glyph floated large and faint behind the label, so the cards read as
- * designed objects rather than an emoji stacked on a word.
+ * Shared front face for the three trait cards: a color-coded panel carrying the
+ * trait name. Colour alone distinguishes them - gold for rarity, violet for
+ * special form, cyan for vibe - so no glyph is needed to tell them apart.
  */
 function TraitFace({
-  glyph,
   label,
   kicker,
   gradient,
   text,
 }: {
-  glyph: string;
   label: string;
   kicker: string;
   gradient: string;
@@ -32,10 +29,12 @@ function TraitFace({
 }) {
   return (
     <div className={`relative flex h-full flex-col justify-end overflow-hidden bg-gradient-to-br p-3 ${gradient}`}>
-      {/* Oversized watermark glyph - bleeds off the corner for depth. */}
-      <span className="pointer-events-none absolute -right-3 -top-4 select-none text-[5.5rem] leading-none opacity-25 drop-shadow-sm">
-        {glyph}
-      </span>
+      {/* Soft corner light, so the panel reads as a lit surface rather than a
+          flat swatch now that nothing sits on top of it. */}
+      <span
+        className="pointer-events-none absolute inset-0"
+        style={{ background: "radial-gradient(120% 80% at 78% 8%, rgb(255 255 255 / 30%), transparent 62%)" }}
+      />
       <span
         className="pointer-events-none absolute inset-x-0 bottom-0 h-2/3"
         style={{ background: "linear-gradient(to top, rgb(0 0 0 / 45%), transparent)" }}
@@ -62,7 +61,6 @@ export function buildCardFaces(
       rare: artType.value === "special-illustration-rare",
       front: (
         <TraitFace
-          glyph={ART_TYPE_ICONS[artType.value]}
           label={artType.label}
           kicker="Art Type"
           gradient="from-amber-300 via-amber-500 to-orange-600"
@@ -76,7 +74,6 @@ export function buildCardFaces(
       rare: specialForm.value !== "none",
       front: (
         <TraitFace
-          glyph={SPECIAL_FORM_ICONS[specialForm.value]}
           label={specialForm.label}
           kicker="Special Form"
           gradient="from-violet-400 via-purple-500 to-indigo-700"
@@ -89,7 +86,6 @@ export function buildCardFaces(
       label: "Vibe",
       front: (
         <TraitFace
-          glyph={VIBE_ICONS[vibe.value]}
           label={vibe.label}
           kicker="Vibe"
           gradient="from-teal-300 via-cyan-500 to-sky-700"
