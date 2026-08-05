@@ -103,5 +103,5 @@ Redis database before relying on battle mode in production.
 - `src/app/api/battle/*` — battle mode endpoints (create/join/state/reroll/lock/advance/ready/image).
 - `src/app/battle/`, `src/components/battle/` — battle mode UI (lobby, waiting room, pick panel, round/match results).
 - `src/components/` — shared pack-opening UI (generation picker, flip cards, loading/result/error screens).
-- `src/app/icon.tsx`, `apple-icon.tsx`, `icon-192/`, `icon-512/`, `manifest.ts` — generated favicon/app icons and the PWA manifest (via `next/og`, no static image files needed).
-- `src/app/opengraph-image.tsx` — the social preview card shown when a link is shared (WhatsApp, iMessage, Slack, Discord, etc.).
+- `src/app/icon.png`, `apple-icon.png`, `public/icon-{192,512}.png`, `public/icon-maskable-512.png`, `manifest.ts` — the app mark at every size a browser, home screen or launcher asks for, plus the PWA manifest.
+- `src/app/opengraph-image.png` — the social preview card shown when a link is shared (WhatsApp, iMessage, Slack, Discord, etc.).
