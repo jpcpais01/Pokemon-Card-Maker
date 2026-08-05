@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import GenSelector from "@/components/GenSelector";
 import RevealScreen, { type CardKey, type RevealData, type RevealFlags } from "@/components/RevealScreen";
 import LoadingScreen from "@/components/LoadingScreen";
@@ -14,6 +14,7 @@ import {
   pickRandomPokemon,
   toPokemonPick,
 } from "@/lib/generations";
+import { setMenuMusic } from "@/lib/audio";
 import { getEvent, type EventTheme } from "@/lib/events";
 import type { PackMode, PokemonPick, PokemonRef } from "@/lib/types";
 
@@ -93,6 +94,13 @@ export default function SoloPackFlow({ mode, theme }: { mode: SoloMode; theme?: 
   const [errorMessage, setErrorMessage] = useState("");
   const [failedStep, setFailedStep] = useState<"prompt" | "image">("prompt");
   const [regenerating, setRegenerating] = useState(false);
+
+  // Solo lives at one URL from pool-picking all the way to the finished card, so the
+  // route can't tell a menu from a game here - the stage can. Everything past setup is
+  // the pack itself, which is where the menu theme bows out.
+  useEffect(() => {
+    setMenuMusic(stage === "setup");
+  }, [stage]);
 
   const allRevealed = useMemo(() => {
     if (!flags) return false;

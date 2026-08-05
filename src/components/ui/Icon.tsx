@@ -28,7 +28,9 @@ export type IconName =
   | "bot"
   | "check"
   | "share"
-  | "plus";
+  | "plus"
+  | "sound-on"
+  | "sound-off";
 
 interface Props extends SVGProps<SVGSVGElement> {
   name: IconName;
@@ -144,6 +146,20 @@ const PATHS: Record<IconName, React.ReactNode> = {
     <>
       <path d="M12 5v14" />
       <path d="M5 12h14" />
+    </>
+  ),
+  "sound-on": (
+    <>
+      <path d="M11 5 6.5 9H3v6h3.5L11 19z" />
+      <path d="M15 9.5a3.5 3.5 0 0 1 0 5" />
+      <path d="M17.8 6.7a7.5 7.5 0 0 1 0 10.6" />
+    </>
+  ),
+  "sound-off": (
+    <>
+      <path d="M11 5 6.5 9H3v6h3.5L11 19z" />
+      <path d="m16 10 5 4" />
+      <path d="m21 10-5 4" />
     </>
   ),
 };

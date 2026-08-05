@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Baloo_2, Geist } from "next/font/google";
+import AppAudio from "@/components/AppAudio";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -79,6 +80,7 @@ export default function RootLayout({
           <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#07070c]/55 to-[#07070c]" />
         </div>
         <div aria-hidden className="grain" />
+        <AppAudio />
         <div className="relative z-10 flex flex-1 flex-col">{children}</div>
       </body>
     </html>

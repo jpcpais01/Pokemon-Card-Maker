@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import Screen from "@/components/ui/Screen";
 import Icon from "@/components/ui/Icon";
+import { getServerMuted, isMuted, subscribe, toggleMuted } from "@/lib/audio";
 import { EVENTS, eventBadge, isEventLive } from "@/lib/events";
 import { getFavorites } from "@/lib/favorites";
 import { useHydrated } from "@/lib/useHydrated";
@@ -55,6 +56,7 @@ export default function Home() {
   const [favoriteCount, setFavoriteCount] = useState<number | null>(null);
   const now = useHydrated();
   const featured = buildFeatured(now);
+  const muted = useSyncExternalStore(subscribe, isMuted, getServerMuted);
 
   useEffect(() => {
     let cancelled = false;
@@ -75,14 +77,29 @@ export default function Home() {
               Poke<span className="gold-gradient-text">Gen</span>
             </h1>
           </div>
-          <Link
-            href="/gallery"
-            aria-label="Open your binder"
-            className="card flex items-center gap-2 !rounded-full px-3.5 py-2 transition-transform active:scale-95"
-          >
-            <Icon name="star-filled" size={15} className="text-amber-300" />
-            <span className="text-sm font-bold tabular-nums text-white">{favoriteCount ?? "–"}</span>
-          </Link>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => toggleMuted()}
+              aria-label={muted ? "Turn sound on" : "Turn sound off"}
+              aria-pressed={muted}
+              className="card flex h-[2.3rem] w-[2.3rem] items-center justify-center !rounded-full transition-transform active:scale-95"
+            >
+              <Icon
+                name={muted ? "sound-off" : "sound-on"}
+                size={16}
+                className={muted ? "text-slate-500" : "text-slate-300"}
+              />
+            </button>
+            <Link
+              href="/gallery"
+              aria-label="Open your binder"
+              className="card flex items-center gap-2 !rounded-full px-3.5 py-2 transition-transform active:scale-95"
+            >
+              <Icon name="star-filled" size={15} className="text-amber-300" />
+              <span className="text-sm font-bold tabular-nums text-white">{favoriteCount ?? "–"}</span>
+            </Link>
+          </div>
         </header>
 
         {/*

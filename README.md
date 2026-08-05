@@ -103,5 +103,6 @@ Redis database before relying on battle mode in production.
 - `src/app/api/battle/*` — battle mode endpoints (create/join/state/reroll/lock/advance/ready/image).
 - `src/app/battle/`, `src/components/battle/` — battle mode UI (lobby, waiting room, pick panel, round/match results).
 - `src/components/` — shared pack-opening UI (generation picker, flip cards, loading/result/error screens).
+- `src/lib/audio.ts`, `src/components/AppAudio.tsx`, `public/audio/` — menu music and the UI click. `AppAudio` mounts once in the root layout and decides from the route which screens are menus; solo reports its own stage instead, since setup and the pack share a URL.
 - `src/app/icon.png`, `apple-icon.png`, `public/icon-{192,512}.png`, `public/icon-maskable-512.png`, `manifest.ts` — the app mark at every size a browser, home screen or launcher asks for, plus the PWA manifest.
 - `src/app/opengraph-image.png` — the social preview card shown when a link is shared (WhatsApp, iMessage, Slack, Discord, etc.).
