@@ -204,16 +204,12 @@ body {
   }
 }
 
-/* Interactive 3D holo card - the pointer position is spring-eased in JS (see HoloCard.tsx) toward
-   a real perspective tilt plus several overlay layers, so the card has weight and settles rather
-   than snapping 1:1 to the pointer. Like .holo-sheen above, every layer only ever has its
-   `transform`/`opacity` touched per frame (never `background-position` or the gradient itself),
-   so tracking stays compositor-only with no main-thread repaint even while dragging on a phone.
-   No CSS transition anywhere here - the JS spring loop is what supplies all the easing, and a
-   CSS transition racing a moving rAF target would just fight it and read as mushy lag. */
+/* Interactive 3D holo card - the pointer position drives a real perspective tilt plus two overlay
+   layers. Like .holo-sheen above, only `transform`/`opacity` ever change per pointer-move frame
+   (never `background-position` or the gradient itself), so tracking stays compositor-only with no
+   main-thread repaint, even while dragging on a phone. */
 @utility holo-card-stage {
-  position: relative;
-  perspective: 1200px;
+  perspective: 1000px;
 }
 
 @utility holo-card {
@@ -223,6 +219,7 @@ body {
   height: 100%;
   overflow: hidden;
   touch-action: pan-y;
+  transition: transform 550ms cubic-bezier(0.16, 1, 0.3, 1);
   will-change: transform;
 }
 
@@ -234,106 +231,64 @@ body {
   pointer-events: none;
 }
 
+/* Wraps the glare + foil layers and carries the per-image luminance mask computed in HoloCard.tsx
+   (a data URL painted white with alpha = the artwork's own brightness at that spot). It sits
+   exactly card-sized (not the oversized layers inside it) so the mask lines up 1:1 with the actual
+   artwork - dark areas of the illustration suppress the shine underneath them, bright areas let it
+   through, and the existing overflow-hidden on .holo-card still clips the oversized children. */
+@utility holo-card-shine-mask {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
 /* Rainbow foil - oversized like .holo-sheen so shifting its position (not its gradient) is what
-   sweeps different colors across the surface as the tilt angle changes. Reserved for the top
-   rarity tier via the `holo` prop; every card still gets the plain glare below. */
+   sweeps different colors across the surface as the "angle" changes. Reserved for the top rarity
+   tier via the `holo` prop; every card still gets the plain glare below. */
 @utility holo-card-foil {
   position: absolute;
   inset: -60%;
   pointer-events: none;
   background-image: linear-gradient(
     115deg,
-    transparent 10%,
-    rgb(255 255 255 / 25%) 20%,
-    rgb(255 0 90 / 55%) 28%,
-    rgb(255 145 0 / 55%) 36%,
-    rgb(255 235 0 / 50%) 44%,
-    rgb(60 220 100 / 55%) 52%,
-    rgb(0 200 255 / 55%) 60%,
-    rgb(110 90 255 / 55%) 68%,
-    rgb(255 0 200 / 50%) 76%,
-    rgb(255 255 255 / 25%) 85%,
-    transparent 95%
+    transparent 15%,
+    rgb(255 255 255 / 25%) 27%,
+    rgb(236 72 153 / 55%) 36%,
+    rgb(168 85 247 / 55%) 45%,
+    rgb(6 182 212 / 55%) 54%,
+    rgb(52 211 153 / 55%) 63%,
+    rgb(251 191 36 / 55%) 72%,
+    rgb(255 255 255 / 25%) 82%,
+    transparent 94%
   );
   mix-blend-mode: color-dodge;
   opacity: 0;
+  transition: opacity 350ms ease-out;
   will-change: transform, opacity;
 }
 
-/* A second, tighter diffraction-grating band crossing the main foil at a different angle - real
-   holo foil isn't one smooth gradient, it's several interference patterns layered together, which
-   is what actually reads as "different colors at different angles" rather than one soft rainbow. */
-@utility holo-card-prism {
-  position: absolute;
-  inset: -70%;
-  pointer-events: none;
-  background-image: repeating-linear-gradient(
-    70deg,
-    transparent 0%,
-    rgb(255 255 255 / 35%) 2%,
-    transparent 4%,
-    rgb(0 255 200 / 35%) 6%,
-    transparent 8%,
-    rgb(255 60 220 / 35%) 10%,
-    transparent 12%
-  );
-  mix-blend-mode: color-dodge;
-  opacity: 0;
-  will-change: transform, opacity;
-}
-
-/* Scattered glitter specks, tiled small so they read as fine sparkle rather than one big shape -
-   the single most recognizable "holo card" cue, missing until now. */
-@utility holo-card-sparkle {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background-image:
-    radial-gradient(circle at 18% 22%, rgb(255 255 255 / 95%) 0%, transparent 1.6%),
-    radial-gradient(circle at 62% 12%, rgb(255 255 255 / 80%) 0%, transparent 1.3%),
-    radial-gradient(circle at 40% 58%, rgb(255 255 255 / 90%) 0%, transparent 1.8%),
-    radial-gradient(circle at 85% 42%, rgb(255 255 255 / 70%) 0%, transparent 1.2%),
-    radial-gradient(circle at 22% 82%, rgb(255 255 255 / 85%) 0%, transparent 1.5%),
-    radial-gradient(circle at 74% 78%, rgb(255 255 255 / 70%) 0%, transparent 1.3%),
-    radial-gradient(circle at 52% 35%, rgb(255 255 255 / 80%) 0%, transparent 1.6%),
-    radial-gradient(circle at 8% 50%, rgb(255 255 255 / 60%) 0%, transparent 1.1%);
-  background-size: 30% 30%;
-  mix-blend-mode: color-dodge;
-  opacity: 0;
-  will-change: transform, opacity;
-}
-
-/* Soft glossy streak that tracks the pointer on every card, holo or not - elongated rather than a
-   plain circle so it reads as a specular highlight gliding across curved glossy plastic. */
+/* Soft glossy highlight that tracks the pointer on every card, holo or not - the material cue that
+   sells "physical card catching the light", not just a picture that leans. */
 @utility holo-card-glare {
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 170%;
-  height: 110%;
-  margin: -55% 0 0 -85%;
+  width: 140%;
+  height: 140%;
+  margin: -70% 0 0 -70%;
   border-radius: 9999px;
   pointer-events: none;
-  background: radial-gradient(ellipse, rgb(255 255 255 / 70%) 0%, transparent 60%);
+  background: radial-gradient(circle, rgb(255 255 255 / 65%) 0%, transparent 58%);
   mix-blend-mode: overlay;
   opacity: 0;
+  transition: opacity 350ms ease-out;
   will-change: transform, opacity;
 }
 
-/* Ambient contact shadow, blurred once at rest and never re-filtered - only ever translated per
-   frame opposite the tilt, which is what actually sells "the card is lifting toward the light"
-   without paying to recompute a blur on every pointer move. */
-@utility holo-card-shadow {
-  position: absolute;
-  left: 10%;
-  right: 10%;
-  bottom: -8%;
-  height: 20%;
-  border-radius: 9999px;
-  background: radial-gradient(ellipse, rgb(0 0 0 / 50%) 0%, transparent 72%);
-  filter: blur(16px);
-  pointer-events: none;
-  will-change: transform;
+@media (prefers-reduced-motion: reduce) {
+  .holo-card {
+    transition: none;
+  }
 }
 
 @keyframes blob-float {
