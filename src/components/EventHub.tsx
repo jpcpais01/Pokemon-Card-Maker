@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import Screen from "@/components/ui/Screen";
 import Icon from "@/components/ui/Icon";
 import Segmented from "@/components/ui/Segmented";
-import { getEvent, type EventTheme } from "@/lib/events";
+import { eventBadge, getEvent, isEventLive, type EventTheme } from "@/lib/events";
+import { useHydrated } from "@/lib/useHydrated";
 import type { PackMode } from "@/lib/types";
 
 type PlayMode = "solo" | "bot" | "friend";
@@ -33,6 +34,11 @@ const PACK_OPTIONS: { value: PackMode; label: string }[] = [
 export default function EventHub({ slug }: { slug: EventTheme }) {
   const router = useRouter();
   const event = getEvent(slug)!;
+  const now = useHydrated();
+  // Null until hydration, so a prerender built weeks ago is never the thing that
+  // decides an event is over - the setup only disappears once the browser confirms it.
+  const ended = now !== null && !isEventLive(event, now);
+  const badge = eventBadge(event, now);
 
   const [playMode, setPlayMode] = useState<PlayMode>("solo");
   const [packMode, setPackMode] = useState<PackMode>("classic");
@@ -68,9 +74,9 @@ export default function EventHub({ slug }: { slug: EventTheme }) {
             }}
           />
           <div className="relative flex min-h-[13.5rem] flex-col justify-end p-5">
-            {event.badge && (
+            {badge && (
               <span className="mb-2 self-start rounded-full bg-black/55 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-white backdrop-blur-sm">
-                {event.badge}
+                {badge}
               </span>
             )}
             <h1
@@ -86,61 +92,67 @@ export default function EventHub({ slug }: { slug: EventTheme }) {
           className="enter-up mt-4 text-[13.5px] leading-relaxed text-slate-400"
           style={{ "--d": "50ms" } as React.CSSProperties}
         >
-          {event.blurb}
+          {ended
+            ? "This event has finished, so it can't be played any more. Everything you pulled during it is still in your binder."
+            : event.blurb}
         </p>
 
-        <div className="enter-up mt-7" style={{ "--d": "80ms" } as React.CSSProperties}>
-          <p className="section-label mb-2.5">How do you want to play?</p>
-          <div className="flex flex-col gap-2">
-            {PLAY_MODES.map((m) => {
-              const on = m.value === playMode;
-              return (
-                <button
-                  key={m.value}
-                  type="button"
-                  onClick={() => setPlayMode(m.value)}
-                  aria-pressed={on}
-                  className={`flex items-center gap-3.5 rounded-2xl border p-3.5 text-left transition-all duration-150 active:scale-[0.98] ${
-                    on
-                      ? "border-amber-300/45 bg-amber-400/[0.09]"
-                      : "border-white/[0.09] bg-white/[0.035]"
-                  }`}
-                >
-                  <span
-                    className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl ${
-                      on ? "bg-amber-400/18 text-amber-300" : "bg-white/[0.06] text-slate-400"
-                    }`}
-                  >
-                    <Icon name={m.icon} size={19} />
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <p className={`text-[14.5px] font-bold ${on ? "text-white" : "text-slate-300"}`}>{m.label}</p>
-                    <p className="mt-0.5 text-[12px] text-slate-500">{m.blurb}</p>
-                  </div>
-                  <span
-                    className={`flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full border transition-colors ${
-                      on ? "border-amber-300 bg-amber-300 text-[#2a1705]" : "border-white/15"
-                    }`}
-                  >
-                    {on && <Icon name="check" size={11} strokeWidth={3.5} />}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
+        {!ended && (
+          <>
+            <div className="enter-up mt-7" style={{ "--d": "80ms" } as React.CSSProperties}>
+              <p className="section-label mb-2.5">How do you want to play?</p>
+              <div className="flex flex-col gap-2">
+                {PLAY_MODES.map((m) => {
+                  const on = m.value === playMode;
+                  return (
+                    <button
+                      key={m.value}
+                      type="button"
+                      onClick={() => setPlayMode(m.value)}
+                      aria-pressed={on}
+                      className={`flex items-center gap-3.5 rounded-2xl border p-3.5 text-left transition-all duration-150 active:scale-[0.98] ${
+                        on
+                          ? "border-amber-300/45 bg-amber-400/[0.09]"
+                          : "border-white/[0.09] bg-white/[0.035]"
+                      }`}
+                    >
+                      <span
+                        className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl ${
+                          on ? "bg-amber-400/18 text-amber-300" : "bg-white/[0.06] text-slate-400"
+                        }`}
+                      >
+                        <Icon name={m.icon} size={19} />
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className={`text-[14.5px] font-bold ${on ? "text-white" : "text-slate-300"}`}>{m.label}</p>
+                        <p className="mt-0.5 text-[12px] text-slate-500">{m.blurb}</p>
+                      </div>
+                      <span
+                        className={`flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full border transition-colors ${
+                          on ? "border-amber-300 bg-amber-300 text-[#2a1705]" : "border-white/15"
+                        }`}
+                      >
+                        {on && <Icon name="check" size={11} strokeWidth={3.5} />}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
 
-        <div className="enter-up mt-6" style={{ "--d": "140ms" } as React.CSSProperties}>
-          <Segmented
-            label="Pack type"
-            options={PACK_OPTIONS}
-            value={packMode}
-            onChange={setPackMode}
-            columns={2}
-            spanLast
-            help="Every normal pack type works inside the event — only the artwork theme is fixed."
-          />
-        </div>
+            <div className="enter-up mt-6" style={{ "--d": "140ms" } as React.CSSProperties}>
+              <Segmented
+                label="Pack type"
+                options={PACK_OPTIONS}
+                value={packMode}
+                onChange={setPackMode}
+                columns={2}
+                spanLast
+                help="Every normal pack type works inside the event — only the artwork theme is fixed."
+              />
+            </div>
+          </>
+        )}
       </div>
 
       <div className="sticky bottom-0 z-20 mt-7">
@@ -149,10 +161,16 @@ export default function EventHub({ slug }: { slug: EventTheme }) {
           className="screen-pad relative bg-[#07070c]"
           style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 0.875rem)" }}
         >
-          <button type="button" onClick={start} className="btn-primary w-full">
-            <Icon name="sparkles" size={17} />
-            Continue
-          </button>
+          {ended ? (
+            <button type="button" onClick={() => router.push("/")} className="btn-ghost w-full">
+              Back to packs
+            </button>
+          ) : (
+            <button type="button" onClick={start} className="btn-primary w-full">
+              <Icon name="sparkles" size={17} />
+              Continue
+            </button>
+          )}
         </div>
       </div>
     </Screen>

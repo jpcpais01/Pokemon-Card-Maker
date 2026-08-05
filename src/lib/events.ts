@@ -1,4 +1,4 @@
-import { BADDIES_GEN_ID, POOL_PARTY_GEN_ID, WEED_GEN_ID } from "./generations";
+import { BADDIES_GEN_ID, POOL_PARTY_GEN_ID, TOP_100_GEN_ID, WEED_GEN_ID } from "./generations";
 
 /**
  * An "event" is a theme layered on top of a normal game, not a replacement for
@@ -7,7 +7,7 @@ import { BADDIES_GEN_ID, POOL_PARTY_GEN_ID, WEED_GEN_ID } from "./generations";
  * pull from. All it does is steer the artwork - and, in battle, tell the judge
  * what the match is going for.
  */
-export type EventTheme = "pool-party" | "baddies" | "weed";
+export type EventTheme = "pool-party" | "baddies" | "weed" | "eclipse";
 
 export interface EventDef {
   slug: EventTheme;
@@ -18,6 +18,12 @@ export interface EventDef {
   blurb: string;
   /** Small badge on the carousel card, e.g. a seasonal marker. */
   badge?: string;
+  /**
+   * `YYYY-MM-DD` of the event's last playable day, inclusive. Omit for an evergreen
+   * event. Once past, it drops off the home shelf and its hub stops handing off into
+   * a game. See `isEventLive` for why the comparison is deliberately client-side.
+   */
+  availableUntil?: string;
   /** Pools preselected when you enter this event's setup. */
   defaultGens: number[];
   /** Extra art direction handed to the drafting model alongside the traits. */
@@ -42,6 +48,31 @@ export interface EventDef {
 }
 
 export const EVENTS: EventDef[] = [
+  {
+    slug: "eclipse",
+    label: "Eclipse",
+    tagline: "Limited time — totality over every card",
+    blurb:
+      "For a few days only, every card falls under a total solar eclipse. Play it however you like - solo, against bots, or against a friend, in any pack mode. Only the artwork changes.",
+    badge: "Limited time",
+    availableUntil: "2026-08-15",
+    defaultGens: [TOP_100_GEN_ID],
+    promptDirection:
+      'Event theme - "Eclipse": stage this illustration around a total solar eclipse. The eclipse itself should be a real presence in the scene, not a detail tucked in a corner - the blacked-out sun ringed by a blazing white corona, the sky dropped to deep twilight blue and violet mid-day, the horizon still glowing sunset-orange the whole way around, stars coming out early. Work in what that light does to everything below it: long strange shadows, crescent-shaped light dappling the ground, rim-lighting that traces every silhouette in white-gold fire, an eerie hushed stillness. The Pokemon should be reacting to the moment - awed, watching, silhouetted against the corona, or lit from behind by that ring of fire. This theme sets the scene and lighting; keep the vibe, special form and rarity tier driving the mood, action and rendering as they normally would.',
+    styleDirection:
+      " This is an Eclipse event card - the entire scene plays out under a total solar eclipse: a black sun ringed by a blazing white corona high in the frame, deep twilight-violet sky, a 360-degree sunset glow on the horizon, dramatic backlit silhouettes and white-gold rim light on everything, with an awed hush over the whole composition. Keep every Pokemon's official design, proportions and colors completely accurate.",
+    judgeContext:
+      'This match is an "Eclipse" event - every card is aiming for a dramatic total-solar-eclipse scene: the corona, the twilight sky, and the strange backlit rim-lighting it throws over everything. Factor in how well each illustration actually commits to that moment and uses the eclipse light, alongside its normal artistic merit.',
+    image: "/modes/eclipse.jpg",
+    // Two layers, because a single radial gradient can only make a glowing sun - an
+    // eclipse needs the hole. The first paints the moon's black disc and goes fully
+    // transparent just past its edge; the second is the corona burning out from exactly
+    // where that disc ends, through the twilight sky. This is the one event still
+    // waiting on art, so the gradient has to carry the card by itself.
+    gradient:
+      "radial-gradient(circle at 50% 35%, #05040c 0 12%, rgba(5,4,12,0) 12.5%), radial-gradient(circle at 50% 35%, #fffdf2 12.2%, #ffeab0 14%, #ffb43c 17.5%, #c2510f 23%, #4b1d5e 44%, #170b2f 70%, #05040f 100%)",
+    accent: "text-amber-200",
+  },
   {
     slug: "pool-party",
     label: "Pool Party!",
@@ -106,12 +137,57 @@ export const EVENTS: EventDef[] = [
   },
 ];
 
-export function getEvent(slug: string | null | undefined): EventDef | undefined {
+const DAY_MS = 86_400_000;
+
+/** Midnight at the end of `availableUntil`, in the viewer's own timezone. */
+function expiryTime(event: EventDef): number | null {
+  if (!event.availableUntil) return null;
+  const [y, m, d] = event.availableUntil.split("-").map(Number);
+  // `d + 1` rolls the month/year over on its own, so the last day stays playable in full.
+  return new Date(y, m - 1, d + 1).getTime();
+}
+
+/**
+ * Whether an event is still running.
+ *
+ * Callers must pass the current time rather than let this read the clock, and that is the
+ * whole point: the home shelf and the event hubs are statically prerendered, so reading
+ * `Date.now()` during render would bake the *build* date into HTML that then gets served
+ * for weeks. Both callers get `now` from `useHydrated`, which is null until the browser
+ * takes over - so the markup never claims an expiry it can't know yet.
+ */
+export function isEventLive(event: EventDef, now: number): boolean {
+  const end = expiryTime(event);
+  return end === null || now < end;
+}
+
+/**
+ * The badge for a time-limited event, counting down once it's close. `now` is null before
+ * hydration, where the static `badge` is the only honest thing to show.
+ */
+export function eventBadge(
+  event: EventDef,
+  now: number | null,
+): string | undefined {
+  const end = expiryTime(event);
+  if (end === null || now === null) return event.badge;
+  if (now >= end) return "Ended";
+  const daysLeft = Math.ceil((end - now) / DAY_MS);
+  if (daysLeft === 1) return "Last day";
+  if (daysLeft <= 7) return `${daysLeft} days left`;
+  return event.badge;
+}
+
+export function getEvent(
+  slug: string | null | undefined,
+): EventDef | undefined {
   if (!slug) return undefined;
   return EVENTS.find((e) => e.slug === slug);
 }
 
 /** Narrows an arbitrary string (query param, request body) to a known theme. */
-export function parseEventTheme(value: string | null | undefined): EventTheme | undefined {
+export function parseEventTheme(
+  value: string | null | undefined,
+): EventTheme | undefined {
   return getEvent(value)?.slug;
 }

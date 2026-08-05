@@ -4,8 +4,9 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Screen from "@/components/ui/Screen";
 import Icon from "@/components/ui/Icon";
-import { EVENTS } from "@/lib/events";
+import { EVENTS, eventBadge, isEventLive } from "@/lib/events";
 import { getFavorites } from "@/lib/favorites";
+import { useHydrated } from "@/lib/useHydrated";
 
 interface Feature {
   href: string;
@@ -17,25 +18,31 @@ interface Feature {
   gradient: string;
 }
 
-/** Every event first - they're the timely thing worth surfacing - then the
- *  normal game, as one horizontally-scrolling shelf. */
-const FEATURED: Feature[] = [
-  ...EVENTS.map((e) => ({
-    href: `/event/${e.slug}`,
-    label: e.label,
-    tagline: e.tagline,
-    badge: e.badge,
-    image: e.image,
-    gradient: e.gradient,
-  })),
-  {
-    href: "/solo/classic",
-    label: "Classic Pack",
-    tagline: "Four random traits, one AI-painted card",
-    image: "/modes/classic.jpg",
-    gradient: "linear-gradient(150deg, #fbbf24 0%, #ea7c0b 45%, #4a1d05 100%)",
-  },
-];
+const CLASSIC_PACK: Feature = {
+  href: "/solo/classic",
+  label: "Classic Pack",
+  tagline: "Four random traits, one AI-painted card",
+  image: "/modes/classic.jpg",
+  gradient: "linear-gradient(150deg, #fbbf24 0%, #ea7c0b 45%, #4a1d05 100%)",
+};
+
+/** Every running event first - they're the timely thing worth surfacing - then the normal
+ *  game, as one horizontally-scrolling shelf. An event past its end date drops off entirely;
+ *  `now` is null until hydration, where a stale prerender can't be trusted to know the date. */
+function buildFeatured(now: number | null): Feature[] {
+  const events = now === null ? EVENTS : EVENTS.filter((e) => isEventLive(e, now));
+  return [
+    ...events.map((e) => ({
+      href: `/event/${e.slug}`,
+      label: e.label,
+      tagline: e.tagline,
+      badge: eventBadge(e, now),
+      image: e.image,
+      gradient: e.gradient,
+    })),
+    CLASSIC_PACK,
+  ];
+}
 
 const MODES = [
   { href: "/solo/sir", title: "Only SIRs", blurb: "Every pull is a Special Illustration Rare" },
@@ -46,6 +53,8 @@ const MODES = [
 
 export default function Home() {
   const [favoriteCount, setFavoriteCount] = useState<number | null>(null);
+  const now = useHydrated();
+  const featured = buildFeatured(now);
 
   useEffect(() => {
     let cancelled = false;
@@ -85,7 +94,7 @@ export default function Home() {
           className="enter-up -mx-0 mt-2 flex snap-x snap-mandatory gap-3 overflow-x-auto px-5 pb-1"
           style={{ "--d": "60ms", scrollPaddingLeft: "1.25rem" } as React.CSSProperties}
         >
-          {FEATURED.map((f, i) => (
+          {featured.map((f, i) => (
             <Link
               key={f.href}
               href={f.href}
