@@ -302,7 +302,7 @@ export default function SoloPackFlow({ mode, theme }: { mode: SoloMode; theme?: 
         title={copy.title}
         subtitle={copy.subtitle}
         back={event ? `/event/${event.slug}` : "/"}
-        eventBanner={event ? { label: event.label, blurb: event.blurb, gradient: event.gradient } : undefined}
+        eventBanner={event ? { label: event.label, blurb: event.blurb, gradient: event.gradient, image: event.image } : undefined}
       />
     );
   }

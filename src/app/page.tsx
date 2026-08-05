@@ -101,25 +101,31 @@ export default function Home() {
                 animationDelay: `${60 + i * 60}ms`,
               }}
             >
-              <div className="sheen-drift pointer-events-none absolute -inset-1/2 bg-gradient-to-tr from-transparent via-white/18 to-transparent" />
-              {/* Scrim so the title stays readable over whatever art lands here. */}
+              <div className="sheen-drift pointer-events-none absolute -inset-1/2 bg-gradient-to-tr from-transparent via-white/10 to-transparent" />
+              {/* Scrim. The title, tagline and button occupy roughly the bottom
+                  55% of the card, so it stays near-opaque through there and only
+                  releases above - keeping the art vivid up top without ever
+                  letting busy artwork compete with the text. */}
               <div
                 className="pointer-events-none absolute inset-0"
                 style={{
                   background:
-                    "linear-gradient(to top, rgb(0 0 0 / 78%) 0%, rgb(0 0 0 / 30%) 45%, rgb(0 0 0 / 5%) 100%)",
+                    "linear-gradient(to top, rgb(0 0 0 / 93%) 0%, rgb(0 0 0 / 86%) 32%, rgb(0 0 0 / 58%) 56%, rgb(0 0 0 / 18%) 78%, transparent 100%)",
                 }}
               />
               <div className="relative flex h-[15.5rem] flex-col justify-end p-4">
                 {f.badge && (
-                  <span className="mb-2 self-start rounded-full bg-black/50 px-2.5 py-1 text-[9.5px] font-black uppercase tracking-[0.14em] text-white backdrop-blur-sm">
+                  <span className="mb-2 self-start rounded-full bg-black/55 px-2.5 py-1 text-[9.5px] font-black uppercase tracking-[0.14em] text-white backdrop-blur-sm">
                     {f.badge}
                   </span>
                 )}
-                <h2 className="font-display text-[1.7rem] font-extrabold leading-none tracking-tight text-white drop-shadow-md">
+                <h2
+                  className="font-display text-[1.7rem] font-extrabold leading-none tracking-tight text-white"
+                  style={{ textShadow: "0 2px 12px rgb(0 0 0 / 65%)" }}
+                >
                   {f.label}
                 </h2>
-                <p className="mt-1.5 text-[12.5px] leading-snug text-white/85 drop-shadow-sm">{f.tagline}</p>
+                <p className="mt-1.5 text-[12.5px] leading-snug text-white/90">{f.tagline}</p>
                 <div className="btn-primary mt-3.5 w-full !py-3 !text-[14px]">
                   <Icon name="sparkles" size={16} />
                   {f.cta}

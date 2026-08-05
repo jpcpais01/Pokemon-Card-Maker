@@ -23,7 +23,7 @@ interface Props {
   extraTop?: ReactNode;
   /** Shown above the title when this setup is running inside an event, so the
    *  theme stays visible while you're choosing pools and rules. */
-  eventBanner?: { label: string; blurb: string; gradient: string };
+  eventBanner?: { label: string; blurb: string; gradient: string; image?: string };
 }
 
 /** Curated pools aren't real generations and get their own group. Real generations
@@ -95,13 +95,25 @@ export default function GenSelector({
         {eventBanner && (
           <div
             className="enter-up relative mb-4 mt-1 overflow-hidden rounded-2xl p-4"
-            style={{ backgroundImage: eventBanner.gradient }}
+            style={{
+              backgroundImage: eventBanner.image
+                ? `url("${eventBanner.image}"), ${eventBanner.gradient}`
+                : eventBanner.gradient,
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+            }}
           >
-            <div className="sheen-drift pointer-events-none absolute -inset-1/2 bg-gradient-to-tr from-transparent via-white/20 to-transparent" />
-            <p className="relative text-[10px] font-black uppercase tracking-[0.18em] text-white/75">
+            {/* Near-opaque over the whole banner: this one is mostly text, so the
+                artwork is here as texture behind it rather than as the subject. */}
+            <div
+              className="pointer-events-none absolute inset-0"
+              style={{ background: "linear-gradient(105deg, rgb(0 0 0 / 82%) 0%, rgb(0 0 0 / 62%) 100%)" }}
+            />
+            <div className="sheen-drift pointer-events-none absolute -inset-1/2 bg-gradient-to-tr from-transparent via-white/10 to-transparent" />
+            <p className="relative text-[10px] font-black uppercase tracking-[0.18em] text-white/70">
               Event
             </p>
-            <p className="font-display relative mt-0.5 text-xl font-extrabold text-white drop-shadow-sm">
+            <p className="font-display relative mt-0.5 text-xl font-extrabold text-white">
               {eventBanner.label}
             </p>
             <p className="relative mt-1 text-[12px] leading-relaxed text-white/85">{eventBanner.blurb}</p>

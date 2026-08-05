@@ -71,7 +71,7 @@ function BotSetup() {
       buttonLabel="Start Match"
       loadingLabel="Starting match..."
       back={event ? `/event/${event.slug}` : "/battle"}
-      eventBanner={event ? { label: event.label, blurb: event.blurb, gradient: event.gradient } : undefined}
+      eventBanner={event ? { label: event.label, blurb: event.blurb, gradient: event.gradient, image: event.image } : undefined}
       extraTop={
         <>
           <PlayerCountPicker value={botPlayers} onChange={setBotPlayers} label="Players (you + bots)" />

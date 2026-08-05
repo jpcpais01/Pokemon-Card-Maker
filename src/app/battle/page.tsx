@@ -91,7 +91,7 @@ function BattleLobby() {
         buttonLabel="Create Room"
         loadingLabel="Creating room..."
         back={event ? `/event/${event.slug}` : () => setMode("menu")}
-        eventBanner={event ? { label: event.label, blurb: event.blurb, gradient: event.gradient } : undefined}
+        eventBanner={event ? { label: event.label, blurb: event.blurb, gradient: event.gradient, image: event.image } : undefined}
         extraTop={
           <>
             <PlayerCountPicker value={maxPlayers} onChange={setMaxPlayers} />

@@ -47,8 +47,10 @@ export default function EventHub({ slug }: { slug: EventTheme }) {
   return (
     <Screen immersive back="/" title="Event">
       <div className="screen-pad flex flex-1 flex-col">
-        {/* Event hero. The background image is dropped into public/modes/; until
-            it exists the gradient underneath carries the card on its own. */}
+        {/* Event hero. The background image lives in public/modes/; until it
+            exists the gradient underneath carries the banner on its own.
+            Only the badge and title sit on the art - the longer blurb goes
+            below it, where it stays readable over whatever the artwork does. */}
         <div
           className="enter-up relative overflow-hidden rounded-3xl"
           style={{
@@ -57,23 +59,35 @@ export default function EventHub({ slug }: { slug: EventTheme }) {
             backgroundPosition: "center",
           }}
         >
-          <div className="sheen-drift pointer-events-none absolute -inset-1/2 bg-gradient-to-tr from-transparent via-white/20 to-transparent" />
+          <div className="sheen-drift pointer-events-none absolute -inset-1/2 bg-gradient-to-tr from-transparent via-white/12 to-transparent" />
           <div
             className="pointer-events-none absolute inset-0"
-            style={{ background: "linear-gradient(to top, rgb(0 0 0 / 72%) 0%, rgb(0 0 0 / 15%) 55%, transparent 100%)" }}
+            style={{
+              background:
+                "linear-gradient(to top, rgb(0 0 0 / 88%) 0%, rgb(0 0 0 / 62%) 30%, rgb(0 0 0 / 14%) 62%, transparent 100%)",
+            }}
           />
-          <div className="relative flex min-h-[11rem] flex-col justify-end p-5">
+          <div className="relative flex min-h-[13.5rem] flex-col justify-end p-5">
             {event.badge && (
-              <span className="mb-2 self-start rounded-full bg-black/45 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-white backdrop-blur-sm">
+              <span className="mb-2 self-start rounded-full bg-black/55 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-white backdrop-blur-sm">
                 {event.badge}
               </span>
             )}
-            <h1 className="font-display text-[2rem] font-extrabold leading-none tracking-tight text-white drop-shadow-md">
+            <h1
+              className="font-display text-[2.15rem] font-extrabold leading-none tracking-tight text-white"
+              style={{ textShadow: "0 2px 14px rgb(0 0 0 / 70%)" }}
+            >
               {event.label}
             </h1>
-            <p className="mt-2 text-[13px] leading-relaxed text-white/85">{event.blurb}</p>
           </div>
         </div>
+
+        <p
+          className="enter-up mt-4 text-[13.5px] leading-relaxed text-slate-400"
+          style={{ "--d": "50ms" } as React.CSSProperties}
+        >
+          {event.blurb}
+        </p>
 
         <div className="enter-up mt-7" style={{ "--d": "80ms" } as React.CSSProperties}>
           <p className="section-label mb-2.5">How do you want to play?</p>
