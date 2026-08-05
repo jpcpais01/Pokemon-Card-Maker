@@ -17,15 +17,9 @@ interface Feature {
   gradient: string;
 }
 
-/** The normal game, plus every event, as one horizontally-scrolling shelf. */
+/** Every event first - they're the timely thing worth surfacing - then the
+ *  normal game, as one horizontally-scrolling shelf. */
 const FEATURED: Feature[] = [
-  {
-    href: "/solo/classic",
-    label: "Classic Pack",
-    tagline: "Four random traits, one AI-painted card",
-    image: "/modes/classic.jpg",
-    gradient: "linear-gradient(150deg, #fbbf24 0%, #ea7c0b 45%, #4a1d05 100%)",
-  },
   ...EVENTS.map((e) => ({
     href: `/event/${e.slug}`,
     label: e.label,
@@ -34,13 +28,20 @@ const FEATURED: Feature[] = [
     image: e.image,
     gradient: e.gradient,
   })),
+  {
+    href: "/solo/classic",
+    label: "Classic Pack",
+    tagline: "Four random traits, one AI-painted card",
+    image: "/modes/classic.jpg",
+    gradient: "linear-gradient(150deg, #fbbf24 0%, #ea7c0b 45%, #4a1d05 100%)",
+  },
 ];
 
 const MODES = [
-  { href: "/solo/sir", title: "Only SIRs", blurb: "Every pull is a Special Illustration Rare", tag: "Rare" },
+  { href: "/solo/sir", title: "Only SIRs", blurb: "Every pull is a Special Illustration Rare" },
   { href: "/solo/tagteam", title: "Tag Teams", blurb: "Two Pokemon share every illustration" },
-  { href: "/solo/tagteamsir", title: "Tag Team SIRs", blurb: "Two Pokemon, top rarity tier", tag: "Rare" },
-  { href: "/solo/tripletagteamsir", title: "Triple Tag Team SIRs", blurb: "Three Pokemon on one SIR", tag: "Rare" },
+  { href: "/solo/tagteamsir", title: "Tag Team SIRs", blurb: "Two Pokemon, top rarity tier" },
+  { href: "/solo/tripletagteamsir", title: "Triple Tag Team SIRs", blurb: "Three Pokemon on one SIR" },
 ];
 
 export default function Home() {
@@ -64,7 +65,6 @@ export default function Home() {
             <h1 className="font-display text-[28px] font-extrabold leading-none tracking-tight text-white">
               Poke<span className="gold-gradient-text">Gen</span>
             </h1>
-            <p className="mt-1 text-[13px] text-slate-400">AI-painted trading cards</p>
           </div>
           <Link
             href="/gallery"
@@ -94,19 +94,22 @@ export default function Home() {
                 backgroundImage: `url("${f.image}"), ${f.gradient}`,
                 backgroundSize: "cover",
                 backgroundPosition: "center",
+                // Without this the artwork paints under the 1px translucent
+                // border, where the scrim (which only covers the padding box)
+                // can't reach it - leaving a bright un-dimmed ring at the edge.
+                backgroundClip: "padding-box",
                 boxShadow: "inset 0 1px 0 rgb(255 255 255 / 14%), 0 20px 40px -20px rgb(0 0 0 / 90%)",
                 animationDelay: `${60 + i * 60}ms`,
               }}
             >
               <div className="sheen-drift pointer-events-none absolute -inset-1/2 bg-gradient-to-tr from-transparent via-white/10 to-transparent" />
-              {/* Scrim. Stays near-opaque through the bottom ~45% the text
-                  occupies and releases above it, so busy artwork can never
-                  compete with the title while the top of the art stays vivid. */}
+              {/* Scrim. Holds through the bottom third the text occupies, then
+                  falls off quickly so most of the card is clean artwork. */}
               <div
                 className="pointer-events-none absolute inset-0"
                 style={{
                   background:
-                    "linear-gradient(to top, rgb(0 0 0 / 92%) 0%, rgb(0 0 0 / 82%) 26%, rgb(0 0 0 / 48%) 48%, rgb(0 0 0 / 14%) 72%, transparent 100%)",
+                    "linear-gradient(to top, rgb(0 0 0 / 94%) 0%, rgb(0 0 0 / 84%) 19%, rgb(0 0 0 / 48%) 34%, rgb(0 0 0 / 12%) 50%, transparent 64%)",
                 }}
               />
               <div className="relative flex h-[15.5rem] flex-col justify-end p-4">
@@ -146,10 +149,7 @@ export default function Home() {
                 style={{ "--d": `${200 + i * 55}ms` } as React.CSSProperties}
               >
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <p className="truncate text-[15px] font-bold text-white">{mode.title}</p>
-                    {mode.tag && <span className="chip chip-violet chip-sm!">{mode.tag}</span>}
-                  </div>
+                  <p className="truncate text-[15px] font-bold text-white">{mode.title}</p>
                   <p className="mt-0.5 truncate text-[12.5px] text-slate-400">{mode.blurb}</p>
                 </div>
                 <Icon

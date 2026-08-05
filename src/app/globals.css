@@ -41,8 +41,10 @@
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
 
-  /* Chrome heights, so content can reserve space without magic numbers. */
-  --tabbar-h: 4.25rem;
+  /* Chrome heights, so content can reserve space without magic numbers.
+     The tab bar floats clear of the screen edges, so this covers the bar
+     itself plus the gap beneath it. */
+  --tabbar-h: 4.6rem;
 }
 
 html {
@@ -115,6 +117,19 @@ body {
   -webkit-backdrop-filter: blur(20px) saturate(150%);
   border: 1px solid var(--line);
   box-shadow: inset 0 1px 0 rgb(255 255 255 / 7%);
+}
+
+/* The floating tab bar. Nearly opaque rather than lightly frosted: it sits over
+   scrolling content with a gap all around it, so it has to read as a solid
+   object hovering above the page rather than a tinted pane content shows through. */
+@utility tabbar {
+  background-color: rgb(13 13 21 / 97%);
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  border: 1px solid rgb(255 255 255 / 11%);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 9%),
+    0 14px 34px -10px rgb(0 0 0 / 85%);
 }
 
 /* Kept as an alias so any surface that still wants the heavier frosted look
