@@ -119,7 +119,9 @@ export default function HoloCard({ src, alt, holo, className, frameClassName }: 
       }
       if (foilRef.current) {
         foilRef.current.style.transform = `translate3d(${((px - 0.5) * 72).toFixed(1)}%, ${((py - 0.5) * 72).toFixed(1)}%, 0)`;
-        foilRef.current.style.opacity = (0.5 + edge * 0.5).toFixed(2);
+        // Lower ceiling than the old color-dodge foil needed: hard-light acts on
+        // the art's own colours, so it reads far stronger at the same opacity.
+        foilRef.current.style.opacity = (0.38 + edge * 0.34).toFixed(2);
       }
       if (glareRef.current) {
         glareRef.current.style.transform = `translate3d(${((px - 0.5) * 90).toFixed(1)}%, ${((py - 0.5) * 90).toFixed(1)}%, 0)`;

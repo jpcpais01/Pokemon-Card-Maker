@@ -472,7 +472,26 @@ body {
     rgb(255 255 255 / 40%) 83%,
     transparent 92%
   );
-  mix-blend-mode: color-dodge;
+  /*
+   * hard-light, not color-dodge, is what makes the foil respond to the art
+   * underneath it.
+   *
+   * Per channel it screens where the foil is bright and multiplies where the
+   * foil is dark. So a pink band (high red, low green) lifts red and crushes
+   * green: over pink art - which is also high-red/low-green - almost nothing
+   * is crushed and the colour stays vivid, while over yellow art - high red
+   * but *also* high green - that green gets multiplied away and the region
+   * goes dim and muddy. Agreement stays bright, disagreement dims, which is
+   * exactly how real foil behaves.
+   *
+   * color-dodge had no such relationship: it divides by the inverse of the
+   * foil, so it blew every hue out toward white equally and the foil read as
+   * a flat wash sitting on top of the art rather than interacting with it.
+   *
+   * The gradient's white bands still blow to pure white here (screen against
+   * white is white), so the specular highlight survives the change.
+   */
+  mix-blend-mode: hard-light;
   opacity: 0;
   transition: opacity 350ms ease-out;
   will-change: transform, opacity;
