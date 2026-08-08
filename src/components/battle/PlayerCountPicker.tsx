@@ -15,9 +15,7 @@ const OPTIONS = Array.from({ length: MAX_PLAYERS - MIN_PLAYERS + 1 }, (_, i) => 
 });
 
 export default function PlayerCountPicker({ value, onChange, label = "Players" }: Props) {
-  // One row of single digits - it reads as a scale from 2 to 6, which wrapping onto a
-  // second row would break.
-  return (
-    <Segmented label={label} options={OPTIONS} value={value} onChange={onChange} columns={OPTIONS.length} />
-  );
+  // Five per row: the full 2-10 range in one row would be ~34px a cell on a phone, and the
+  // numbers still read as a scale when they wrap at a consistent width.
+  return <Segmented label={label} options={OPTIONS} value={value} onChange={onChange} columns={5} />;
 }

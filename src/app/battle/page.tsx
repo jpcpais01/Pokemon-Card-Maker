@@ -8,7 +8,7 @@ import Screen from "@/components/ui/Screen";
 import Icon from "@/components/ui/Icon";
 import JudgeModePicker from "@/components/battle/JudgeModePicker";
 import PackModePicker from "@/components/battle/PackModePicker";
-import NicknameField from "@/components/battle/NicknameField";
+import NicknameField, { isNicknameUsable } from "@/components/battle/NicknameField";
 import PlayerCountPicker from "@/components/battle/PlayerCountPicker";
 import { createRoom, joinRoom } from "@/lib/battle/api";
 import { ROOM_CODE_LENGTH } from "@/lib/battle/roomCode";
@@ -102,11 +102,12 @@ function BattleLobby() {
         subtitle="Pick the pool everyone pulls from, then how the match plays out."
         buttonLabel="Create Room"
         loadingLabel="Creating room..."
+        startDisabled={!isNicknameUsable(nickname)}
         back={event ? `/event/${event.slug}` : () => setMode("menu")}
         eventBanner={event ? { label: event.label, blurb: event.blurb, gradient: event.gradient, image: event.image } : undefined}
         extraTop={
           <>
-            <NicknameField value={nickname} onChange={setNickname} fallback="Opponent" />
+            <NicknameField value={nickname} onChange={setNickname} />
             <PlayerCountPicker value={maxPlayers} onChange={setMaxPlayers} />
             <PackModePicker value={packMode} onChange={setPackMode} />
             {maxPlayers >= MIN_VOTE_PLAYERS && <JudgeModePicker value={judgeMode} onChange={setJudgeMode} />}
@@ -143,7 +144,7 @@ function BattleLobby() {
           />
 
           <div className="enter-up mt-5" style={{ "--d": "110ms" } as React.CSSProperties}>
-            <NicknameField value={nickname} onChange={setNickname} fallback="Opponent" />
+            <NicknameField value={nickname} onChange={setNickname} />
           </div>
 
           {joinError && (
@@ -154,7 +155,7 @@ function BattleLobby() {
 
           <button
             type="submit"
-            disabled={joining || code.trim().length < ROOM_CODE_LENGTH}
+            disabled={joining || code.trim().length < ROOM_CODE_LENGTH || !isNicknameUsable(nickname)}
             className="btn-primary mt-6 w-full disabled:pointer-events-none disabled:opacity-40"
           >
             {joining ? "Joining..." : "Join Room"}

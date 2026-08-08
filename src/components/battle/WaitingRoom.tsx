@@ -37,20 +37,24 @@ export default function WaitingRoom({ code, playersJoined, maxPlayers, joinedNam
           Waiting for players
         </h1>
 
-        {/* Seat indicators - concrete "who's here" state instead of a bare count. */}
-        <div className="mt-4 flex items-center justify-center gap-2">
+        {/* Seat indicators - concrete "who's here" state instead of a bare count. Wraps and
+            shrinks past six seats, where a single row of full-size dots runs off a phone. */}
+        <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
           {Array.from({ length: maxPlayers }, (_, i) => {
             const filled = i < playersJoined;
+            const compact = maxPlayers > 6;
             return (
               <span
                 key={i}
-                className={`flex h-9 w-9 items-center justify-center rounded-full border transition-colors duration-300 ${
+                className={`flex items-center justify-center rounded-full border transition-colors duration-300 ${
+                  compact ? "h-7 w-7" : "h-9 w-9"
+                } ${
                   filled
                     ? "border-amber-300/50 bg-amber-400/15 text-amber-300"
                     : "border-white/10 bg-white/[0.04] text-slate-600"
                 }`}
               >
-                <Icon name={filled ? "check" : "plus"} size={15} strokeWidth={2.6} />
+                <Icon name={filled ? "check" : "plus"} size={compact ? 12 : 15} strokeWidth={2.6} />
               </span>
             );
           })}

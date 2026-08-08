@@ -21,6 +21,9 @@ interface Props {
   footer?: ReactNode;
   /** Rendered after the gen grid, before the start button - e.g. match settings. */
   extraTop?: ReactNode;
+  /** Blocks the start button for a reason this component can't see - e.g. an unfilled
+   *  nickname in `extraTop`. Pool selection is still checked here regardless. */
+  startDisabled?: boolean;
   /** Shown above the title when this setup is running inside an event, so the
    *  theme stays visible while you're choosing pools and rules. */
   eventBanner?: { label: string; blurb: string; gradient: string; image?: string };
@@ -49,6 +52,7 @@ export default function GenSelector({
   back,
   footer,
   extraTop,
+  startDisabled,
   eventBanner,
 }: Props) {
   const allSelected = selected.length === GENERATIONS.length;
@@ -172,7 +176,7 @@ export default function GenSelector({
           <button
             type="button"
             onClick={onStart}
-            disabled={loading || selected.length === 0}
+            disabled={loading || selected.length === 0 || startDisabled}
             className="btn-primary w-full disabled:pointer-events-none disabled:opacity-40"
           >
             {loading ? (

@@ -4,7 +4,7 @@ import { createRound } from "@/lib/battle/engine";
 import { normalizeRoomCode } from "@/lib/battle/roomCode";
 import { getRoom, lockKey, saveRoom } from "@/lib/battle/rooms";
 import { acquireLock, releaseLock } from "@/lib/battle/store";
-import { sanitizeNickname } from "@/lib/battle/nickname";
+import { NICKNAME_REQUIRED_MESSAGE, sanitizeNickname } from "@/lib/battle/nickname";
 import { BATTLE_REROLLS_PER_ROUND } from "@/lib/battle/types";
 import { fetchPokemonForGenerations } from "@/lib/generations";
 
@@ -22,6 +22,13 @@ export async function POST(request: Request) {
 
   if (!body.code) {
     return NextResponse.json({ error: "Missing room code." }, { status: 400 });
+  }
+
+  // Checked before the room lock below, so a nameless join fails instantly instead of holding
+  // a lock every other joiner is queueing behind.
+  const nickname = sanitizeNickname(body.nickname);
+  if (!nickname) {
+    return NextResponse.json({ error: NICKNAME_REQUIRED_MESSAGE }, { status: 400 });
   }
 
   const code = normalizeRoomCode(body.code);
@@ -48,8 +55,7 @@ export async function POST(request: Request) {
     }
 
     const playerId = randomUUID();
-    const nickname = sanitizeNickname(body.nickname);
-    if (nickname) room.names = { ...room.names, [playerId]: nickname };
+    room.names = { ...room.names, [playerId]: nickname };
     room.players.push(playerId);
     room.scores[playerId] = 0;
     room.rerolls[playerId] = BATTLE_REROLLS_PER_ROUND;

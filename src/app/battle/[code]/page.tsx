@@ -6,7 +6,7 @@ import Link from "next/link";
 import BattleHeader from "@/components/battle/BattleHeader";
 import BattlePickPanel from "@/components/battle/BattlePickPanel";
 import MatchResult from "@/components/battle/MatchResult";
-import NicknameField from "@/components/battle/NicknameField";
+import NicknameField, { isNicknameUsable } from "@/components/battle/NicknameField";
 import OpponentStatus from "@/components/battle/OpponentStatus";
 import RoundResult from "@/components/battle/RoundResult";
 import VotingPanel from "@/components/battle/VotingPanel";
@@ -300,7 +300,7 @@ export default function BattleRoomPage() {
           </div>
 
           <div className="mt-5 text-left">
-            <NicknameField value={nickname} onChange={setNickname} fallback="Opponent" />
+            <NicknameField value={nickname} onChange={setNickname} />
           </div>
 
           {joinError && (
@@ -312,8 +312,8 @@ export default function BattleRoomPage() {
           <button
             type="button"
             onClick={handleJoinHere}
-            disabled={joining}
-            className="btn-primary mt-5 w-full disabled:opacity-50"
+            disabled={joining || !isNicknameUsable(nickname)}
+            className="btn-primary mt-5 w-full disabled:pointer-events-none disabled:opacity-40"
           >
             {joining ? "Joining..." : "Join Room"}
           </button>

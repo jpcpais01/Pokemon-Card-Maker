@@ -10,7 +10,7 @@ import { generateImage, generateText, judgeMultiBattle, type JudgeCardInput } fr
 import { SYSTEM_PROMPT, buildJudgeSystemPrompt, buildStyleSuffix, buildUserPrompt } from "@/lib/promptBuilder";
 
 /** One per player slot, so this has to keep pace with MAX_PLAYERS. */
-const LETTERS = ["A", "B", "C", "D", "E", "F"];
+const LETTERS = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"];
 
 export const maxDuration = 60;
 

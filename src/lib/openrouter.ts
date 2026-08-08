@@ -81,7 +81,7 @@ export interface CardRatings {
 }
 
 export interface JudgeCardInput {
-  /** "A" | "B" | ... | "F" - one per card being judged, 2 to 6 cards. */
+  /** "A" | "B" | ... | "J" - one per card being judged, 2 to 10 cards. */
   letter: string;
   image: string;
   names: string;
@@ -195,7 +195,7 @@ const RATING_SCHEMA = {
 
 const ratingsKey = (letter: string) => `card${letter}Ratings`;
 
-/** Builds a schema requiring exactly one ratings object per card being judged (2-6 of them). */
+/** Builds a schema requiring exactly one ratings object per card being judged (2-10 of them). */
 function buildJudgeResponseFormat(letters: string[]) {
   const properties: Record<string, unknown> = {
     reasoning: {
@@ -231,7 +231,7 @@ function pickWinnerByTotals(ratings: Record<string, CardRatings>, fallbackLetter
 }
 
 /**
- * Judges 2 to 6 cards at once (1v1, or any of the free-for-all sizes) and returns per-card
+ * Judges 2 to 10 cards at once (1v1, or any of the free-for-all sizes) and returns per-card
  * ratings plus a single round winner, derived from whichever card's ratings add up highest
  * (the model's own stated "winner" only breaks an exact tie).
  *
@@ -240,8 +240,8 @@ function pickWinnerByTotals(ratings: Record<string, CardRatings>, fallbackLetter
  * batches that could never be compared fairly.
  */
 export async function judgeMultiBattle(systemPrompt: string, cards: JudgeCardInput[]): Promise<MultiBattleJudgement> {
-  if (cards.length < 2 || cards.length > 6) {
-    throw new Error(`judgeMultiBattle expects 2-6 cards, got ${cards.length}.`);
+  if (cards.length < 2 || cards.length > 10) {
+    throw new Error(`judgeMultiBattle expects 2-10 cards, got ${cards.length}.`);
   }
   const letters = cards.map((c) => c.letter);
 

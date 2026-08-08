@@ -86,8 +86,17 @@ export function buildJudgeSystemPrompt(letters: string[], theme?: EventTheme): s
   const n = letters.length;
   const cardList = letters.map((l) => `Card ${l}`).join(", ").replace(/, ([^,]*)$/, n > 2 ? ", and $1" : " and $1");
   const ratingsKeyList = letters.map((l) => `"card${l}Ratings"`).join(", ");
+  // The illustrative example walks down the cards so no two look alike, but the drop per card
+  // has to shrink as the table grows: a fixed step of 1 fell off the bottom past six cards and
+  // was handing the model an example full of zero and negative ratings, directly contradicting
+  // the 1-10 range stated right above it. Below seven cards this is still exactly a step of 1.
+  const exampleStep = Math.min(1, 5 / Math.max(1, n - 1));
   const exampleRatingsList = letters
-    .map((l, i) => `"card${l}Ratings": {"art": ${8 - i}, "fame": ${7 - i}, "chase": ${6 - i}, "rarity": ${7 - i}}`)
+    .map((l, i) => {
+      const drop = Math.round(i * exampleStep);
+      const at = (top: number) => Math.max(1, top - drop);
+      return `"card${l}Ratings": {"art": ${at(8)}, "fame": ${at(7)}, "chase": ${at(6)}, "rarity": ${at(7)}}`;
+    })
     .join(", ");
 
   const modeDescription = n === 2 ? "1-on-1" : `${n}-way free-for-all`;

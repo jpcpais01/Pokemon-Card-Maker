@@ -11,7 +11,7 @@ import {
   MIN_VOTE_PLAYERS,
 } from "@/lib/battle/types";
 import type { BattleRoom, JudgeMode, PackMode } from "@/lib/battle/types";
-import { sanitizeNickname } from "@/lib/battle/nickname";
+import { NICKNAME_REQUIRED_MESSAGE, sanitizeNickname } from "@/lib/battle/nickname";
 import { parseEventTheme } from "@/lib/events";
 import { fetchPokemonForGenerations } from "@/lib/generations";
 
@@ -63,11 +63,18 @@ export async function POST(request: Request) {
   // Unlimited rerolls is a vs-bot-only relaxation - a friend room's fairness depends on everyone
   // having the same finite budget, so silently ignore the flag outside vs-bot matches.
   const unlimitedRerolls = vsBot && body.unlimitedRerolls === true;
+
+  // Required in a room with other people in it, where it's how everyone tells the cards apart.
+  // A vs-bot match has no such audience - the host is only ever "You" to themselves - so it
+  // isn't asked for there and isn't demanded here.
+  const nickname = sanitizeNickname(body.nickname);
+  if (!vsBot && !nickname) {
+    return NextResponse.json({ error: NICKNAME_REQUIRED_MESSAGE }, { status: 400 });
+  }
+
   const playerId = randomUUID();
   const botIds = vsBot ? BOT_PLAYER_IDS.slice(0, maxPlayers - 1) : [];
   const players = vsBot ? [playerId, ...botIds] : [playerId];
-
-  const nickname = sanitizeNickname(body.nickname);
 
   const room: BattleRoom = {
     code,

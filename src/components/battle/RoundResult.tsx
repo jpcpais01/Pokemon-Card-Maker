@@ -8,9 +8,18 @@ import { MAJOR_TIER_MARKS, ratingsTier, ratingsTotal, tierForTotal } from "@/lib
 import type { BattleRound, BattleRoundPlayerState, CardRatings } from "@/lib/battle/types";
 import { useFavoriteToggle } from "@/lib/favorites";
 
-const CARD_SPOTLIGHT_MS = 3000;
 const COMPARE_MS = 15000;
 const VICTORY_SPOTLIGHT_MS = 4000;
+
+/**
+ * Every player gets their own spotlight beat before the bars, so the total is this times the
+ * table size - at ten players a flat 3s meant half a minute of card-by-card before anything
+ * was decided. Big tables get a quicker cut so the whole reveal stays roughly constant.
+ */
+function cardSpotlightMs(playerCount: number): number {
+  if (playerCount <= 4) return 3000;
+  return playerCount <= 6 ? 2200 : 1500;
+}
 
 export interface RoundResultPlayerInfo {
   id: string;
@@ -82,10 +91,14 @@ export default function RoundResult({
   useEffect(() => {
     if (phaseIndex === SUMMARY_PHASE || !allImagesReady) return;
     const duration =
-      phaseIndex === VICTORY_PHASE ? VICTORY_SPOTLIGHT_MS : phaseIndex === COMPARE_PHASE ? COMPARE_MS : CARD_SPOTLIGHT_MS;
+      phaseIndex === VICTORY_PHASE
+        ? VICTORY_SPOTLIGHT_MS
+        : phaseIndex === COMPARE_PHASE
+          ? COMPARE_MS
+          : cardSpotlightMs(n);
     const timer = window.setTimeout(advancePhase, duration);
     return () => window.clearTimeout(timer);
-  }, [phaseIndex, allImagesReady, advancePhase, SUMMARY_PHASE, VICTORY_PHASE, COMPARE_PHASE]);
+  }, [phaseIndex, allImagesReady, advancePhase, n, SUMMARY_PHASE, VICTORY_PHASE, COMPARE_PHASE]);
 
   if (phaseIndex === COMPARE_PHASE) {
     return <RatingsBattle players={players} onSkip={advancePhase} />;
@@ -272,6 +285,10 @@ const BAR_ACCENTS: BarAccent[] = [
   { grad: "from-sky-700 via-sky-400 to-blue-200", border: "border-sky-300", text: "text-sky-300", glow: "rgba(56,189,248,0.75)" },
   { grad: "from-rose-700 via-rose-500 to-orange-200", border: "border-rose-300", text: "text-rose-300", glow: "rgba(244,63,94,0.75)" },
   { grad: "from-lime-700 via-lime-400 to-yellow-200", border: "border-lime-300", text: "text-lime-300", glow: "rgba(163,230,53,0.75)" },
+  { grad: "from-indigo-700 via-indigo-400 to-sky-200", border: "border-indigo-300", text: "text-indigo-300", glow: "rgba(129,140,248,0.75)" },
+  { grad: "from-orange-700 via-orange-400 to-amber-200", border: "border-orange-300", text: "text-orange-300", glow: "rgba(251,146,60,0.75)" },
+  { grad: "from-teal-700 via-teal-400 to-emerald-200", border: "border-teal-300", text: "text-teal-300", glow: "rgba(45,212,191,0.75)" },
+  { grad: "from-pink-700 via-pink-400 to-rose-200", border: "border-pink-300", text: "text-pink-300", glow: "rgba(244,114,182,0.75)" },
 ];
 
 /**
@@ -281,35 +298,53 @@ const BAR_ACCENTS: BarAccent[] = [
  * drifting apart.
  *
  * `wide` exists because six columns don't fit at `group`'s dimensions: they'd be about 50px
- * apiece on a phone, narrower than the 56px marker sitting in them.
+ * apiece on a phone, narrower than the 56px marker sitting in them. `xwide` goes further and
+ * stops trying to fit one row at all - see `container`.
  */
 const BAR_SIZES = {
   duo: {
+    column: "min-w-0 flex-1",
+    container: "max-w-sm gap-5",
     track: "h-[26rem] max-w-[8rem]",
     trackPx: 416,
     marker: "h-24 w-24",
     markerPx: 96,
-    gap: "gap-5",
     label: "text-[11px]",
     total: "text-[2.4rem]",
   },
   group: {
+    column: "min-w-0 flex-1",
+    container: "max-w-sm gap-2.5",
     track: "h-64 max-w-[5rem]",
     trackPx: 256,
     marker: "h-14 w-14",
     markerPx: 56,
-    gap: "gap-2.5",
     label: "text-[9px]",
     total: "text-[1.6rem]",
   },
   wide: {
+    column: "min-w-0 flex-1",
+    container: "max-w-sm gap-1.5",
     track: "h-56 max-w-[3.25rem]",
     trackPx: 224,
     marker: "h-10 w-10",
     markerPx: 40,
-    gap: "gap-1.5",
     label: "text-[8px]",
     total: "text-[1.15rem]",
+  },
+  xwide: {
+    // Fixed-width columns and a container deliberately too narrow for a sixth, so seven to ten
+    // players wrap onto two centred rows of five instead of being squeezed into one row of
+    // ten - which on a phone is 29px a column, thinner than the artwork marker. The bars are
+    // shorter to leave room for the second row.
+    column: "w-[3.4rem] shrink-0",
+    container: "max-w-[19rem] flex-wrap gap-x-1.5 gap-y-5",
+    track: "h-44 max-w-[3.4rem]",
+    trackPx: 176,
+    marker: "h-9 w-9",
+    markerPx: 36,
+    label: "text-[8px]",
+    total: "text-[1.05rem]",
   },
 } as const;
 
@@ -317,7 +352,8 @@ type BarSize = keyof typeof BAR_SIZES;
 
 function barSizeFor(playerCount: number): BarSize {
   if (playerCount === 2) return "duo";
-  return playerCount <= 4 ? "group" : "wide";
+  if (playerCount <= 4) return "group";
+  return playerCount <= 6 ? "wide" : "xwide";
 }
 
 function RatingsBattle({ players, onSkip }: { players: RoundResultPlayerInfo[]; onSkip: () => void }) {
@@ -406,7 +442,7 @@ function RatingsBattle({ players, onSkip }: { players: RoundResultPlayerInfo[]; 
         </h2>
       </header>
 
-      <div className={`relative flex w-full max-w-sm items-end justify-center ${BAR_SIZES[size].gap}`}>
+      <div className={`relative flex w-full items-end justify-center ${BAR_SIZES[size].container}`}>
         {columns}
       </div>
 
@@ -480,7 +516,7 @@ function RatingBar({
 
   return (
     <div
-      className={`bar-enter flex min-w-0 flex-1 flex-col items-center gap-2.5 transition-all duration-700 ${
+      className={`bar-enter flex flex-col items-center gap-2.5 transition-all duration-700 ${dim.column} ${
         trailing ? "opacity-55 saturate-[0.65]" : "opacity-100"
       }`}
       style={{ "--d": `${index * 110}ms` } as React.CSSProperties}
