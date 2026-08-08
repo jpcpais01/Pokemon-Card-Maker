@@ -1,3 +1,5 @@
+import { MAX_CARDS_PER_JUDGE } from "@/lib/battle/judgePlan";
+
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 
 export const TEXT_MODEL = "google/gemini-3.6-flash";
@@ -81,7 +83,7 @@ export interface CardRatings {
 }
 
 export interface JudgeCardInput {
-  /** "A" | "B" | ... | "J" - one per card being judged, 2 to 10 cards. */
+  /** "A" | "B" | "C" - one per card in this judging group, 2 or 3 of them. */
   letter: string;
   image: string;
   names: string;
@@ -195,7 +197,7 @@ const RATING_SCHEMA = {
 
 const ratingsKey = (letter: string) => `card${letter}Ratings`;
 
-/** Builds a schema requiring exactly one ratings object per card being judged (2-10 of them). */
+/** Builds a schema requiring exactly one ratings object per card in the group (2 or 3). */
 function buildJudgeResponseFormat(letters: string[]) {
   const properties: Record<string, unknown> = {
     reasoning: {
@@ -231,17 +233,18 @@ function pickWinnerByTotals(ratings: Record<string, CardRatings>, fallbackLetter
 }
 
 /**
- * Judges 2 to 10 cards at once (1v1, or any of the free-for-all sizes) and returns per-card
- * ratings plus a single round winner, derived from whichever card's ratings add up highest
- * (the model's own stated "winner" only breaks an exact tie).
+ * Judges one small group of cards - 2 or 3 - and returns per-card ratings plus the group's
+ * best, derived from whichever card's ratings add up highest (the model's own stated "winner"
+ * only breaks an exact tie).
  *
- * The ceiling tracks MAX_PLAYERS: every player's artwork goes into one multimodal request,
- * so the whole table is judged against the same eyes in a single pass rather than scored in
- * batches that could never be compared fairly.
+ * A whole table is judged as several of these groups; see `planJudgeBatches`. The low ceiling
+ * is the point: two or three images is a comparison one pass can make carefully, and because
+ * the rubric scores each card absolutely rather than ranking it against its neighbours, the
+ * totals stay comparable across groups.
  */
 export async function judgeMultiBattle(systemPrompt: string, cards: JudgeCardInput[]): Promise<MultiBattleJudgement> {
-  if (cards.length < 2 || cards.length > 10) {
-    throw new Error(`judgeMultiBattle expects 2-10 cards, got ${cards.length}.`);
+  if (cards.length < 2 || cards.length > MAX_CARDS_PER_JUDGE) {
+    throw new Error(`judgeMultiBattle expects 2-${MAX_CARDS_PER_JUDGE} cards, got ${cards.length}.`);
   }
   const letters = cards.map((c) => c.letter);
 

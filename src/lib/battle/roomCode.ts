@@ -1,5 +1,7 @@
-// Excludes visually-ambiguous characters (0/O, 1/I).
-const CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+// Letters only - a code that's read aloud or typed from memory is easier to get right
+// without digits mixed in. I and O stay out: with no digits to confuse them for they're
+// safe on paper, but they're still the two letters people most often mistype as 1 and 0.
+const CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ";
 
 export const ROOM_CODE_LENGTH = 3;
 

@@ -1,21 +1,23 @@
 import { NextResponse } from "next/server";
 import { buildVoteOrders, sanitizeRoomForPlayer } from "@/lib/battle/engine";
+import { splitIntoJudgeBatches } from "@/lib/battle/judgePlan";
 import { normalizeRoomCode } from "@/lib/battle/roomCode";
 import { getImage, getRoom, lockKey, saveImage, saveRoom } from "@/lib/battle/rooms";
 import { acquireLock, releaseLock } from "@/lib/battle/store";
+import { ratingsTotal } from "@/lib/battle/tier";
 import { isBotPlayerId, type BattleRound } from "@/lib/battle/types";
 import type { EventTheme } from "@/lib/events";
 import { isBaddiesOnlySelection } from "@/lib/generations";
 import { generateImage, generateText, judgeMultiBattle, type JudgeCardInput } from "@/lib/openrouter";
 import { SYSTEM_PROMPT, buildJudgeSystemPrompt, buildStyleSuffix, buildUserPrompt } from "@/lib/promptBuilder";
 
-/** One per player slot, so this has to keep pace with MAX_PLAYERS. */
-const LETTERS = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"];
+/** Cards within one judging group. Groups are at most 3, so this never needs a 4th. */
+const LETTERS = ["A", "B", "C"];
 
 export const maxDuration = 60;
 
 /**
- * Judges the round, retrying once with the event context stripped out if the themed attempt
+ * Judges one group, retrying once with the event context stripped out if the themed attempt
  * fails.
  *
  * An event's framing can be enough on its own for the vision model to refuse the request and
@@ -25,14 +27,80 @@ export const maxDuration = 60;
  * the theme, fall back to the plain rubric. Scores come from the images regardless; all the
  * theme ever did was tell the judge what the cards were reaching for.
  */
-async function judgeRound(letters: string[], cards: JudgeCardInput[], theme: EventTheme | undefined) {
-  if (!theme) return judgeMultiBattle(buildJudgeSystemPrompt(letters), cards);
+async function judgeGroup(letters: string[], cards: JudgeCardInput[], theme: EventTheme | undefined) {
+  if (theme) {
+    try {
+      return await judgeMultiBattle(buildJudgeSystemPrompt(letters, theme), cards);
+    } catch (err) {
+      console.error(`battle/advance: judging failed for the "${theme}" event, retrying unthemed`, err);
+    }
+  }
   try {
-    return await judgeMultiBattle(buildJudgeSystemPrompt(letters, theme), cards);
+    return await judgeMultiBattle(buildJudgeSystemPrompt(letters), cards);
   } catch (err) {
-    console.error(`battle/advance: judging failed for the "${theme}" event, retrying unthemed`, err);
+    // Splitting a round across several calls multiplies the chance that at least one of them
+    // fails, and one failed group costs every player in the round their ratings - not just the
+    // two in it. One more attempt is cheap next to losing the whole reveal.
+    console.error("battle/advance: judging a group failed, retrying once", err);
     return judgeMultiBattle(buildJudgeSystemPrompt(letters), cards);
   }
+}
+
+interface JudgeEntry {
+  playerId: string;
+  image: string;
+  names: string;
+}
+
+/**
+ * Judges the round in small groups rather than showing one judge the whole table.
+ *
+ * The groups run in parallel and each one only ever sees two or three cards, which is the
+ * comparison a judge can actually make carefully - a single call ranking ten images at once
+ * asks for far more discrimination than it can give, and costs a request that grows with the
+ * table. What holds it together is that the rubric is absolute: every card is scored 1-10 on
+ * its own merits, not placed relative to whoever it happened to be shown beside, so totals
+ * from different groups are still comparable and the round winner is simply the highest one.
+ *
+ * Groups are drawn in a fresh random order every round. With fixed ordering the same two
+ * players would be paired for all five rounds of a match, and any relative anchoring the
+ * judge does despite the rubric would land on the same person every time.
+ */
+async function judgeRoundInGroups(entries: JudgeEntry[], theme: EventTheme | undefined) {
+  const shuffled = [...entries];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+
+  const groups = splitIntoJudgeBatches(shuffled);
+  const judged = await Promise.all(
+    groups.map(async (group) => {
+      const letters = group.map((_, i) => LETTERS[i]);
+      const cards: JudgeCardInput[] = group.map((entry, i) => ({
+        letter: letters[i],
+        image: entry.image,
+        names: entry.names,
+      }));
+      const result = await judgeGroup(letters, cards, theme);
+      return group.map((entry, i) => ({
+        playerId: entry.playerId,
+        ratings: result.ratings[letters[i]],
+        reason: result.reason,
+      }));
+    })
+  );
+
+  const scored = judged.flat();
+  const best = scored.reduce((top, card) =>
+    ratingsTotal(card.ratings) > ratingsTotal(top.ratings) ? card : top
+  );
+  return {
+    ratings: Object.fromEntries(scored.map((c) => [c.playerId, c.ratings])),
+    // The winner's own group wrote the line that actually describes how they won.
+    reason: best.reason,
+    winnerId: best.playerId,
+  };
 }
 
 export async function POST(request: Request) {
@@ -187,20 +255,17 @@ export async function POST(request: Request) {
         const images = await Promise.all(pids.map((pid) => getImage(room.code, room.round, pid)));
         try {
           if (images.some((img) => !img)) throw new Error("Missing stored image.");
-          const letters = pids.map((_, i) => LETTERS[i]);
-          const cards: JudgeCardInput[] = pids.map((pid, i) => ({
-            letter: letters[i],
-            image: images[i]!,
-            names: states[i].pokemons.map((p) => p.displayName).join(" & "),
-          }));
-          const judged = await judgeRound(letters, cards, theme);
-          const winnerIndex = letters.indexOf(judged.winnerLetter);
-          winnerId = pids[winnerIndex];
+          const judged = await judgeRoundInGroups(
+            pids.map((pid, i) => ({
+              playerId: pid,
+              image: images[i]!,
+              names: states[i].pokemons.map((p) => p.displayName).join(" & "),
+            })),
+            theme
+          );
+          winnerId = judged.winnerId;
           verdict = judged.reason;
-          ratings = {};
-          pids.forEach((pid, i) => {
-            ratings![pid] = judged.ratings[letters[i]];
-          });
+          ratings = judged.ratings;
         } catch (err) {
           // Logged, not swallowed: this branch drops the round's ratings, so the client loses
           // the whole score-bar stage. Without a line in the log, "the judge isn't working"

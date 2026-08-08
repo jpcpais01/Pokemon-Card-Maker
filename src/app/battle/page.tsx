@@ -126,13 +126,17 @@ function BattleLobby() {
               Enter the Code
             </h1>
             <p className="mt-1.5 text-[13.5px] leading-relaxed text-slate-400">
-              Type the {ROOM_CODE_LENGTH}-character code your friend shared with you.
+              Type the {ROOM_CODE_LENGTH}-letter code your friend shared with you.
             </p>
           </div>
 
           <input
             value={code}
-            onChange={(e) => setCode(e.target.value.toUpperCase().slice(0, ROOM_CODE_LENGTH))}
+            // Codes are letters only, so anything else can never match a room - dropping it as
+            // it's typed beats letting someone fill the field with digits and hit a 404.
+            onChange={(e) =>
+              setCode(e.target.value.toUpperCase().replace(/[^A-Z]/g, "").slice(0, ROOM_CODE_LENGTH))
+            }
             placeholder={"–".repeat(ROOM_CODE_LENGTH)}
             autoCapitalize="characters"
             autoCorrect="off"
