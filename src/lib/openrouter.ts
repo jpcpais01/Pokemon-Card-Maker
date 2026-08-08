@@ -81,7 +81,7 @@ export interface CardRatings {
 }
 
 export interface JudgeCardInput {
-  /** "A" | "B" | "C" | "D" - one per card being judged, 2 to 4 cards. */
+  /** "A" | "B" | ... | "F" - one per card being judged, 2 to 6 cards. */
   letter: string;
   image: string;
   names: string;
@@ -195,7 +195,7 @@ const RATING_SCHEMA = {
 
 const ratingsKey = (letter: string) => `card${letter}Ratings`;
 
-/** Builds a schema requiring exactly one ratings object per card being judged (2-4 of them). */
+/** Builds a schema requiring exactly one ratings object per card being judged (2-6 of them). */
 function buildJudgeResponseFormat(letters: string[]) {
   const properties: Record<string, unknown> = {
     reasoning: {
@@ -231,13 +231,17 @@ function pickWinnerByTotals(ratings: Record<string, CardRatings>, fallbackLetter
 }
 
 /**
- * Judges 2 to 4 cards at once (1v1, or the 3-/4-player free-for-all variants) and returns
- * per-card ratings plus a single round winner, derived from whichever card's ratings add up
- * highest (the model's own stated "winner" only breaks an exact tie).
+ * Judges 2 to 6 cards at once (1v1, or any of the free-for-all sizes) and returns per-card
+ * ratings plus a single round winner, derived from whichever card's ratings add up highest
+ * (the model's own stated "winner" only breaks an exact tie).
+ *
+ * The ceiling tracks MAX_PLAYERS: every player's artwork goes into one multimodal request,
+ * so the whole table is judged against the same eyes in a single pass rather than scored in
+ * batches that could never be compared fairly.
  */
 export async function judgeMultiBattle(systemPrompt: string, cards: JudgeCardInput[]): Promise<MultiBattleJudgement> {
-  if (cards.length < 2 || cards.length > 4) {
-    throw new Error(`judgeMultiBattle expects 2-4 cards, got ${cards.length}.`);
+  if (cards.length < 2 || cards.length > 6) {
+    throw new Error(`judgeMultiBattle expects 2-6 cards, got ${cards.length}.`);
   }
   const letters = cards.map((c) => c.letter);
 

@@ -9,7 +9,8 @@ import { isBaddiesOnlySelection } from "@/lib/generations";
 import { generateImage, generateText, judgeMultiBattle, type JudgeCardInput } from "@/lib/openrouter";
 import { SYSTEM_PROMPT, buildJudgeSystemPrompt, buildStyleSuffix, buildUserPrompt } from "@/lib/promptBuilder";
 
-const LETTERS = ["A", "B", "C", "D"];
+/** One per player slot, so this has to keep pace with MAX_PLAYERS. */
+const LETTERS = ["A", "B", "C", "D", "E", "F"];
 
 export const maxDuration = 60;
 

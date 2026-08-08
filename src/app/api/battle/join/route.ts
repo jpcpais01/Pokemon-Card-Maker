@@ -25,7 +25,7 @@ export async function POST(request: Request) {
 
   const code = normalizeRoomCode(body.code);
 
-  // With up to 4 players able to join the same room in quick succession, an unlocked
+  // With up to MAX_PLAYERS able to join the same room in quick succession, an unlocked
   // read-modify-write here could let two joins race and silently clobber each other (one
   // player's seat vanishing). Lock the room for the brief moment it takes to add a seat.
   let gotLock = false;

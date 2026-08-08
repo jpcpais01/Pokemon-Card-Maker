@@ -15,5 +15,9 @@ const OPTIONS = Array.from({ length: MAX_PLAYERS - MIN_PLAYERS + 1 }, (_, i) => 
 });
 
 export default function PlayerCountPicker({ value, onChange, label = "Players" }: Props) {
-  return <Segmented label={label} options={OPTIONS} value={value} onChange={onChange} columns={3} />;
+  // One row of single digits - it reads as a scale from 2 to 6, which wrapping onto a
+  // second row would break.
+  return (
+    <Segmented label={label} options={OPTIONS} value={value} onChange={onChange} columns={OPTIONS.length} />
+  );
 }

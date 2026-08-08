@@ -8,10 +8,12 @@ export const BATTLE_ROUNDS = 5;
 /** Granted at the start of every round, on top of whatever's left unused from the previous round. */
 export const BATTLE_REROLLS_PER_ROUND = 5;
 export const MIN_PLAYERS = 2;
-export const MAX_PLAYERS = 4;
+/** Also the number of letters the AI judge is given (Card A..F) - raising this means
+ *  widening `LETTERS` in the advance route and the range `judgeMultiBattle` accepts. */
+export const MAX_PLAYERS = 6;
 /** Fixed player ids standing in for CPU opponents in a vs-bot match - up to MAX_PLAYERS - 1 of
  *  these fill every non-host slot. */
-export const BOT_PLAYER_IDS = ["bot-1", "bot-2", "bot-3"] as const;
+export const BOT_PLAYER_IDS = ["bot-1", "bot-2", "bot-3", "bot-4", "bot-5"] as const;
 
 export function isBotPlayerId(id: string): boolean {
   return (BOT_PLAYER_IDS as readonly string[]).includes(id);

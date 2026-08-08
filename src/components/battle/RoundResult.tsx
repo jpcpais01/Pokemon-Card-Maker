@@ -24,7 +24,7 @@ export interface RoundResultPlayerInfo {
 
 interface Props {
   round: BattleRound;
-  /** Ordered with "me" first, then every other player in a stable order. 2 to 4 entries. */
+  /** Ordered with "me" first, then every other player in a stable order. 2 to MAX_PLAYERS entries. */
   players: RoundResultPlayerInfo[];
   isLastRound: boolean;
   myReady: boolean;
@@ -263,18 +263,68 @@ interface BarAccent {
   glow: string;
 }
 
-/** Up to 4 distinct accents, one per player column. */
+/** One per player column, and there must be at least MAX_PLAYERS of them - the columns
+ *  stand side by side, so two players sharing an accent would be genuinely ambiguous. */
 const BAR_ACCENTS: BarAccent[] = [
   { grad: "from-amber-600 via-amber-400 to-yellow-200", border: "border-amber-300", text: "text-amber-300", glow: "rgba(251,191,36,0.75)" },
   { grad: "from-violet-700 via-fuchsia-500 to-cyan-300", border: "border-fuchsia-300", text: "text-fuchsia-300", glow: "rgba(217,70,239,0.75)" },
   { grad: "from-emerald-700 via-emerald-400 to-teal-200", border: "border-emerald-300", text: "text-emerald-300", glow: "rgba(16,185,129,0.75)" },
   { grad: "from-sky-700 via-sky-400 to-blue-200", border: "border-sky-300", text: "text-sky-300", glow: "rgba(56,189,248,0.75)" },
+  { grad: "from-rose-700 via-rose-500 to-orange-200", border: "border-rose-300", text: "text-rose-300", glow: "rgba(244,63,94,0.75)" },
+  { grad: "from-lime-700 via-lime-400 to-yellow-200", border: "border-lime-300", text: "text-lime-300", glow: "rgba(163,230,53,0.75)" },
 ];
+
+/**
+ * Column metrics per table size. The pixel values have to agree with the Tailwind classes
+ * next to them: the image marker is positioned in px so it can be clamped inside the track,
+ * so the two are only correct together - keeping them in one row each is what stops them
+ * drifting apart.
+ *
+ * `wide` exists because six columns don't fit at `group`'s dimensions: they'd be about 50px
+ * apiece on a phone, narrower than the 56px marker sitting in them.
+ */
+const BAR_SIZES = {
+  duo: {
+    track: "h-[26rem] max-w-[8rem]",
+    trackPx: 416,
+    marker: "h-24 w-24",
+    markerPx: 96,
+    gap: "gap-5",
+    label: "text-[11px]",
+    total: "text-[2.4rem]",
+  },
+  group: {
+    track: "h-64 max-w-[5rem]",
+    trackPx: 256,
+    marker: "h-14 w-14",
+    markerPx: 56,
+    gap: "gap-2.5",
+    label: "text-[9px]",
+    total: "text-[1.6rem]",
+  },
+  wide: {
+    track: "h-56 max-w-[3.25rem]",
+    trackPx: 224,
+    marker: "h-10 w-10",
+    markerPx: 40,
+    gap: "gap-1.5",
+    label: "text-[8px]",
+    total: "text-[1.15rem]",
+  },
+} as const;
+
+type BarSize = keyof typeof BAR_SIZES;
+
+function barSizeFor(playerCount: number): BarSize {
+  if (playerCount === 2) return "duo";
+  return playerCount <= 4 ? "group" : "wide";
+}
 
 function RatingsBattle({ players, onSkip }: { players: RoundResultPlayerInfo[]; onSkip: () => void }) {
   const [grown, setGrown] = useState(false);
   const [settled, setSettled] = useState<boolean[]>(() => players.map(() => false));
-  const isDuo = players.length === 2;
+  const size = barSizeFor(players.length);
+  const isDuo = size === "duo";
 
   useEffect(() => {
     const growTimer = window.setTimeout(() => setGrown(true), BAR_GROW_START_DELAY);
@@ -311,7 +361,7 @@ function RatingsBattle({ players, onSkip }: { players: RoundResultPlayerInfo[]; 
       image={p.image}
       total={totals[i]}
       grown={grown}
-      isDuo={isDuo}
+      size={size}
       accent={BAR_ACCENTS[i % BAR_ACCENTS.length]}
       ahead={revealed && totals[i] === maxTotal && leaderCount === 1}
       trailing={revealed && totals[i] !== maxTotal}
@@ -356,7 +406,7 @@ function RatingsBattle({ players, onSkip }: { players: RoundResultPlayerInfo[]; 
         </h2>
       </header>
 
-      <div className={`relative flex w-full max-w-sm items-end justify-center ${isDuo ? "gap-5" : "gap-2.5"}`}>
+      <div className={`relative flex w-full max-w-sm items-end justify-center ${BAR_SIZES[size].gap}`}>
         {columns}
       </div>
 
@@ -379,7 +429,7 @@ function RatingBar({
   accent,
   ahead,
   trailing,
-  isDuo,
+  size,
   index,
   onSettled,
 }: {
@@ -390,7 +440,7 @@ function RatingBar({
   accent: BarAccent;
   ahead: boolean;
   trailing: boolean;
-  isDuo: boolean;
+  size: BarSize;
   index: number;
   onSettled: (index: number) => void;
 }) {
@@ -423,11 +473,10 @@ function RatingBar({
   const pct = grown ? Math.max(6, (currentTotal / MAX_RATINGS_TOTAL) * 100) : 0;
   const currentTier = grown ? tierForTotal(Math.round(currentTotal)) : "F";
 
-  // Pixel math (matching the Tailwind track/image size classes below) so the image marker's own
+  // Pixel math (matching the Tailwind track/marker classes in BAR_SIZES) so the marker's own
   // height is accounted for and it never pokes out above the track, even at a near-max total.
-  const trackHeightPx = isDuo ? 416 : 256;
-  const imageSizePx = isDuo ? 96 : 56;
-  const imageBottomPx = Math.min((pct / 100) * trackHeightPx, trackHeightPx - imageSizePx);
+  const dim = BAR_SIZES[size];
+  const imageBottomPx = Math.min((pct / 100) * dim.trackPx, dim.trackPx - dim.markerPx);
 
   return (
     <div
@@ -439,12 +488,12 @@ function RatingBar({
       <p
         className={`truncate font-bold uppercase tracking-[0.18em] transition-colors duration-500 ${
           ahead ? accent.text : "text-slate-400"
-        } ${isDuo ? "text-[11px]" : "text-[9px]"}`}
+        } ${dim.label}`}
       >
         {label}
       </p>
 
-      <div className={`relative ${isDuo ? "h-[26rem] w-full max-w-[8rem]" : "h-64 w-full max-w-[5rem]"}`}>
+      <div className={`relative w-full ${dim.track}`}>
         {/* Accent floodlight behind the column, brightening as the bar climbs. */}
         <div
           aria-hidden
@@ -502,9 +551,7 @@ function RatingBar({
         </div>
 
         <div
-          className={`absolute left-1/2 -translate-x-1/2 overflow-hidden rounded-xl border-2 bg-black/40 transition-shadow duration-500 ${accent.border} ${
-            isDuo ? "h-24 w-24" : "h-14 w-14"
-          }`}
+          className={`absolute left-1/2 -translate-x-1/2 overflow-hidden rounded-xl border-2 bg-black/40 transition-shadow duration-500 ${accent.border} ${dim.marker}`}
           style={{
             bottom: `${imageBottomPx}px`,
             boxShadow: ahead ? `0 0 30px -4px ${accent.glow}` : "0 10px 22px -10px rgb(0 0 0 / 90%)",
@@ -524,7 +571,7 @@ function RatingBar({
         <p
           className={`font-display tabular-nums font-black leading-none transition-opacity duration-300 ${
             grown ? "opacity-100" : "opacity-0"
-          } ${accent.text} ${isDuo ? "text-[2.4rem]" : "text-[1.6rem]"}`}
+          } ${accent.text} ${dim.total}`}
           style={{ textShadow: `0 0 22px ${accent.glow}` }}
         >
           {Math.round(currentTotal)}
@@ -533,7 +580,7 @@ function RatingBar({
           key={currentTier}
           className={`tier-pop mt-0.5 font-black uppercase leading-none tracking-[0.14em] transition-opacity duration-300 ${
             grown ? "opacity-100" : "opacity-0"
-          } ${ahead ? accent.text : "text-slate-400"} ${isDuo ? "text-[11px]" : "text-[9px]"}`}
+          } ${ahead ? accent.text : "text-slate-400"} ${dim.label}`}
         >
           Tier {currentTier}
         </p>
