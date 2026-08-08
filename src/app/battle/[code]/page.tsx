@@ -6,6 +6,7 @@ import Link from "next/link";
 import BattleHeader from "@/components/battle/BattleHeader";
 import BattlePickPanel from "@/components/battle/BattlePickPanel";
 import MatchResult from "@/components/battle/MatchResult";
+import NicknameField from "@/components/battle/NicknameField";
 import OpponentStatus from "@/components/battle/OpponentStatus";
 import RoundResult from "@/components/battle/RoundResult";
 import VotingPanel from "@/components/battle/VotingPanel";
@@ -38,13 +39,27 @@ const GENERATING_MESSAGES: Partial<Record<RoundStatus, string>> = {
   judging: "The judge is comparing every artwork...",
 };
 
-/** Ordered: every non-self player, in room order. Bot rooms number bots; friend rooms number
- *  opponents - but a single opponent/bot keeps the plain "Bot"/"Opponent" label unnumbered. */
-function getOtherPlayers(players: string[], myId: string, vsBot: boolean | undefined) {
+/**
+ * Ordered: every non-self player, in room order.
+ *
+ * A nickname the player typed on their way in always wins. Everyone else falls back to the
+ * positional label: bot rooms number bots, friend rooms number opponents, and a lone
+ * opponent/bot stays unnumbered. The numbering deliberately counts *all* others rather than
+ * only the unnamed ones, so "Opponent 2" keeps meaning the same seat whether or not the
+ * others typed a name.
+ */
+function getOtherPlayers(
+  players: string[],
+  myId: string,
+  vsBot: boolean | undefined,
+  names: Record<string, string> | undefined
+) {
   const others = players.filter((pid) => pid !== myId);
   const baseLabel = vsBot ? "Bot" : "Opponent";
-  if (others.length <= 1) return others.map((id) => ({ id, label: baseLabel }));
-  return others.map((id, i) => ({ id, label: `${baseLabel} ${i + 1}` }));
+  return others.map((id, i) => ({
+    id,
+    label: names?.[id] || (others.length <= 1 ? baseLabel : `${baseLabel} ${i + 1}`),
+  }));
 }
 
 export default function BattleRoomPage() {
@@ -60,6 +75,7 @@ export default function BattleRoomPage() {
 
   const [joining, setJoining] = useState(false);
   const [joinError, setJoinError] = useState<string | null>(null);
+  const [nickname, setNickname] = useState("");
 
   const [images, setImages] = useState<Record<string, string>>({});
   const [voteImages, setVoteImages] = useState<Record<string, string>>({});
@@ -183,7 +199,7 @@ export default function BattleRoomPage() {
     setJoining(true);
     setJoinError(null);
     try {
-      const { playerId: newId } = await joinRoom(code);
+      const { playerId: newId } = await joinRoom(code, nickname);
       storePlayerId(code, newId);
       setPlayerId(newId);
     } catch (err) {
@@ -283,6 +299,10 @@ export default function BattleRoomPage() {
             </p>
           </div>
 
+          <div className="mt-5 text-left">
+            <NicknameField value={nickname} onChange={setNickname} fallback="Opponent" />
+          </div>
+
           {joinError && (
             <p className="mt-4 rounded-2xl border border-red-500/25 bg-red-500/10 px-4 py-3 text-[13px] text-red-300">
               {joinError}
@@ -320,10 +340,17 @@ export default function BattleRoomPage() {
   }
 
   if (room.status === "waiting") {
-    return <WaitingRoom code={code} playersJoined={room.players.length} maxPlayers={room.maxPlayers} />;
+    return (
+      <WaitingRoom
+        code={code}
+        playersJoined={room.players.length}
+        maxPlayers={room.maxPlayers}
+        joinedNames={room.players.map((pid) => room.names?.[pid]).filter((n): n is string => !!n)}
+      />
+    );
   }
 
-  const otherPlayers = getOtherPlayers(room.players, playerId, room.vsBot);
+  const otherPlayers = getOtherPlayers(room.players, playerId, room.vsBot, room.names);
 
   if (room.status === "finished") {
     const mvpResult = computeMvp(room);

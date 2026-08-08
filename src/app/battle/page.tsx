@@ -8,6 +8,7 @@ import Screen from "@/components/ui/Screen";
 import Icon from "@/components/ui/Icon";
 import JudgeModePicker from "@/components/battle/JudgeModePicker";
 import PackModePicker from "@/components/battle/PackModePicker";
+import NicknameField from "@/components/battle/NicknameField";
 import PlayerCountPicker from "@/components/battle/PlayerCountPicker";
 import { createRoom, joinRoom } from "@/lib/battle/api";
 import { ROOM_CODE_LENGTH } from "@/lib/battle/roomCode";
@@ -41,6 +42,8 @@ function BattleLobby() {
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
 
+  const [nickname, setNickname] = useState("");
+
   const [code, setCode] = useState("");
   const [joining, setJoining] = useState(false);
   const [joinError, setJoinError] = useState<string | null>(null);
@@ -50,7 +53,16 @@ function BattleLobby() {
     setCreating(true);
     try {
       const effectiveJudgeMode = maxPlayers >= MIN_VOTE_PLAYERS ? judgeMode : "ai";
-      const { code, playerId } = await createRoom(gens, false, maxPlayers, effectiveJudgeMode, false, packMode, theme);
+      const { code, playerId } = await createRoom(
+        gens,
+        false,
+        maxPlayers,
+        effectiveJudgeMode,
+        false,
+        packMode,
+        theme,
+        nickname
+      );
       storePlayerId(code, playerId);
       router.push(`/battle/${code}`);
     } catch (err) {
@@ -67,7 +79,7 @@ function BattleLobby() {
     if (!trimmed) return;
     setJoining(true);
     try {
-      const { code: roomCode, playerId } = await joinRoom(trimmed);
+      const { code: roomCode, playerId } = await joinRoom(trimmed, nickname);
       storePlayerId(roomCode, playerId);
       router.push(`/battle/${roomCode}`);
     } catch (err) {
@@ -94,6 +106,7 @@ function BattleLobby() {
         eventBanner={event ? { label: event.label, blurb: event.blurb, gradient: event.gradient, image: event.image } : undefined}
         extraTop={
           <>
+            <NicknameField value={nickname} onChange={setNickname} fallback="Opponent" />
             <PlayerCountPicker value={maxPlayers} onChange={setMaxPlayers} />
             <PackModePicker value={packMode} onChange={setPackMode} />
             {maxPlayers >= MIN_VOTE_PLAYERS && <JudgeModePicker value={judgeMode} onChange={setJudgeMode} />}
@@ -128,6 +141,10 @@ function BattleLobby() {
             className="enter-up card w-full py-6 text-center font-display text-[2.5rem] font-black tracking-[0.35em] text-white placeholder:text-slate-700 focus:border-amber-300/50 focus:outline-none"
             style={{ "--d": "60ms" } as React.CSSProperties}
           />
+
+          <div className="enter-up mt-5" style={{ "--d": "110ms" } as React.CSSProperties}>
+            <NicknameField value={nickname} onChange={setNickname} fallback="Opponent" />
+          </div>
 
           {joinError && (
             <p className="mt-4 rounded-2xl border border-red-500/25 bg-red-500/10 px-4 py-3 text-center text-[13px] text-red-300">
@@ -234,7 +251,7 @@ function BattleLobby() {
             </span>
             <div className="min-w-0 flex-1">
               <p className="text-[15px] font-bold text-white">Battle a Bot</p>
-              <p className="mt-0.5 text-[12.5px] text-slate-400">1–3 CPU opponents, play instantly</p>
+              <p className="mt-0.5 text-[12.5px] text-slate-400">1–5 CPU opponents, play instantly</p>
             </div>
             <Icon name="chevron-right" size={18} className="flex-shrink-0 text-slate-600" />
           </Link>

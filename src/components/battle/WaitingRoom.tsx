@@ -7,9 +7,13 @@ interface Props {
   code: string;
   playersJoined: number;
   maxPlayers: number;
+  /** Nicknames of everyone in the room so far, in seat order - shorter than `playersJoined`
+   *  whenever someone skipped the field, which is why the count stays the source of truth
+   *  for how many seats are filled. */
+  joinedNames?: string[];
 }
 
-export default function WaitingRoom({ code, playersJoined, maxPlayers }: Props) {
+export default function WaitingRoom({ code, playersJoined, maxPlayers, joinedNames = [] }: Props) {
   const [copied, setCopied] = useState(false);
 
   async function copyLink() {
@@ -54,6 +58,19 @@ export default function WaitingRoom({ code, playersJoined, maxPlayers }: Props) 
         <p className="mt-2 text-[12.5px] text-slate-400">
           {playersJoined} of {maxPlayers} joined
         </p>
+
+        {joinedNames.length > 0 && (
+          <div className="mt-3 flex flex-wrap items-center justify-center gap-1.5">
+            {joinedNames.map((name, i) => (
+              <span
+                key={`${name}-${i}`}
+                className="max-w-[9rem] truncate rounded-full border border-white/10 bg-white/[0.06] px-2.5 py-1 text-[11px] font-bold text-slate-300"
+              >
+                {name}
+              </span>
+            ))}
+          </div>
+        )}
 
         <div className="relative mt-6 overflow-hidden rounded-2xl border border-amber-300/25 bg-amber-400/[0.07] py-6">
           <div className="holo-sheen opacity-20" />

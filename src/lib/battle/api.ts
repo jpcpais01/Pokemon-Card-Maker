@@ -28,7 +28,8 @@ export function createRoom(
   judgeMode: JudgeMode = "ai",
   unlimitedRerolls = false,
   packMode: PackMode = "classic",
-  theme?: EventTheme
+  theme?: EventTheme,
+  nickname?: string
 ) {
   return postJson<{ code: string; playerId: string }>("/api/battle/create", {
     gens,
@@ -38,11 +39,12 @@ export function createRoom(
     unlimitedRerolls,
     packMode,
     theme,
+    nickname,
   });
 }
 
-export function joinRoom(code: string) {
-  return postJson<{ code: string; playerId: string }>("/api/battle/join", { code });
+export function joinRoom(code: string, nickname?: string) {
+  return postJson<{ code: string; playerId: string }>("/api/battle/join", { code, nickname });
 }
 
 export function fetchRoomState(code: string, playerId: string) {

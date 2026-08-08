@@ -11,6 +11,7 @@ import {
   MIN_VOTE_PLAYERS,
 } from "@/lib/battle/types";
 import type { BattleRoom, JudgeMode, PackMode } from "@/lib/battle/types";
+import { sanitizeNickname } from "@/lib/battle/nickname";
 import { parseEventTheme } from "@/lib/events";
 import { fetchPokemonForGenerations } from "@/lib/generations";
 
@@ -23,6 +24,7 @@ export async function POST(request: Request) {
     unlimitedRerolls?: boolean;
     packMode?: string;
     theme?: string;
+    nickname?: string;
   };
   try {
     body = await request.json();
@@ -65,8 +67,11 @@ export async function POST(request: Request) {
   const botIds = vsBot ? BOT_PLAYER_IDS.slice(0, maxPlayers - 1) : [];
   const players = vsBot ? [playerId, ...botIds] : [playerId];
 
+  const nickname = sanitizeNickname(body.nickname);
+
   const room: BattleRoom = {
     code,
+    names: nickname ? { [playerId]: nickname } : {},
     createdAt: Date.now(),
     status: vsBot ? "playing" : "waiting",
     gens: body.gens,

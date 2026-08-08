@@ -77,6 +77,10 @@ export interface BattleRound {
 
 export interface BattleRoom {
   code: string;
+  /** playerId -> the nickname that player typed on their way in. Scoped to this room and
+   *  nothing else, optional per player, and absent for bots - anyone without one falls back
+   *  to a positional "Opponent 2" label. */
+  names?: Record<string, string>;
   createdAt: number;
   status: RoomStatus;
   gens: number[];

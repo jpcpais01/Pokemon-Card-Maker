@@ -4,6 +4,7 @@ import { createRound } from "@/lib/battle/engine";
 import { normalizeRoomCode } from "@/lib/battle/roomCode";
 import { getRoom, lockKey, saveRoom } from "@/lib/battle/rooms";
 import { acquireLock, releaseLock } from "@/lib/battle/store";
+import { sanitizeNickname } from "@/lib/battle/nickname";
 import { BATTLE_REROLLS_PER_ROUND } from "@/lib/battle/types";
 import { fetchPokemonForGenerations } from "@/lib/generations";
 
@@ -12,7 +13,7 @@ function sleep(ms: number) {
 }
 
 export async function POST(request: Request) {
-  let body: { code?: string };
+  let body: { code?: string; nickname?: string };
   try {
     body = await request.json();
   } catch {
@@ -47,6 +48,8 @@ export async function POST(request: Request) {
     }
 
     const playerId = randomUUID();
+    const nickname = sanitizeNickname(body.nickname);
+    if (nickname) room.names = { ...room.names, [playerId]: nickname };
     room.players.push(playerId);
     room.scores[playerId] = 0;
     room.rerolls[playerId] = BATTLE_REROLLS_PER_ROUND;

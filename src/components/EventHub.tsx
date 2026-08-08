@@ -13,7 +13,7 @@ type PlayMode = "solo" | "bot" | "friend";
 
 const PLAY_MODES: { value: PlayMode; label: string; blurb: string; icon: "cards" | "bot" | "users" }[] = [
   { value: "solo", label: "Solo", blurb: "Open packs on your own", icon: "cards" },
-  { value: "bot", label: "vs Bots", blurb: "1–3 CPU opponents", icon: "bot" },
+  { value: "bot", label: "vs Bots", blurb: "1–5 CPU opponents", icon: "bot" },
   { value: "friend", label: "vs Friends", blurb: "Create a room to share", icon: "users" },
 ];
 
