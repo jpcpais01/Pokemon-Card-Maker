@@ -68,7 +68,8 @@ export type Vibe =
   | "humongous"
   | "secret"
   | "sports-promo"
-  | "one-piece";
+  | "one-piece"
+  | "statue";
 
 // A single combined pool: special forms (Shiny, Mega, Tag Team, ...) and regional forms
 // (Alolan, Galarian, ...) are mutually exclusive outcomes of the same roll/card, not two
