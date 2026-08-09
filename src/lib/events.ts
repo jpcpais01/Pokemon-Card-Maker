@@ -1,4 +1,10 @@
-import { BADDIES_GEN_ID, POOL_PARTY_GEN_ID, TOP_100_GEN_ID, WEED_GEN_ID } from "./generations";
+import {
+  BADDIES_GEN_ID,
+  POOL_PARTY_GEN_ID,
+  PORTUGAL_GEN_ID,
+  TOP_100_GEN_ID,
+  WEED_GEN_ID,
+} from "./generations";
 
 /**
  * An "event" is a theme layered on top of a normal game, not a replacement for
@@ -7,7 +13,7 @@ import { BADDIES_GEN_ID, POOL_PARTY_GEN_ID, TOP_100_GEN_ID, WEED_GEN_ID } from "
  * pull from. All it does is steer the artwork - and, in battle, tell the judge
  * what the match is going for.
  */
-export type EventTheme = "pool-party" | "baddies" | "weed" | "eclipse";
+export type EventTheme = "pool-party" | "baddies" | "weed" | "eclipse" | "portuguese-culture";
 
 export interface EventDef {
   slug: EventTheme;
@@ -72,6 +78,32 @@ export const EVENTS: EventDef[] = [
     gradient:
       "radial-gradient(circle at 50% 35%, #05040c 0 12%, rgba(5,4,12,0) 12.5%), radial-gradient(circle at 50% 35%, #fffdf2 12.2%, #ffeab0 14%, #ffb43c 17.5%, #c2510f 23%, #4b1d5e 44%, #170b2f 70%, #05040f 100%)",
     accent: "text-amber-200",
+  },
+  {
+    slug: "portuguese-culture",
+    label: "Portuguese Culture",
+    tagline: "Azulejos, the Atlantic and a bit of saudade",
+    blurb:
+      "Every card is set somewhere in Portugal - the tiled streets, the fishing coast, a festa at night. Play it however you like: solo, against bots, or against a friend, in any pack mode. Only the artwork changes.",
+    defaultGens: [PORTUGAL_GEN_ID],
+    // Named specifics rather than "make it Portuguese": a drafting model handed a country
+    // reaches for the same three postcard clichés every time, and the point of the pool is
+    // that each card already has a concrete hook to build on.
+    promptDirection:
+      'Event theme - "Portuguese Culture": set this illustration somewhere unmistakably Portuguese, and commit to the details. Draw on the real visual language of the country wherever it fits the card - blue-and-white azulejo tilework climbing a wall, black-and-white calçada portuguesa mosaic paving underfoot, terracotta rooftops stacked down a hillside, narrow streets strung with laundry lines and paper festa garlands, ornate Manueline stonework carved with rope and armillary spheres, wooden fishing boats and caravels, a whitewashed lighthouse on an Atlantic cliff, sardines grilling over coals, ceramic swallows on a wall, the painted Galo de Barcelos rooster, a Portuguese guitar and a fado singer in the lamplight, cork oaks and golden Alentejo plains, port wine cellars, cobbled squares and tiled train stations. Warm Atlantic light, deep ocean blues, whitewash, terracotta and gold. There should be a touch of saudade about it - a warmth with something wistful underneath. This theme sets the scene; keep the vibe, special form and rarity tier driving the mood, action and rendering as they normally would.',
+    styleDirection:
+      " This is a Portuguese Culture event card - the whole scene is set in Portugal: blue-and-white azulejo tiling, black-and-white calçada mosaic paving, terracotta rooftops, whitewashed walls, Atlantic sea light and coastal cliffs, with warm gold, deep blue and terracotta throughout. Keep every Pokemon's official design, proportions and colors completely accurate.",
+    judgeContext:
+      'This match is a "Portuguese Culture" event - every card is aiming to be set unmistakably in Portugal: azulejo tilework, calçada paving, terracotta rooftops, the Atlantic coast, festa and fado imagery, and that warm light with a wistful edge. Factor in how specifically and convincingly each illustration commits to that setting, rather than a generic seaside town, alongside its normal artistic merit.',
+    image: "/modes/portuguese-culture.jpg",
+    // Layered rather than a plain fade, because a blue gradient on its own says nothing about
+    // Portugal. The two crossed repeating gradients draw an azulejo diamond lattice, the
+    // radial puts warm Atlantic sun in the corner so it isn't flatly monochrome, and the base
+    // runs whitewash down into deep ocean. This event is still waiting on art, so the
+    // gradient has to carry the card by itself.
+    gradient:
+      "repeating-linear-gradient(45deg, rgba(23,58,110,.32) 0 2px, transparent 2px 24px), repeating-linear-gradient(-45deg, rgba(23,58,110,.32) 0 2px, transparent 2px 24px), radial-gradient(circle at 78% 12%, rgba(255,214,140,.85) 0%, rgba(255,180,90,.35) 12%, transparent 34%), linear-gradient(150deg, #eef4fb 0%, #9dc0e3 20%, #3f7cbd 46%, #1c4a86 70%, #0a1f3d 100%)",
+    accent: "text-sky-200",
   },
   {
     slug: "pool-party",

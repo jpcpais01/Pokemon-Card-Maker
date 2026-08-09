@@ -10,6 +10,9 @@ export const NICHE_GEN_ID = -2;
 export const POOL_PARTY_GEN_ID = -3;
 /** Not a real generation - a curated pool of leafy, sleepy, hazy Pokemon for the Weed event. */
 export const WEED_GEN_ID = -4;
+/** Not a real generation - a curated pool for the Portuguese Culture event: the Atlantic, the
+ *  fishing coast, the Galo de Barcelos, azulejo blues, fado and the country's animals. */
+export const PORTUGAL_GEN_ID = -5;
 
 export const GENERATIONS: Generation[] = [
   { id: 1, label: "Gen I", region: "Kanto" },
@@ -26,6 +29,7 @@ export const GENERATIONS: Generation[] = [
   { id: NICHE_GEN_ID, label: "Niche", region: "Hidden Gems" },
   { id: POOL_PARTY_GEN_ID, label: "Pool Party", region: "Beach & Summer" },
   { id: WEED_GEN_ID, label: "Weed", region: "Leafy & Hazy" },
+  { id: PORTUGAL_GEN_ID, label: "Portugal", region: "Sea & Azulejo" },
 ];
 
 /** True only when Baddies is the sole selected generation, not just one of several. */
@@ -344,6 +348,71 @@ const WEED_SPECIES: PokemonRef[] = [
   { id: 930, name: "arboliva" },
 ];
 
+/**
+ * Portuguese Culture pool. Every entry earns its place through something the artwork can
+ * actually show, not a vague vibe:
+ *
+ * - the Galo de Barcelos, in the Torchic line and Dodrio's crest
+ * - the Atlantic and the fishing fleet - sardines, bacalhau, octopus, squid, shellfish
+ * - gulls and cormorants over the harbour, swallows for the Bordallo Pinheiro ceramics
+ * - Swablu and Altaria for azulejo blue-and-white
+ * - Ampharos, whose tail is a lighthouse, and Nosepass, which points north like a compass
+ * - Dhelmise for the caravels and the Age of Discoveries
+ * - Kricketune, Chatot and Primarina for fado and the Portuguese guitar
+ * - cork oaks and acorns in the Seedot line, the Lusitano horse in Ponyta
+ */
+const PORTUGAL_SPECIES: PokemonRef[] = [
+  { id: 52, name: "meowth" },
+  { id: 58, name: "growlithe" },
+  { id: 59, name: "arcanine" },
+  { id: 77, name: "ponyta" },
+  { id: 78, name: "rapidash" },
+  { id: 85, name: "dodrio" },
+  { id: 90, name: "shellder" },
+  { id: 91, name: "cloyster" },
+  { id: 98, name: "krabby" },
+  { id: 99, name: "kingler" },
+  { id: 128, name: "tauros" },
+  { id: 129, name: "magikarp" },
+  { id: 130, name: "gyarados" },
+  { id: 131, name: "lapras" },
+  { id: 170, name: "chinchou" },
+  { id: 171, name: "lanturn" },
+  { id: 179, name: "mareep" },
+  { id: 180, name: "flaaffy" },
+  { id: 181, name: "ampharos" },
+  { id: 185, name: "sudowoodo" },
+  { id: 222, name: "corsola" },
+  { id: 224, name: "octillery" },
+  { id: 226, name: "mantine" },
+  { id: 255, name: "torchic" },
+  { id: 256, name: "combusken" },
+  { id: 257, name: "blaziken" },
+  { id: 273, name: "seedot" },
+  { id: 275, name: "shiftry" },
+  { id: 276, name: "taillow" },
+  { id: 277, name: "swellow" },
+  { id: 278, name: "wingull" },
+  { id: 279, name: "pelipper" },
+  { id: 299, name: "nosepass" },
+  { id: 320, name: "wailmer" },
+  { id: 321, name: "wailord" },
+  { id: 333, name: "swablu" },
+  { id: 334, name: "altaria" },
+  { id: 401, name: "kricketot" },
+  { id: 402, name: "kricketune" },
+  { id: 441, name: "chatot" },
+  { id: 686, name: "inkay" },
+  { id: 687, name: "malamar" },
+  { id: 730, name: "primarina" },
+  { id: 746, name: "wishiwashi" },
+  { id: 781, name: "dhelmise" },
+  { id: 845, name: "cramorant" },
+  { id: 846, name: "arrokuda" },
+  { id: 847, name: "barraskewda" },
+  { id: 869, name: "alcremie" },
+];
+
 const genCache = new Map<number, Promise<PokemonRef[]>>();
 
 /** A handful of species whose kebab-case PokeAPI name doesn't title-case cleanly. */
@@ -391,6 +460,7 @@ async function fetchGeneration(genId: number): Promise<PokemonRef[]> {
   if (genId === NICHE_GEN_ID) return NICHE_SPECIES;
   if (genId === POOL_PARTY_GEN_ID) return POOL_PARTY_SPECIES;
   if (genId === WEED_GEN_ID) return WEED_SPECIES;
+  if (genId === PORTUGAL_GEN_ID) return PORTUGAL_SPECIES;
   const res = await fetch(`https://pokeapi.co/api/v2/generation/${genId}`);
   if (!res.ok) throw new Error(`Failed to load generation ${genId}`);
   const data = await res.json();
