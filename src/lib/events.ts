@@ -99,8 +99,7 @@ export const EVENTS: EventDef[] = [
     // Layered rather than a plain fade, because a blue gradient on its own says nothing about
     // Portugal. The two crossed repeating gradients draw an azulejo diamond lattice, the
     // radial puts warm Atlantic sun in the corner so it isn't flatly monochrome, and the base
-    // runs whitewash down into deep ocean. This event is still waiting on art, so the
-    // gradient has to carry the card by itself.
+    // runs whitewash down into deep ocean. Sits under the artwork above, covering the load.
     gradient:
       "repeating-linear-gradient(45deg, rgba(23,58,110,.32) 0 2px, transparent 2px 24px), repeating-linear-gradient(-45deg, rgba(23,58,110,.32) 0 2px, transparent 2px 24px), radial-gradient(circle at 78% 12%, rgba(255,214,140,.85) 0%, rgba(255,180,90,.35) 12%, transparent 34%), linear-gradient(150deg, #eef4fb 0%, #9dc0e3 20%, #3f7cbd 46%, #1c4a86 70%, #0a1f3d 100%)",
     accent: "text-sky-200",
