@@ -14,7 +14,9 @@ const MUSIC_SRC = "/audio/menu-music.mp3";
 const CLICK_SRC = "/audio/click.mp3";
 
 const MUSIC_VOLUME = 0.32;
-const CLICK_VOLUME = 0.45;
+/** Kept well under the music. The click fires on every tap, so it wants to sit under the bed
+ *  as feedback you barely notice - at its old 0.45 it was louder than the music itself. */
+const CLICK_VOLUME = 0.16;
 const FADE_OUT_MS = 700;
 const FADE_IN_MS = 400;
 /** Enough that a fast run of taps overlaps instead of cutting itself off. */
