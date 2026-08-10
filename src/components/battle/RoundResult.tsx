@@ -9,6 +9,7 @@ import type { BattleRound, BattleRoundPlayerState, CardRatings } from "@/lib/bat
 import { useFavoriteToggle } from "@/lib/favorites";
 
 const COMPARE_MS = 15000;
+const BREAKDOWN_MS = 7000;
 const VICTORY_SPOTLIGHT_MS = 4000;
 
 /**
@@ -71,8 +72,11 @@ export default function RoundResult({
 
   const n = players.length;
   const COMPARE_PHASE = n;
-  const VICTORY_PHASE = n + 1;
-  const SUMMARY_PHASE = n + 2;
+  // The bars answer "who won"; this one answers "on what". It sits between them and the
+  // victory spotlight so the win is explained before it's celebrated.
+  const BREAKDOWN_PHASE = n + 1;
+  const VICTORY_PHASE = n + 2;
+  const SUMMARY_PHASE = n + 3;
 
   const allImagesReady = players.every((p) => !!p.image);
   // Only worth a dedicated bars-comparison beat when the judge actually produced ratings -
@@ -83,10 +87,11 @@ export default function RoundResult({
     setPhaseIndex((p) => {
       if (p < n - 1) return p + 1;
       if (p === n - 1) return hasRatings ? COMPARE_PHASE : VICTORY_PHASE;
-      if (p === COMPARE_PHASE) return VICTORY_PHASE;
+      if (p === COMPARE_PHASE) return BREAKDOWN_PHASE;
+      if (p === BREAKDOWN_PHASE) return VICTORY_PHASE;
       return SUMMARY_PHASE;
     });
-  }, [n, hasRatings, COMPARE_PHASE, VICTORY_PHASE, SUMMARY_PHASE]);
+  }, [n, hasRatings, COMPARE_PHASE, BREAKDOWN_PHASE, VICTORY_PHASE, SUMMARY_PHASE]);
 
   useEffect(() => {
     if (phaseIndex === SUMMARY_PHASE || !allImagesReady) return;
@@ -95,13 +100,20 @@ export default function RoundResult({
         ? VICTORY_SPOTLIGHT_MS
         : phaseIndex === COMPARE_PHASE
           ? COMPARE_MS
-          : cardSpotlightMs(n);
+          : phaseIndex === BREAKDOWN_PHASE
+            ? BREAKDOWN_MS
+            : cardSpotlightMs(n);
     const timer = window.setTimeout(advancePhase, duration);
     return () => window.clearTimeout(timer);
-  }, [phaseIndex, allImagesReady, advancePhase, n, SUMMARY_PHASE, VICTORY_PHASE, COMPARE_PHASE]);
+  }, [phaseIndex, allImagesReady, advancePhase, n, SUMMARY_PHASE, VICTORY_PHASE, COMPARE_PHASE, BREAKDOWN_PHASE]);
 
   if (phaseIndex === COMPARE_PHASE) {
     return <RatingsBattle players={players} onSkip={advancePhase} />;
+  }
+
+  // Must come before the spotlight branch below, which indexes players by phase.
+  if (phaseIndex === BREAKDOWN_PHASE) {
+    return <RatingsBreakdown players={players} onSkip={advancePhase} />;
   }
 
   const winnerPlayer = players.find((p) => p.id === round.winnerId);
@@ -453,6 +465,148 @@ function RatingsBattle({ players, onSkip }: { players: RoundResultPlayerInfo[]; 
       >
         Tap to skip →
       </p>
+    </div>
+  );
+}
+
+/** The four things the judge scores, in the order the rubric asks for them. */
+const ASPECTS = [
+  { key: "art", label: "Art" },
+  { key: "fame", label: "Fame" },
+  { key: "chase", label: "Chase" },
+  { key: "rarity", label: "Rarity" },
+] as const;
+
+const MAX_ASPECT = 10;
+
+/**
+ * The scorecard beat: every card's four aspect scores, after the bars have settled the totals.
+ *
+ * Until now those four numbers existed only in the round's data - the bars showed the total they
+ * add up to and the badge showed the letter it lands on, so "why" was never actually on screen.
+ * Each player keeps the accent colour their bar had a moment earlier, which is what lets the two
+ * screens read as one thought rather than two charts.
+ */
+function RatingsBreakdown({ players, onSkip }: { players: RoundResultPlayerInfo[]; onSkip: () => void }) {
+  const [grown, setGrown] = useState(false);
+  // Ten players is forty meters; the roomier row only fits on a small table.
+  const roomy = players.length <= 4;
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setGrown(true), 180);
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  // Per-aspect leaders, so the round reads as a set of categories someone took rather than one
+  // number. Ties highlight everyone level at the top, which is the honest outcome.
+  const leaders = ASPECTS.map(({ key }) => Math.max(...players.map((p) => p.ratings?.[key] ?? 0)));
+
+  return (
+    <div
+      onClick={onSkip}
+      className="fixed inset-0 z-40 flex cursor-pointer flex-col items-center justify-center overflow-hidden bg-[#07070c] px-5"
+    >
+      {/* Same stage lighting as the bars - this is the second half of that scene. */}
+      <div aria-hidden className="pointer-events-none absolute inset-0">
+        <div className="glow-pulse absolute left-1/2 top-[6%] h-[26rem] w-[26rem] -translate-x-1/2 rounded-full bg-amber-400/12 blur-3xl" />
+        <div
+          className="absolute inset-x-0 bottom-0 h-1/2"
+          style={{ background: "linear-gradient(to top, rgb(0 0 0 / 75%), transparent)" }}
+        />
+        <div
+          className="absolute inset-0"
+          style={{ background: "radial-gradient(120% 75% at 50% 45%, transparent 45%, rgb(0 0 0 / 65%) 100%)" }}
+        />
+      </div>
+
+      <header className="enter-up relative mb-6 text-center">
+        <p className="section-label text-amber-300/70">Round Score</p>
+        <h2 className="font-display mt-1.5 text-[1.6rem] font-extrabold leading-none tracking-tight text-white">
+          Where It Was Won
+        </h2>
+      </header>
+
+      <div className="relative flex w-full max-w-sm flex-col gap-2.5">
+        {/* Column headings, so the four numbers below never need repeating per row. */}
+        <div className={`flex items-center gap-2 pl-[5.8rem] pr-[2.9rem] ${roomy ? "mb-0.5" : ""}`}>
+          {ASPECTS.map((a) => (
+            <span
+              key={a.key}
+              className="flex-1 text-center text-[8.5px] font-black uppercase tracking-[0.14em] text-slate-500"
+            >
+              {a.label}
+            </span>
+          ))}
+        </div>
+
+        {players.map((player, row) => {
+          const accent = BAR_ACCENTS[row % BAR_ACCENTS.length];
+          const total = player.ratings ? ratingsTotal(player.ratings) : 0;
+          return (
+            <div
+              key={player.id}
+              className="bar-enter flex items-center gap-2"
+              style={{ "--d": `${row * 70}ms` } as React.CSSProperties}
+            >
+              {/* Wide enough for a full-length nickname: at 3.6rem the thumbnail left room for
+                  about three characters, so every name past "Ana" was an ellipsis. */}
+              <div className="flex w-[5.3rem] flex-shrink-0 items-center gap-1.5">
+                <span
+                  className={`overflow-hidden rounded-md border bg-black/40 ${accent.border} ${
+                    roomy ? "h-7 w-7" : "h-6 w-6"
+                  }`}
+                >
+                  {player.image && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={player.image} alt="" className="h-full w-full object-cover" />
+                  )}
+                </span>
+                <span className={`truncate text-[9px] font-black uppercase tracking-[0.04em] ${accent.text}`}>
+                  {player.isMe ? "You" : player.label}
+                </span>
+              </div>
+
+              {ASPECTS.map((a, col) => {
+                const value = player.ratings?.[a.key] ?? 0;
+                const isLeader = value > 0 && value === leaders[col];
+                return (
+                  <div key={a.key} className="flex flex-1 flex-col items-center gap-1">
+                    <span
+                      className={`font-display tabular-nums font-black leading-none transition-colors duration-300 ${
+                        isLeader ? accent.text : "text-slate-400"
+                      } ${roomy ? "text-[1.05rem]" : "text-[0.9rem]"}`}
+                    >
+                      {value}
+                    </span>
+                    <span className="relative h-[3px] w-full overflow-hidden rounded-full bg-white/10">
+                      <span
+                        className={`absolute inset-0 origin-left rounded-full bg-gradient-to-r ${accent.grad}`}
+                        style={{
+                          transform: `scaleX(${grown ? value / MAX_ASPECT : 0})`,
+                          transition: "transform 700ms cubic-bezier(0.16, 1, 0.3, 1)",
+                          transitionDelay: `${row * 70 + col * 90}ms`,
+                          boxShadow: isLeader ? `0 0 10px -2px ${accent.glow}` : "none",
+                        }}
+                      />
+                    </span>
+                  </div>
+                );
+              })}
+
+              <span
+                className={`font-display w-[2.4rem] flex-shrink-0 text-right tabular-nums font-black leading-none ${accent.text} ${
+                  roomy ? "text-[1.15rem]" : "text-[1rem]"
+                }`}
+                style={{ textShadow: `0 0 18px ${accent.glow}` }}
+              >
+                {total}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+
+      <p className="relative mt-8 text-[11px] font-semibold text-slate-600">Tap to skip →</p>
     </div>
   );
 }
