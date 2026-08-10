@@ -36,7 +36,8 @@ export default function NicknameField({ value, onChange }: Props) {
         className="card w-full px-4 py-3.5 text-[15px] font-semibold text-white placeholder:font-normal placeholder:text-slate-600 focus:border-amber-300/50 focus:outline-none"
       />
       <p className="mt-2 text-[11px] leading-relaxed text-slate-500">
-        Just for this match — everyone sees it on your cards and the scoreboard.
+        Everyone sees it on your cards and the scoreboard. Saved for next time — change it here
+        whenever you want.
       </p>
     </div>
   );

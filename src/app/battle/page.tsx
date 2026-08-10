@@ -8,7 +8,8 @@ import NicknameField, { isNicknameUsable } from "@/components/battle/NicknameFie
 import PackModePicker from "@/components/battle/PackModePicker";
 import PlayerCountPicker from "@/components/battle/PlayerCountPicker";
 import { createRoom } from "@/lib/battle/api";
-import { storePlayerId } from "@/lib/battle/session";
+import { storeNickname, storePlayerId } from "@/lib/battle/session";
+import { useNickname } from "@/lib/battle/useNickname";
 import { getEvent, parseEventTheme } from "@/lib/events";
 import { GENERATIONS } from "@/lib/generations";
 import { MIN_VOTE_PLAYERS, type JudgeMode } from "@/lib/battle/types";
@@ -36,7 +37,7 @@ function CreateRoom() {
   const [maxPlayers, setMaxPlayers] = useState(2);
   const [judgeMode, setJudgeMode] = useState<JudgeMode>("ai");
   const [packMode, setPackMode] = useState<PackMode>(parsePackMode(params.get("pack")));
-  const [nickname, setNickname] = useState("");
+  const [nickname, setNickname] = useNickname();
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
 
@@ -56,6 +57,7 @@ function CreateRoom() {
         nickname
       );
       storePlayerId(code, playerId);
+      storeNickname(nickname);
       router.push(`/battle/${code}`);
     } catch (err) {
       setCreateError(err instanceof Error ? err.message : "Failed to create room.");

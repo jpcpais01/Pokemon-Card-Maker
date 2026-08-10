@@ -6,7 +6,8 @@ import Icon from "@/components/ui/Icon";
 import NicknameField, { isNicknameUsable } from "@/components/battle/NicknameField";
 import { joinRoom } from "@/lib/battle/api";
 import { ROOM_CODE_LENGTH } from "@/lib/battle/roomCode";
-import { storePlayerId } from "@/lib/battle/session";
+import { storeNickname, storePlayerId } from "@/lib/battle/session";
+import { useNickname } from "@/lib/battle/useNickname";
 
 /**
  * Joining a room, as a sheet rather than a screen.
@@ -18,7 +19,7 @@ import { storePlayerId } from "@/lib/battle/session";
 export default function JoinRoomSheet({ onClose }: { onClose: () => void }) {
   const router = useRouter();
   const [code, setCode] = useState("");
-  const [nickname, setNickname] = useState("");
+  const [nickname, setNickname] = useNickname();
   const [joining, setJoining] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -32,6 +33,7 @@ export default function JoinRoomSheet({ onClose }: { onClose: () => void }) {
     try {
       const { code: roomCode, playerId } = await joinRoom(code.trim().toUpperCase(), nickname);
       storePlayerId(roomCode, playerId);
+      storeNickname(nickname);
       router.push(`/battle/${roomCode}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to join room.");

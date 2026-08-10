@@ -25,7 +25,8 @@ import {
   rerollCard,
 } from "@/lib/battle/api";
 import { computeMvp } from "@/lib/battle/mvp";
-import { getStoredPlayerId, storePlayerId } from "@/lib/battle/session";
+import { getStoredPlayerId, storeNickname, storePlayerId } from "@/lib/battle/session";
+import { useNickname } from "@/lib/battle/useNickname";
 import type { BattleRoom, RoundStatus } from "@/lib/battle/types";
 import type { CardKey } from "@/lib/cardFaces";
 
@@ -75,7 +76,7 @@ export default function BattleRoomPage() {
 
   const [joining, setJoining] = useState(false);
   const [joinError, setJoinError] = useState<string | null>(null);
-  const [nickname, setNickname] = useState("");
+  const [nickname, setNickname] = useNickname();
 
   const [images, setImages] = useState<Record<string, string>>({});
   const [voteImages, setVoteImages] = useState<Record<string, string>>({});
@@ -201,6 +202,7 @@ export default function BattleRoomPage() {
     try {
       const { playerId: newId } = await joinRoom(code, nickname);
       storePlayerId(code, newId);
+      storeNickname(nickname);
       setPlayerId(newId);
     } catch (err) {
       setJoinError(err instanceof Error ? err.message : "Failed to join room.");
