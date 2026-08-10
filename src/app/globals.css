@@ -499,33 +499,6 @@ body {
 
 /* Soft glossy highlight that tracks the pointer on every card, holo or not - the material cue that
    sells "physical card catching the light", not just a picture that leans. */
-/* Etched relief - two copies of the same edge map, one lit and one shadowed, that the tilt pulls
-   apart. Neither is a pattern in its own right: the geometry lives entirely in the mask
-   HoloCard.tsx builds from the artwork, so all these do is colour it and blend.
-
-   overlay for the lit side and multiply for the shadowed one. soft-light on both was the first
-   attempt and vanished completely over busy mid-tone artwork - a raised edge either catches the
-   light or it isn't there. What keeps that from wrecking the illustration isn't a gentler blend,
-   it's the threshold on the mask: only the strongest contours are raised at all. */
-@utility holo-card-etch {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 350ms ease-out;
-  will-change: transform, opacity;
-}
-
-@utility holo-card-etch-light {
-  background: #fff;
-  mix-blend-mode: overlay;
-}
-
-@utility holo-card-etch-dark {
-  background: #000;
-  mix-blend-mode: multiply;
-}
-
 @utility holo-card-glare {
   position: absolute;
   top: 50%;
