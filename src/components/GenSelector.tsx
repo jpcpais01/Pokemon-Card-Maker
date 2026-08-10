@@ -26,7 +26,9 @@ interface Props {
   startDisabled?: boolean;
   /** Shown above the title when this setup is running inside an event, so the
    *  theme stays visible while you're choosing pools and rules. */
-  eventBanner?: { label: string; blurb: string; gradient: string; image?: string };
+  /** Confirms which event this setup belongs to. Label only, deliberately: you arrive here
+   *  straight from the event hub, which has just shown you the blurb in full. */
+  eventBanner?: { label: string; gradient: string; image?: string };
 }
 
 /** Curated pools aren't real generations and get their own group. Real generations
@@ -98,7 +100,7 @@ export default function GenSelector({
       <div className="screen-pad flex flex-1 flex-col">
         {eventBanner && (
           <div
-            className="enter-up relative mb-4 mt-1 overflow-hidden rounded-2xl p-4"
+            className="enter-up relative mb-4 mt-1 overflow-hidden rounded-2xl px-4 py-3"
             style={{
               backgroundImage: eventBanner.image
                 ? `url("${eventBanner.image}"), ${eventBanner.gradient}`
@@ -120,7 +122,6 @@ export default function GenSelector({
             <p className="font-display relative mt-0.5 text-xl font-extrabold text-white">
               {eventBanner.label}
             </p>
-            <p className="relative mt-1 text-[12px] leading-relaxed text-white/85">{eventBanner.blurb}</p>
           </div>
         )}
 

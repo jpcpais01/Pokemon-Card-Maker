@@ -12,5 +12,5 @@ import { parseEventTheme } from "@/lib/events";
  */
 export default function SoloPackRoute({ mode }: { mode: SoloMode }) {
   const theme = parseEventTheme(useSearchParams().get("theme"));
-  return <SoloPackFlow mode={mode} theme={theme} />;
+  return <SoloPackFlow initialMode={mode} theme={theme} />;
 }

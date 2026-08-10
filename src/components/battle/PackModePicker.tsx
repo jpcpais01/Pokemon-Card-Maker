@@ -27,7 +27,7 @@ const HELP: Partial<Record<PackMode, string>> = {
 export default function PackModePicker({ value, onChange }: Props) {
   return (
     <Segmented
-      label="Game mode"
+      label="Pack type"
       options={OPTIONS}
       value={value}
       onChange={onChange}

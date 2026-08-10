@@ -1,53 +1,43 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Screen from "@/components/ui/Screen";
 import Icon from "@/components/ui/Icon";
-import Segmented from "@/components/ui/Segmented";
 import { eventBadge, getEvent, isEventLive, type EventTheme } from "@/lib/events";
 import { useHydrated } from "@/lib/useHydrated";
-import type { PackMode } from "@/lib/types";
 
 type PlayMode = "solo" | "bot" | "friend";
 
 const PLAY_MODES: { value: PlayMode; label: string; blurb: string; icon: "cards" | "bot" | "users" }[] = [
   { value: "solo", label: "Solo", blurb: "Open packs on your own", icon: "cards" },
-  { value: "bot", label: "vs Bots", blurb: "1–5 CPU opponents", icon: "bot" },
+  { value: "bot", label: "vs Bots", blurb: "1–9 CPU opponents", icon: "bot" },
   { value: "friend", label: "vs Friends", blurb: "Create a room to share", icon: "users" },
 ];
 
-const PACK_OPTIONS: { value: PackMode; label: string }[] = [
-  { value: "classic", label: "Classic" },
-  { value: "sir", label: "Only SIRs" },
-  { value: "tagteam", label: "Tag Teams" },
-  { value: "tagteamsir", label: "Tag Team SIRs" },
-  { value: "tripletagteamsir", label: "Triple Tag SIRs" },
-];
-
 /**
- * An event's entry point. Events are purely a coat of paint on the normal game,
- * so this screen deliberately gives away nothing: you still choose how to play
- * and which pack mode to run, then it hands off to the ordinary solo/bot/friend
- * setup with `?theme=` attached. Only the artwork direction changes.
+ * An event's entry point, and the only question it asks: how do you want to play.
+ *
+ * It used to also pick the pack type and then need a Continue tap to act on both. But the
+ * setup screen it hands off to asks for the pack type anyway, so that choice was being made
+ * twice in a row under two different names - and a radio group whose only effect is to arm a
+ * button is two taps for one decision. Each row now goes straight through, and the pack type
+ * is settled in the one place that was always going to ask for it.
  */
 export default function EventHub({ slug }: { slug: EventTheme }) {
   const router = useRouter();
   const event = getEvent(slug)!;
   const now = useHydrated();
   // Null until hydration, so a prerender built weeks ago is never the thing that
-  // decides an event is over - the setup only disappears once the browser confirms it.
+  // decides an event is over.
   const ended = now !== null && !isEventLive(event, now);
   const badge = eventBadge(event, now);
 
-  const [playMode, setPlayMode] = useState<PlayMode>("solo");
-  const [packMode, setPackMode] = useState<PackMode>("classic");
-
-  function start() {
+  function start(playMode: PlayMode) {
     const theme = `theme=${event.slug}`;
-    if (playMode === "solo") router.push(`/solo/${packMode}?${theme}`);
-    else if (playMode === "bot") router.push(`/bot?${theme}&pack=${packMode}`);
-    else router.push(`/battle?${theme}&pack=${packMode}&create=1`);
+    // Solo opens on the classic pack; every setup screen lets you change it from there.
+    if (playMode === "solo") router.push(`/solo/classic?${theme}`);
+    else if (playMode === "bot") router.push(`/bot?${theme}`);
+    else router.push(`/battle?${theme}&create=1`);
   }
 
   return (
@@ -97,81 +87,47 @@ export default function EventHub({ slug }: { slug: EventTheme }) {
             : event.blurb}
         </p>
 
-        {!ended && (
-          <>
-            <div className="enter-up mt-7" style={{ "--d": "80ms" } as React.CSSProperties}>
-              <p className="section-label mb-2.5">How do you want to play?</p>
-              <div className="flex flex-col gap-2">
-                {PLAY_MODES.map((m) => {
-                  const on = m.value === playMode;
-                  return (
-                    <button
-                      key={m.value}
-                      type="button"
-                      onClick={() => setPlayMode(m.value)}
-                      aria-pressed={on}
-                      className={`flex items-center gap-3.5 rounded-2xl border p-3.5 text-left transition-all duration-150 active:scale-[0.98] ${
-                        on
-                          ? "border-amber-300/45 bg-amber-400/[0.09]"
-                          : "border-white/[0.09] bg-white/[0.035]"
-                      }`}
-                    >
-                      <span
-                        className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl ${
-                          on ? "bg-amber-400/18 text-amber-300" : "bg-white/[0.06] text-slate-400"
-                        }`}
-                      >
-                        <Icon name={m.icon} size={19} />
-                      </span>
-                      <div className="min-w-0 flex-1">
-                        <p className={`text-[14.5px] font-bold ${on ? "text-white" : "text-slate-300"}`}>{m.label}</p>
-                        <p className="mt-0.5 text-[12px] text-slate-500">{m.blurb}</p>
-                      </div>
-                      <span
-                        className={`flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full border transition-colors ${
-                          on ? "border-amber-300 bg-amber-300 text-[#2a1705]" : "border-white/15"
-                        }`}
-                      >
-                        {on && <Icon name="check" size={11} strokeWidth={3.5} />}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
+        {ended ? (
+          <button
+            type="button"
+            onClick={() => router.push("/")}
+            className="btn-ghost enter-up mt-6 w-full"
+            style={{ "--d": "80ms" } as React.CSSProperties}
+          >
+            Back to packs
+          </button>
+        ) : (
+          <div className="enter-up mt-7" style={{ "--d": "80ms" } as React.CSSProperties}>
+            <p className="section-label mb-2.5">How do you want to play?</p>
+            <div className="flex flex-col gap-2">
+              {PLAY_MODES.map((m) => (
+                <button
+                  key={m.value}
+                  type="button"
+                  onClick={() => start(m.value)}
+                  className="group flex items-center gap-3.5 rounded-2xl border border-white/[0.09] bg-white/[0.035] p-3.5 text-left transition-all duration-150 active:scale-[0.98]"
+                >
+                  <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-white/[0.06] text-slate-400">
+                    <Icon name={m.icon} size={19} />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[14.5px] font-bold text-white">{m.label}</p>
+                    <p className="mt-0.5 text-[12px] text-slate-500">{m.blurb}</p>
+                  </div>
+                  <Icon
+                    name="chevron-right"
+                    size={18}
+                    className="flex-shrink-0 text-slate-600 transition-transform duration-150 group-active:translate-x-0.5"
+                  />
+                </button>
+              ))}
             </div>
-
-            <div className="enter-up mt-6" style={{ "--d": "140ms" } as React.CSSProperties}>
-              <Segmented
-                label="Pack type"
-                options={PACK_OPTIONS}
-                value={packMode}
-                onChange={setPackMode}
-                columns={2}
-                spanLast
-                help="Every normal pack type works inside the event — only the artwork theme is fixed."
-              />
-            </div>
-          </>
+            <p className="mt-3 text-center text-[11px] leading-relaxed text-slate-500">
+              Every pack type works inside the event — you&apos;ll pick one next. Only the artwork theme is
+              fixed.
+            </p>
+          </div>
         )}
-      </div>
-
-      <div className="sticky bottom-0 z-20 mt-7">
-        <div className="pointer-events-none absolute inset-x-0 -top-8 h-8 bg-gradient-to-t from-[#07070c] to-transparent" />
-        <div
-          className="screen-pad relative bg-[#07070c]"
-          style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 0.875rem)" }}
-        >
-          {ended ? (
-            <button type="button" onClick={() => router.push("/")} className="btn-ghost w-full">
-              Back to packs
-            </button>
-          ) : (
-            <button type="button" onClick={start} className="btn-primary w-full">
-              <Icon name="sparkles" size={17} />
-              Continue
-            </button>
-          )}
-        </div>
       </div>
     </Screen>
   );

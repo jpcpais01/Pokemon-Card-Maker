@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import GenSelector from "@/components/GenSelector";
+import PackModePicker from "@/components/battle/PackModePicker";
 import RevealScreen, { type CardKey, type RevealData, type RevealFlags } from "@/components/RevealScreen";
 import LoadingScreen from "@/components/LoadingScreen";
 import ErrorScreen from "@/components/ErrorScreen";
@@ -20,39 +21,31 @@ import type { PackMode, PokemonPick, PokemonRef } from "@/lib/types";
 
 export type SoloMode = PackMode;
 
-const MODE_COPY: Record<SoloMode, { eyebrow: string; title: string; subtitle: string; packEyebrow: string; forcedKeys: CardKey[] }> = {
+// Per-mode wording for the header and the reveal. The setup screen deliberately has no
+// per-mode blurb: the pack-type picker on it already explains whichever mode is selected.
+const MODE_COPY: Record<SoloMode, { eyebrow: string; packEyebrow: string; forcedKeys: CardKey[] }> = {
   classic: {
     eyebrow: "Classic Pack",
-    title: "Choose Your Pool",
-    subtitle: "Pick which Pokemon can show up, then open your pack for four random traits.",
     packEyebrow: "Your Pack",
     forcedKeys: [],
   },
   sir: {
     eyebrow: "Only SIRs",
-    title: "Guaranteed SIR",
-    subtitle: "Art type is locked to Special Illustration Rare. Form, vibe and Pokemon are still random.",
     packEyebrow: "SIR Pack",
     forcedKeys: ["artType"],
   },
   tagteam: {
     eyebrow: "Tag Teams",
-    title: "Guaranteed Tag Team",
-    subtitle: "Every pack pairs up two Pokemon. Art type, vibe and Pokemon are still random.",
     packEyebrow: "Tag Team Pack",
     forcedKeys: ["specialForm"],
   },
   tagteamsir: {
     eyebrow: "Tag Team SIRs",
-    title: "Guaranteed Tag Team SIR",
-    subtitle: "Two Pokemon at the top rarity tier. Vibe and Pokemon are still random.",
     packEyebrow: "Tag Team SIR Pack",
     forcedKeys: ["artType", "specialForm"],
   },
   tripletagteamsir: {
     eyebrow: "Triple Tag SIRs",
-    title: "Guaranteed Triple Tag SIR",
-    subtitle: "Three Pokemon on one Special Illustration Rare. Vibe and Pokemon are still random.",
     packEyebrow: "Triple Tag Team Pack",
     forcedKeys: ["artType", "specialForm"],
   },
@@ -73,7 +66,11 @@ async function postJson<T>(url: string, body: unknown): Promise<T> {
   return data as T;
 }
 
-export default function SoloPackFlow({ mode, theme }: { mode: SoloMode; theme?: EventTheme }) {
+export default function SoloPackFlow({ initialMode, theme }: { initialMode: SoloMode; theme?: EventTheme }) {
+  // The route only seeds this. Pack type is a setting on the setup screen like it is for
+  // bot and friend matches, rather than something you have to back out of the flow to
+  // change - which also lets the event hub stop asking for it a screen early.
+  const [mode, setMode] = useState<SoloMode>(initialMode);
   const copy = MODE_COPY[mode];
   const event = getEvent(theme);
 
@@ -307,10 +304,11 @@ export default function SoloPackFlow({ mode, theme }: { mode: SoloMode; theme?: 
         loading={poolLoading}
         error={poolError}
         eyebrow={event ? event.label : copy.eyebrow}
-        title={copy.title}
-        subtitle={copy.subtitle}
+        title="Set Up Your Pack"
+        subtitle="Pick which Pokemon can show up, then the kind of pack you want."
         back={event ? `/event/${event.slug}` : "/"}
-        eventBanner={event ? { label: event.label, blurb: event.blurb, gradient: event.gradient, image: event.image } : undefined}
+        eventBanner={event ? { label: event.label, gradient: event.gradient, image: event.image } : undefined}
+        extraTop={<PackModePicker value={mode} onChange={setMode} />}
       />
     );
   }

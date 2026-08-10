@@ -104,7 +104,7 @@ function BattleLobby() {
         loadingLabel="Creating room..."
         startDisabled={!isNicknameUsable(nickname)}
         back={event ? `/event/${event.slug}` : () => setMode("menu")}
-        eventBanner={event ? { label: event.label, blurb: event.blurb, gradient: event.gradient, image: event.image } : undefined}
+        eventBanner={event ? { label: event.label, gradient: event.gradient, image: event.image } : undefined}
         extraTop={
           <>
             <NicknameField value={nickname} onChange={setNickname} />
@@ -256,7 +256,7 @@ function BattleLobby() {
             </span>
             <div className="min-w-0 flex-1">
               <p className="text-[15px] font-bold text-white">Battle a Bot</p>
-              <p className="mt-0.5 text-[12.5px] text-slate-400">1–5 CPU opponents, play instantly</p>
+              <p className="mt-0.5 text-[12.5px] text-slate-400">1–9 CPU opponents, play instantly</p>
             </div>
             <Icon name="chevron-right" size={18} className="flex-shrink-0 text-slate-600" />
           </Link>
