@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import EventHub from "@/components/EventHub";
+import ModeHub from "@/components/ModeHub";
 import { EVENTS, getEvent } from "@/lib/events";
 
 export function generateStaticParams() {
@@ -10,5 +10,5 @@ export default async function EventPage({ params }: { params: Promise<{ slug: st
   const { slug } = await params;
   const event = getEvent(slug);
   if (!event) notFound();
-  return <EventHub slug={event.slug} />;
+  return <ModeHub slug={event.slug} />;
 }

@@ -4,6 +4,8 @@ export type ArtType = "ex" | "illustration-rare" | "special-illustration-rare";
 // "tripletagteamsir", the latter forcing a Triple Tag Team instead of a regular Tag Team) for a
 // whole pack-opening session or battle match; "classic" (the default) leaves both random.
 export type PackMode = "classic" | "sir" | "tagteam" | "tagteamsir" | "tripletagteamsir";
+/** Every pack mode, for validating one that arrived as a query param. */
+export const PACK_MODES: PackMode[] = ["classic", "sir", "tagteam", "tagteamsir", "tripletagteamsir"];
 
 // The mood/atmosphere the artwork gets rendered in - always exactly one of these 61, all equally
 // likely; unlike Special Form there is no "none"/default outcome.

@@ -617,10 +617,26 @@ body {
   will-change: transform, opacity;
 }
 
+/* Bottom sheet - rises from the edge it's anchored to, so it reads as pulled up
+   rather than dropped on top of the page. */
+@keyframes sheet-in {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+.sheet-in {
+  animation: sheet-in 320ms var(--ease-out) both;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .enter-up,
   .pop-in,
   .rise-in,
+  .sheet-in,
   .spotlight-in {
     animation-duration: 1ms;
     animation-delay: 0ms;

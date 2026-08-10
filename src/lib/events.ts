@@ -53,6 +53,23 @@ export interface EventDef {
   accent: string;
 }
 
+/**
+ * The game with no event layered on it.
+ *
+ * Deliberately not in EVENTS - it has no art direction, no pool of its own and never expires,
+ * so nothing that iterates events should pick it up. It carries the same identity fields
+ * because it is otherwise a mode like any other: it sits on the same shelf and opens the same
+ * hub, and the only difference is that it leaves the artwork alone.
+ */
+export const BASE_MODE = {
+  label: "Classic Pack",
+  tagline: "Four random traits, one AI-painted card",
+  blurb:
+    "The game with nothing layered on top - four random traits and whatever the AI paints from them. Play it however you like: solo, against bots, or against a friend, in any pack mode.",
+  image: "/modes/classic.jpg",
+  gradient: "linear-gradient(150deg, #fbbf24 0%, #ea7c0b 45%, #4a1d05 100%)",
+};
+
 export const EVENTS: EventDef[] = [
   {
     slug: "eclipse",

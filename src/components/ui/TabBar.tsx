@@ -12,9 +12,12 @@ interface Tab {
   match: string[];
 }
 
+// No Battle tab: every mode's hub now offers vs-bots and vs-friends directly, which left
+// that section duplicating three rows it no longer owned. Joining a room - the one thing it
+// had to itself - is a sheet on Packs. Everything that used to live under it still lights
+// Packs up, since that's where you came from.
 const TABS: Tab[] = [
-  { href: "/", label: "Packs", icon: "cards", match: ["/solo"] },
-  { href: "/battle", label: "Battle", icon: "swords", match: ["/battle", "/bot"] },
+  { href: "/", label: "Packs", icon: "cards", match: ["/play", "/solo", "/bot", "/battle", "/event"] },
   { href: "/gallery", label: "Binder", icon: "binder", match: ["/gallery"] },
 ];
 
@@ -26,7 +29,7 @@ function isActive(pathname: string, tab: Tab): boolean {
 /**
  * Persistent bottom navigation - the single strongest "this is an app, not a
  * page" signal, and it maps directly onto what the app actually does: open
- * packs, battle, browse your collection.
+ * packs and browse your collection.
  *
  * Deliberately not rendered on immersive flow screens (reveal, result, an
  * active battle round); those own the whole viewport and `Screen` opts out via

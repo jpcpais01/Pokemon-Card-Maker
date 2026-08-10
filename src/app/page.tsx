@@ -5,7 +5,8 @@ import Link from "next/link";
 import Screen from "@/components/ui/Screen";
 import Icon from "@/components/ui/Icon";
 import { getServerMuted, isMuted, subscribe, toggleMuted } from "@/lib/audio";
-import { EVENTS, eventBadge, isEventLive } from "@/lib/events";
+import JoinRoomSheet from "@/components/battle/JoinRoomSheet";
+import { BASE_MODE, EVENTS, eventBadge, isEventLive } from "@/lib/events";
 import { getFavorites } from "@/lib/favorites";
 import { useHydrated } from "@/lib/useHydrated";
 
@@ -19,12 +20,13 @@ interface Feature {
   gradient: string;
 }
 
+/** The base game sits on the shelf as a mode like any other, and opens the same hub. */
 const CLASSIC_PACK: Feature = {
-  href: "/solo/classic",
-  label: "Classic Pack",
-  tagline: "Four random traits, one AI-painted card",
-  image: "/modes/classic.jpg",
-  gradient: "linear-gradient(150deg, #fbbf24 0%, #ea7c0b 45%, #4a1d05 100%)",
+  href: "/play",
+  label: BASE_MODE.label,
+  tagline: BASE_MODE.tagline,
+  image: BASE_MODE.image,
+  gradient: BASE_MODE.gradient,
 };
 
 /** Every running event first - they're the timely thing worth surfacing - then the normal
@@ -45,11 +47,13 @@ function buildFeatured(now: number | null): Feature[] {
   ];
 }
 
+/** Shortcuts into the same hub with a pack type already chosen - the hub still asks how you
+ *  want to play, so these are a head start rather than a solo-only side door. */
 const MODES = [
-  { href: "/solo/sir", title: "Only SIRs", blurb: "Every pull is a Special Illustration Rare" },
-  { href: "/solo/tagteam", title: "Tag Teams", blurb: "Two Pokemon share every illustration" },
-  { href: "/solo/tagteamsir", title: "Tag Team SIRs", blurb: "Two Pokemon, top rarity tier" },
-  { href: "/solo/tripletagteamsir", title: "Triple Tag Team SIRs", blurb: "Three Pokemon on one SIR" },
+  { href: "/play?pack=sir", title: "Only SIRs", blurb: "Every pull is a Special Illustration Rare" },
+  { href: "/play?pack=tagteam", title: "Tag Teams", blurb: "Two Pokemon share every illustration" },
+  { href: "/play?pack=tagteamsir", title: "Tag Team SIRs", blurb: "Two Pokemon, top rarity tier" },
+  { href: "/play?pack=tripletagteamsir", title: "Triple Tag Team SIRs", blurb: "Three Pokemon on one SIR" },
 ];
 
 export default function Home() {
@@ -57,6 +61,7 @@ export default function Home() {
   const now = useHydrated();
   const featured = buildFeatured(now);
   const muted = useSyncExternalStore(subscribe, isMuted, getServerMuted);
+  const [joining, setJoining] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -187,18 +192,22 @@ export default function Home() {
             ))}
           </div>
 
-          <Link
-            href="/battle"
-            className="card enter-up group mt-7 flex items-center gap-3.5 overflow-hidden p-4 transition-transform duration-150 active:scale-[0.98]"
+          {/* Everything the old Battle section offered - start against bots or friends - now
+              lives on each mode's own hub, so joining someone else's room is the only part of
+              it that still needs a door of its own. Two fields, so it opens as a sheet. */}
+          <button
+            type="button"
+            onClick={() => setJoining(true)}
+            className="card enter-up group mt-7 flex w-full items-center gap-3.5 p-4 text-left transition-transform duration-150 active:scale-[0.98]"
             style={{ "--d": "420ms" } as React.CSSProperties}
           >
             <span className="brand-gradient flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl text-white shadow-lg shadow-fuchsia-500/25">
               <Icon name="swords" size={21} />
             </span>
             <div className="min-w-0 flex-1">
-              <p className="text-[15px] font-bold text-white">Card Showdown</p>
+              <p className="text-[15px] font-bold text-white">Join a Room</p>
               <p className="mt-0.5 truncate text-[12.5px] text-slate-400">
-                Battle friends or bots — an AI judges every round
+                Got a code from a friend? Jump into their match
               </p>
             </div>
             <Icon
@@ -206,9 +215,11 @@ export default function Home() {
               size={18}
               className="flex-shrink-0 text-slate-600 transition-transform duration-150 group-active:translate-x-0.5"
             />
-          </Link>
+          </button>
         </div>
       </div>
+
+      {joining && <JoinRoomSheet onClose={() => setJoining(false)} />}
     </Screen>
   );
 }

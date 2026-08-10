@@ -317,8 +317,8 @@ export default function BattleRoomPage() {
           >
             {joining ? "Joining..." : "Join Room"}
           </button>
-          <Link href="/battle" className="btn-quiet mt-2 w-full">
-            Back to Lobby
+          <Link href="/" className="btn-quiet mt-2 w-full">
+            Back to Packs
           </Link>
         </div>
       </div>
@@ -330,7 +330,7 @@ export default function BattleRoomPage() {
       <ErrorScreen
         message={room ? `${fatalError} (still trying to reconnect...)` : fatalError}
         onRetry={refresh}
-        onStartOver={() => window.location.assign("/battle")}
+        onStartOver={() => window.location.assign("/")}
       />
     );
   }
@@ -449,7 +449,7 @@ export default function BattleRoomPage() {
             stuck={isStuck}
             onRetry={handleForceAdvance}
             retryBusy={actionBusy}
-            leaveHref="/battle"
+            leaveHref="/"
           />
         )}
 

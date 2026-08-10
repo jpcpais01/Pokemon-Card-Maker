@@ -12,9 +12,7 @@ import { storePlayerId } from "@/lib/battle/session";
 import { getEvent, parseEventTheme } from "@/lib/events";
 import { GENERATIONS } from "@/lib/generations";
 import { MIN_VOTE_PLAYERS, type JudgeMode } from "@/lib/battle/types";
-import type { PackMode } from "@/lib/types";
-
-const PACK_MODES: PackMode[] = ["classic", "sir", "tagteam", "tagteamsir", "tripletagteamsir"];
+import { PACK_MODES, type PackMode } from "@/lib/types";
 
 function parsePackMode(value: string | null): PackMode {
   return PACK_MODES.includes(value as PackMode) ? (value as PackMode) : "classic";
@@ -70,7 +68,7 @@ function BotSetup() {
       subtitle="Pick the pool, how many players, and the match rules."
       buttonLabel="Start Match"
       loadingLabel="Starting match..."
-      back={event ? `/event/${event.slug}` : "/battle"}
+      back={event ? `/event/${event.slug}` : "/play"}
       eventBanner={event ? { label: event.label, gradient: event.gradient, image: event.image } : undefined}
       extraTop={
         <>

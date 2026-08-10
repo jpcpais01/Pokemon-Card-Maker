@@ -3,8 +3,9 @@
 import { useRouter } from "next/navigation";
 import Screen from "@/components/ui/Screen";
 import Icon from "@/components/ui/Icon";
-import { eventBadge, getEvent, isEventLive, type EventTheme } from "@/lib/events";
+import { BASE_MODE, eventBadge, getEvent, isEventLive, type EventTheme } from "@/lib/events";
 import { useHydrated } from "@/lib/useHydrated";
+import type { PackMode } from "@/lib/types";
 
 type PlayMode = "solo" | "bot" | "friend";
 
@@ -14,43 +15,55 @@ const PLAY_MODES: { value: PlayMode; label: string; blurb: string; icon: "cards"
   { value: "friend", label: "vs Friends", blurb: "Create a room to share", icon: "users" },
 ];
 
+interface Props {
+  /** Omitted for the base game, which is a mode like any other minus the art direction. */
+  slug?: EventTheme;
+  /** Carried straight through to the setup screen when a shelf shortcut named a pack type. */
+  pack?: PackMode;
+}
+
 /**
- * An event's entry point, and the only question it asks: how do you want to play.
+ * The single entry point into a game, for events and the base game alike.
  *
- * It used to also pick the pack type and then need a Continue tap to act on both. But the
- * setup screen it hands off to asks for the pack type anyway, so that choice was being made
- * twice in a row under two different names - and a radio group whose only effect is to arm a
- * button is two taps for one decision. Each row now goes straight through, and the pack type
- * is settled in the one place that was always going to ask for it.
+ * Every mode asks the same one question here - how do you want to play - and then hands off to
+ * the setup screen for that answer. The base game used to skip this and drop you straight into
+ * a solo pack, which quietly made "solo" the only way to play it and left vs-bots and
+ * vs-friends reachable only through a separate Battle section that duplicated these three rows.
  */
-export default function EventHub({ slug }: { slug: EventTheme }) {
+export default function ModeHub({ slug, pack }: Props) {
   const router = useRouter();
-  const event = getEvent(slug)!;
+  const event = slug ? getEvent(slug) : undefined;
+  const identity = event ?? BASE_MODE;
   const now = useHydrated();
   // Null until hydration, so a prerender built weeks ago is never the thing that
-  // decides an event is over.
-  const ended = now !== null && !isEventLive(event, now);
-  const badge = eventBadge(event, now);
+  // decides an event is over. The base game never ends.
+  const ended = !!event && now !== null && !isEventLive(event, now);
+  const badge = event ? eventBadge(event, now) : undefined;
 
   function start(playMode: PlayMode) {
-    const theme = `theme=${event.slug}`;
-    // Solo opens on the classic pack; every setup screen lets you change it from there.
-    if (playMode === "solo") router.push(`/solo/classic?${theme}`);
-    else if (playMode === "bot") router.push(`/bot?${theme}`);
-    else router.push(`/battle?${theme}&create=1`);
+    const params = new URLSearchParams();
+    if (event) params.set("theme", event.slug);
+    if (pack) params.set("pack", pack);
+    const query = params.toString();
+    const suffix = query ? `?${query}` : "";
+
+    // Solo's pack is still part of its path; every setup screen lets you change it from there.
+    if (playMode === "solo") router.push(`/solo/${pack ?? "classic"}${event ? `?theme=${event.slug}` : ""}`);
+    else if (playMode === "bot") router.push(`/bot${suffix}`);
+    else router.push(`/battle${suffix}`);
   }
 
   return (
-    <Screen immersive back="/" title="Event">
+    <Screen immersive back="/" title={event ? "Event" : "Mode"}>
       <div className="screen-pad flex flex-1 flex-col">
-        {/* Event hero. The background image lives in public/modes/; until it
-            exists the gradient underneath carries the banner on its own.
-            Only the badge and title sit on the art - the longer blurb goes
-            below it, where it stays readable over whatever the artwork does. */}
+        {/* Hero. The background image lives in public/modes/; until it exists the
+            gradient underneath carries the banner on its own. Only the badge and
+            title sit on the art - the longer blurb goes below it, where it stays
+            readable over whatever the artwork does. */}
         <div
           className="enter-up relative overflow-hidden rounded-3xl"
           style={{
-            backgroundImage: `url("${event.image}"), ${event.gradient}`,
+            backgroundImage: `url("${identity.image}"), ${identity.gradient}`,
             backgroundSize: "cover",
             backgroundPosition: "center",
           }}
@@ -73,7 +86,7 @@ export default function EventHub({ slug }: { slug: EventTheme }) {
               className="font-display text-[2.15rem] font-extrabold leading-none tracking-tight text-white"
               style={{ textShadow: "0 2px 14px rgb(0 0 0 / 70%)" }}
             >
-              {event.label}
+              {identity.label}
             </h1>
           </div>
         </div>
@@ -84,7 +97,7 @@ export default function EventHub({ slug }: { slug: EventTheme }) {
         >
           {ended
             ? "This event has finished, so it can't be played any more. Everything you pulled during it is still in your binder."
-            : event.blurb}
+            : identity.blurb}
         </p>
 
         {ended ? (
@@ -123,8 +136,9 @@ export default function EventHub({ slug }: { slug: EventTheme }) {
               ))}
             </div>
             <p className="mt-3 text-center text-[11px] leading-relaxed text-slate-500">
-              Every pack type works inside the event — you&apos;ll pick one next. Only the artwork theme is
-              fixed.
+              {event
+                ? "Every pack type works inside the event — you'll pick one next. Only the artwork theme is fixed."
+                : "You'll pick the pack type and the Pokemon pool next."}
             </p>
           </div>
         )}
