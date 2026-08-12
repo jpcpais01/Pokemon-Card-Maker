@@ -13,6 +13,9 @@ export const WEED_GEN_ID = -4;
 /** Not a real generation - a curated pool for the Portuguese Culture event: the Atlantic, the
  *  fishing coast, the Galo de Barcelos, azulejo blues, fado and the country's animals. */
 export const PORTUGAL_GEN_ID = -5;
+/** Not a real generation - a curated pool for the Rick and Morty event: mad-science brains,
+ *  gooey blobs, machines and outright aliens, plus the faces from the crossover art itself. */
+export const PORTALS_GEN_ID = -6;
 
 export const GENERATIONS: Generation[] = [
   { id: 1, label: "Gen I", region: "Kanto" },
@@ -30,6 +33,7 @@ export const GENERATIONS: Generation[] = [
   { id: POOL_PARTY_GEN_ID, label: "Pool Party", region: "Beach & Summer" },
   { id: WEED_GEN_ID, label: "Weed", region: "Leafy & Hazy" },
   { id: PORTUGAL_GEN_ID, label: "Portugal", region: "Sea & Azulejo" },
+  { id: PORTALS_GEN_ID, label: "Portals", region: "Aliens & Gadgets" },
 ];
 
 /** True only when Baddies is the sole selected generation, not just one of several. */
@@ -413,6 +417,77 @@ const PORTUGAL_SPECIES: PokemonRef[] = [
   { id: 869, name: "alcremie" },
 ];
 
+/**
+ * The Rick and Morty pool - Pokemon that can carry an interdimensional disaster without the
+ * art having to explain itself:
+ * - the mad-science brains for the lab coat and the flask - the Abra line, Mewtwo, Metagross,
+ *   the Porygon line, Genesect
+ * - things that already look like they came through a portal - Elgyem, Beheeyem, Deoxys,
+ *   Lunatone, Solrock, Claydol, Golurk, Cryogonal, Unown, and the Ultra Beasts
+ * - the gooey blob aliens - Grimer, Muk, Ditto, the Goomy and Solosis lines, Gulpin
+ * - the ray guns and duct-taped gadgets - the Magnemite and Klink lines, Rotom, Voltorb
+ * - the toxic gas and the ghosts for the fumes and the screaming - Koffing, Weezing, Gengar
+ * - and the cast from the crossover art itself: Charizard, Pikachu, Jigglypuff, Gyarados, Meowth
+ */
+const PORTALS_SPECIES: PokemonRef[] = [
+  { id: 6, name: "charizard" },
+  { id: 25, name: "pikachu" },
+  { id: 39, name: "jigglypuff" },
+  { id: 52, name: "meowth" },
+  { id: 63, name: "abra" },
+  { id: 64, name: "kadabra" },
+  { id: 65, name: "alakazam" },
+  { id: 81, name: "magnemite" },
+  { id: 82, name: "magneton" },
+  { id: 88, name: "grimer" },
+  { id: 89, name: "muk" },
+  { id: 94, name: "gengar" },
+  { id: 100, name: "voltorb" },
+  { id: 101, name: "electrode" },
+  { id: 109, name: "koffing" },
+  { id: 110, name: "weezing" },
+  { id: 120, name: "staryu" },
+  { id: 121, name: "starmie" },
+  { id: 130, name: "gyarados" },
+  { id: 132, name: "ditto" },
+  { id: 137, name: "porygon" },
+  { id: 150, name: "mewtwo" },
+  { id: 151, name: "mew" },
+  { id: 201, name: "unown" },
+  { id: 233, name: "porygon2" },
+  { id: 316, name: "gulpin" },
+  { id: 317, name: "swalot" },
+  { id: 337, name: "lunatone" },
+  { id: 338, name: "solrock" },
+  { id: 343, name: "baltoy" },
+  { id: 344, name: "claydol" },
+  { id: 375, name: "metang" },
+  { id: 376, name: "metagross" },
+  { id: 386, name: "deoxys" },
+  { id: 437, name: "bronzong" },
+  { id: 462, name: "magnezone" },
+  { id: 474, name: "porygon-z" },
+  { id: 479, name: "rotom" },
+  { id: 577, name: "solosis" },
+  { id: 578, name: "duosion" },
+  { id: 579, name: "reuniclus" },
+  { id: 599, name: "klink" },
+  { id: 601, name: "klinklang" },
+  { id: 605, name: "elgyem" },
+  { id: 606, name: "beheeyem" },
+  { id: 615, name: "cryogonal" },
+  { id: 622, name: "golett" },
+  { id: 623, name: "golurk" },
+  { id: 649, name: "genesect" },
+  { id: 704, name: "goomy" },
+  { id: 705, name: "sliggoo" },
+  { id: 706, name: "goodra" },
+  { id: 793, name: "nihilego" },
+  { id: 795, name: "pheromosa" },
+  { id: 797, name: "celesteela" },
+  { id: 799, name: "guzzlord" },
+];
+
 const genCache = new Map<number, Promise<PokemonRef[]>>();
 
 /** A handful of species whose kebab-case PokeAPI name doesn't title-case cleanly. */
@@ -461,6 +536,7 @@ async function fetchGeneration(genId: number): Promise<PokemonRef[]> {
   if (genId === POOL_PARTY_GEN_ID) return POOL_PARTY_SPECIES;
   if (genId === WEED_GEN_ID) return WEED_SPECIES;
   if (genId === PORTUGAL_GEN_ID) return PORTUGAL_SPECIES;
+  if (genId === PORTALS_GEN_ID) return PORTALS_SPECIES;
   const res = await fetch(`https://pokeapi.co/api/v2/generation/${genId}`);
   if (!res.ok) throw new Error(`Failed to load generation ${genId}`);
   const data = await res.json();

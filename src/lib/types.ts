@@ -7,7 +7,7 @@ export type PackMode = "classic" | "sir" | "tagteam" | "tagteamsir" | "tripletag
 /** Every pack mode, for validating one that arrived as a query param. */
 export const PACK_MODES: PackMode[] = ["classic", "sir", "tagteam", "tagteamsir", "tripletagteamsir"];
 
-// The creative concept the artwork is built around - always exactly one of these 63, all equally
+// The creative concept the artwork is built around - always exactly one of these 62, all equally
 // likely; unlike Special Form there is no "none"/default outcome.
 export type Vibe =
   | "cozy"
@@ -71,8 +71,7 @@ export type Vibe =
   | "secret"
   | "sports-promo"
   | "one-piece"
-  | "statue"
-  | "rick-and-morty";
+  | "statue";
 
 // A single combined pool: special forms (Shiny, Mega, Tag Team, ...) and regional forms
 // (Alolan, Galarian, ...) are mutually exclusive outcomes of the same roll/card, not two

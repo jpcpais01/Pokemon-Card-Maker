@@ -10,6 +10,7 @@ Background images for the home carousel cards and the event hero screens.
 | `weed.jpg`       | Weed event card + hero        |
 | `eclipse.jpg`    | Eclipse event card + hero     |
 | `portuguese-culture.jpg` | Portuguese Culture event card + hero |
+| `rick-and-morty.jpg` | Rick and Morty event card + hero |
 
 To swap one out, keep the filename (including the extension), or update
 `image` in `src/lib/events.ts` / `FEATURED` in `src/app/page.tsx` to match.

@@ -1,6 +1,7 @@
 import {
   BADDIES_GEN_ID,
   POOL_PARTY_GEN_ID,
+  PORTALS_GEN_ID,
   PORTUGAL_GEN_ID,
   TOP_100_GEN_ID,
   WEED_GEN_ID,
@@ -13,7 +14,13 @@ import {
  * pull from. All it does is steer the artwork - and, in battle, tell the judge
  * what the match is going for.
  */
-export type EventTheme = "pool-party" | "baddies" | "weed" | "eclipse" | "portuguese-culture";
+export type EventTheme =
+  | "pool-party"
+  | "baddies"
+  | "weed"
+  | "eclipse"
+  | "portuguese-culture"
+  | "rick-and-morty";
 
 export interface EventDef {
   slug: EventTheme;
@@ -95,6 +102,32 @@ export const EVENTS: EventDef[] = [
     gradient:
       "radial-gradient(circle at 50% 35%, #05040c 0 12%, rgba(5,4,12,0) 12.5%), radial-gradient(circle at 50% 35%, #fffdf2 12.2%, #ffeab0 14%, #ffb43c 17.5%, #c2510f 23%, #4b1d5e 44%, #170b2f 70%, #05040f 100%)",
     accent: "text-amber-200",
+  },
+  {
+    slug: "rick-and-morty",
+    label: "Rick and Morty",
+    tagline: "Portals, bad science and worse decisions",
+    blurb:
+      "Every card becomes a scene from an unhinged interdimensional misadventure - a reckless genius, a sidekick who wants no part of it, and a portal that should never have been opened. Play it however you like: solo, against bots, or against a friend, in any pack mode. Only the artwork changes.",
+    defaultGens: [PORTALS_GEN_ID],
+    // Most of this is spent on the *casting* rather than the palette, because that's what the
+    // event is actually for: handed only the look, a drafting model paints a green portal
+    // behind a normal Pokemon portrait and calls it done. The dynamic - who is dragging whom
+    // into what, and the faces they're making about it - is the part worth spelling out, so
+    // the single-Pokemon case gets its own instruction rather than being left to chance.
+    promptDirection:
+      'Event theme - "Rick and Morty": build this card as one moment from an unhinged interdimensional misadventure, and commit to the personalities and the interaction as much as to the look. Cast the Pokemon into that double act. One is the manic, motor-mouthed genius - white lab coat, wild hair, a smoking flask in one hand and some duct-taped raygun in the other, drunk on its own cleverness and completely unbothered by the catastrophe it just caused. The other is the jittery sidekick being dragged along against its will, wide-eyed and mid-protest, visibly regretting every decision that led here. If there is only one Pokemon on the card, it plays the reckless genius alone, caught mid-experiment as the whole thing goes wrong behind it. The faces carry the joke: bulging cartoon eyes, drool, screaming panic on one and a flat deadpan stare on the other while something explodes between them. Around them, work in whatever fits - a swirling green portal tearing the frame open, an acid-green and neon-purple sky with ringed alien planets and streaking comets, jagged alien rock, gooey blob aliens and small shrieking creatures, scattered gadgets, wires and laser fire treated as ordinary background noise. Draw it with thick black outlines and flat, blazing, oversaturated cartoon color. Everything played completely straight-faced, no matter how absurd it gets. This theme sets the scene, the casting and the comedy; keep the vibe, special form and rarity tier driving the mood, action and rendering as they normally would.',
+    styleDirection:
+      " This is a Rick and Morty event card - the whole scene is an unhinged interdimensional misadventure rendered in thick black outlines and flat, acid-bright oversaturated cartoon color: a swirling green portal, a neon-purple sky with alien planets, jagged alien terrain, slimy blob aliens, duct-taped gadgets and rayguns, explosions going off unremarked in the background, and the Pokemon playing it as a manic reckless genius dragging a panicking sidekick along - bulging cartoon eyes, screaming and deadpan faces side by side. Keep every Pokemon's official design, proportions and colors completely accurate.",
+    judgeContext:
+      'This match is a "Rick and Morty" event - every card is aiming for an unhinged interdimensional misadventure: swirling green portals, acid-bright alien skies and terrain, improvised gadgets and slimy aliens, thick-outlined cartoon rendering, and above all the comic double act between a manic reckless genius and the panicking sidekick dragged along with it. Factor in how well each illustration sells that dynamic - the expressions, the interaction, the chaos being played deadpan - and not just the neon and the portal, alongside its normal artistic merit.',
+    image: "/modes/rick-and-morty.jpg",
+    // The portal first: a hot green core that fades out well before the edges, so it reads as a
+    // hole punched in the frame rather than a glow laid over it. Everything under it is the
+    // purple void it opened into. Sits below the artwork, and covers for it while it loads.
+    gradient:
+      "radial-gradient(ellipse 42% 34% at 50% 42%, #e8ff7a 0%, #8ef23f 16%, #2fbf52 32%, rgba(47,191,82,0) 58%), linear-gradient(150deg, #a855f7 0%, #7c3aed 32%, #4c1d95 60%, #1a0733 100%)",
+    accent: "text-emerald-200",
   },
   {
     slug: "portuguese-culture",
