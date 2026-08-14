@@ -7,7 +7,7 @@ import Icon from "@/components/ui/Icon";
 import { getServerMuted, isMuted, subscribe, toggleMuted } from "@/lib/audio";
 import JoinRoomSheet from "@/components/battle/JoinRoomSheet";
 import { BASE_MODE, EVENTS, eventBadge, isEventLive } from "@/lib/events";
-import { getFavorites } from "@/lib/favorites";
+import { countFavorites } from "@/lib/favorites";
 import { useHydrated } from "@/lib/useHydrated";
 
 interface Feature {
@@ -65,8 +65,8 @@ export default function Home() {
 
   useEffect(() => {
     let cancelled = false;
-    getFavorites().then((favs) => {
-      if (!cancelled) setFavoriteCount(favs.length);
+    countFavorites().then((count) => {
+      if (!cancelled) setFavoriteCount(count);
     });
     return () => {
       cancelled = true;

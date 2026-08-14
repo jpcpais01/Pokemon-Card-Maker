@@ -83,19 +83,92 @@ function openDb(): Promise<IDBDatabase> {
   });
 }
 
-/** Newest first. */
-export async function getFavorites(): Promise<FavoriteCard[]> {
+/** A binder entry with the full-size artwork left behind in the database. */
+export type FavoriteSummary = Omit<FavoriteCard, "image">;
+
+/**
+ * Every saved card, newest first, *without* its full-size image.
+ *
+ * The grid only ever draws `thumbnail`, but a `getAll()` would hand back every full-size data
+ * URL along with it and hold the lot in memory for as long as the binder is open - megabytes
+ * per card, which is what made a well-stocked binder slow to open and, on a phone, able to
+ * take the tab down with it. Walking a cursor and copying out just the fields the grid needs
+ * lets each full record be collected as soon as it's been read, so peak memory is one card
+ * rather than all of them. The lightbox pulls the real image by id when it actually opens.
+ */
+export async function getFavoriteSummaries(): Promise<FavoriteSummary[]> {
   if (typeof window === "undefined") return [];
   try {
     const db = await openDb();
-    const favorites = await new Promise<FavoriteCard[]>((resolve, reject) => {
-      const req = db.transaction(STORE_NAME, "readonly").objectStore(STORE_NAME).getAll();
-      req.onsuccess = () => resolve(req.result as FavoriteCard[]);
+    const summaries = await new Promise<FavoriteSummary[]>((resolve, reject) => {
+      const out: FavoriteSummary[] = [];
+      const req = db.transaction(STORE_NAME, "readonly").objectStore(STORE_NAME).openCursor();
+      req.onsuccess = () => {
+        const cursor = req.result;
+        if (!cursor) {
+          resolve(out);
+          return;
+        }
+        // Destructured out rather than deleted, so the big string is never copied into
+        // anything that outlives this iteration.
+        const { image, ...summary } = cursor.value as FavoriteCard;
+        void image;
+        out.push(summary);
+        cursor.continue();
+      };
       req.onerror = () => reject(req.error);
     });
-    return favorites.sort((a, b) => b.savedAt - a.savedAt);
+    return summaries.sort((a, b) => b.savedAt - a.savedAt);
   } catch {
     return [];
+  }
+}
+
+/**
+ * How many cards are in the binder. Uses IndexedDB's own count, which reads no record bodies at
+ * all - the home screen only wants the number on the binder tab, and loading a shelf of
+ * multi-megabyte images to call `.length` on it was the most expensive thing that screen did.
+ */
+export async function countFavorites(): Promise<number> {
+  if (typeof window === "undefined") return 0;
+  try {
+    const db = await openDb();
+    return await new Promise<number>((resolve, reject) => {
+      const req = db.transaction(STORE_NAME, "readonly").objectStore(STORE_NAME).count();
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+  } catch {
+    return 0;
+  }
+}
+
+/** The full-size artwork for one saved card, loaded only when something actually shows it. */
+export async function getFavoriteImage(id: string): Promise<string | null> {
+  if (typeof window === "undefined") return null;
+  try {
+    const db = await openDb();
+    return await new Promise<string | null>((resolve, reject) => {
+      const req = db.transaction(STORE_NAME, "readonly").objectStore(STORE_NAME).get(id);
+      req.onsuccess = () => resolve((req.result as FavoriteCard | undefined)?.image ?? null);
+      req.onerror = () => reject(req.error);
+    });
+  } catch {
+    return null;
+  }
+}
+
+export async function removeFavoriteById(id: string): Promise<void> {
+  try {
+    const db = await openDb();
+    await new Promise<void>((resolve, reject) => {
+      const tx = db.transaction(STORE_NAME, "readwrite");
+      tx.objectStore(STORE_NAME).delete(id);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+  } catch {
+    // Nothing more we can do if the delete fails.
   }
 }
 
@@ -142,15 +215,16 @@ export async function addFavorite(card: Omit<FavoriteCard, "id" | "savedAt" | "t
 /** Silently upgrades one entry saved before thumbnails existed - the gallery calls this in the
  *  background for anything missing one, so a binder self-heals to the fast path over time without
  *  requiring a risky bulk migration of everyone's existing saved images. */
-export async function backfillThumbnail(fav: FavoriteCard): Promise<string | undefined> {
-  if (fav.thumbnail) return fav.thumbnail;
+export async function backfillThumbnail(id: string): Promise<string | undefined> {
   try {
-    const thumbnail = await generateThumbnail(fav.image);
+    const image = await getFavoriteImage(id);
+    if (!image) return undefined;
+    const thumbnail = await generateThumbnail(image);
     const db = await openDb();
     await new Promise<void>((resolve, reject) => {
       const tx = db.transaction(STORE_NAME, "readwrite");
       const store = tx.objectStore(STORE_NAME);
-      const getReq = store.get(fav.id);
+      const getReq = store.get(id);
       getReq.onsuccess = () => {
         const existing = getReq.result as FavoriteCard | undefined;
         if (existing) store.put({ ...existing, thumbnail });

@@ -41,6 +41,20 @@ const GENERATING_MESSAGES: Partial<Record<RoundStatus, string>> = {
 };
 
 /**
+ * Drops every cached image that isn't from the round currently on screen.
+ *
+ * Card art arrives as a data URL that is megabytes of JavaScript string, and only the current
+ * round's is ever rendered - nothing on screen can reach back to an earlier round. Without this
+ * the map just grew: a full ten-player match ended up holding fifty of them at once, which is
+ * enough to get a phone's renderer killed outright ("This page couldn't load"). The one card
+ * that does outlive its round, the end-of-match MVP, is fetched separately and kept on its own.
+ */
+function onlyRound<T>(cache: Record<string, T>, round: number): Record<string, T> {
+  const prefix = `${round}:`;
+  return Object.fromEntries(Object.entries(cache).filter(([key]) => key.startsWith(prefix)));
+}
+
+/**
  * Ordered: every non-self player, in room order.
  *
  * A nickname the player typed on their way in always wins. Everyone else falls back to the
@@ -146,7 +160,7 @@ export default function BattleRoomPage() {
       const key = `${roundNumber}:${pid}`;
       if (images[key]) continue;
       fetchBattleImage(code, roundNumber, pid, playerId)
-        .then(({ image }) => setImages((prev) => ({ ...prev, [key]: image })))
+        .then(({ image }) => setImages((prev) => ({ ...onlyRound(prev, roundNumber), [key]: image })))
         .catch(() => {});
     }
   }, [code, playerId, room, images]);
@@ -162,7 +176,7 @@ export default function BattleRoomPage() {
       const key = `${roundNumber}:${slot}`;
       if (voteImages[key]) continue;
       fetchVoteImage(code, roundNumber, playerId, slot)
-        .then(({ image }) => setVoteImages((prev) => ({ ...prev, [key]: image })))
+        .then(({ image }) => setVoteImages((prev) => ({ ...onlyRound(prev, roundNumber), [key]: image })))
         .catch(() => {});
     }
   }, [code, playerId, room, voteImages]);

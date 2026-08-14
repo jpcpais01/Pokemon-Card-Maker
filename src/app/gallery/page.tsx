@@ -6,16 +6,25 @@ import ImageLightbox from "@/components/ImageLightbox";
 import TraitChip from "@/components/TraitChip";
 import Screen from "@/components/ui/Screen";
 import Icon from "@/components/ui/Icon";
-import { backfillThumbnail, getFavorites, removeFavoriteByImage, type FavoriteCard } from "@/lib/favorites";
+import {
+  backfillThumbnail,
+  getFavoriteImage,
+  getFavoriteSummaries,
+  removeFavoriteById,
+  type FavoriteSummary,
+} from "@/lib/favorites";
 
 export default function GalleryPage() {
-  const [favorites, setFavorites] = useState<FavoriteCard[]>([]);
+  const [favorites, setFavorites] = useState<FavoriteSummary[]>([]);
   const [loaded, setLoaded] = useState(false);
+  const [openId, setOpenId] = useState<string | null>(null);
+  // The full-size artwork for whichever card is open, fetched on demand so the binder never
+  // holds more than one of them at a time.
   const [openImage, setOpenImage] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    getFavorites().then((favs) => {
+    getFavoriteSummaries().then((favs) => {
       if (cancelled) return;
       setFavorites(favs);
       setLoaded(true);
@@ -25,7 +34,7 @@ export default function GalleryPage() {
       // change anything on screen right now, but the binder gets lighter to open every time after.
       for (const fav of favs) {
         if (fav.thumbnail) continue;
-        backfillThumbnail(fav).then((thumbnail) => {
+        backfillThumbnail(fav.id).then((thumbnail) => {
           if (cancelled || !thumbnail) return;
           setFavorites((prev) => prev.map((f) => (f.id === fav.id ? { ...f, thumbnail } : f)));
         });
@@ -36,13 +45,27 @@ export default function GalleryPage() {
     };
   }, []);
 
-  async function handleRemove(image: string) {
-    await removeFavoriteByImage(image);
-    setFavorites((prev) => prev.filter((f) => f.image !== image));
-    setOpenImage((prev) => (prev === image ? null : prev));
+  // Loads the open card's artwork, and - just as importantly - drops it again on close, so the
+  // one full-size image in memory goes away with the lightbox instead of lingering.
+  useEffect(() => {
+    if (!openId) return;
+    let cancelled = false;
+    getFavoriteImage(openId).then((image) => {
+      if (!cancelled) setOpenImage(image);
+    });
+    return () => {
+      cancelled = true;
+      setOpenImage(null);
+    };
+  }, [openId]);
+
+  async function handleRemove(id: string) {
+    await removeFavoriteById(id);
+    setFavorites((prev) => prev.filter((f) => f.id !== id));
+    setOpenId((prev) => (prev === id ? null : prev));
   }
 
-  const openCard = favorites.find((f) => f.image === openImage) ?? null;
+  const openCard = favorites.find((f) => f.id === openId) ?? null;
   const sirCount = favorites.filter((f) => f.artType === "Special Illustration Rare").length;
 
   return (
@@ -83,21 +106,26 @@ export default function GalleryPage() {
                 <button
                   key={f.id}
                   type="button"
-                  onClick={() => setOpenImage(f.image)}
+                  onClick={() => setOpenId(f.id)}
                   style={{ "--d": `${Math.min(i, 10) * 45}ms` } as React.CSSProperties}
                   className={`enter-up card overflow-hidden !rounded-2xl p-0 text-left transition-transform duration-150 active:scale-[0.97] ${
                     isSir ? "!border-amber-300/45" : ""
                   }`}
                 >
                   <div className="relative aspect-[3/4] w-full bg-black/40">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={f.thumbnail ?? f.image}
-                      alt={f.pokemonNames}
-                      loading="lazy"
-                      decoding="async"
-                      className="h-full w-full object-cover"
-                    />
+                    {/* Entries saved before thumbnails existed have none until the backfill above
+                        lands, and the tile just stays dark for that moment - deliberately not
+                        falling back to the full-size image, which is the whole cost being avoided. */}
+                    {f.thumbnail && (
+                      /* eslint-disable-next-line @next/next/no-img-element */
+                      <img
+                        src={f.thumbnail}
+                        alt={f.pokemonNames}
+                        loading="lazy"
+                        decoding="async"
+                        className="h-full w-full object-cover"
+                      />
+                    )}
                     {isSir && <div className="holo-sheen opacity-40" />}
                     {isSir && (
                       <span className="absolute left-1.5 top-1.5 rounded-full bg-black/55 px-1.5 py-0.5 text-[8.5px] font-black uppercase tracking-wider text-amber-300 backdrop-blur-sm">
@@ -125,14 +153,14 @@ export default function GalleryPage() {
         )}
       </div>
 
-      {openCard && (
+      {openCard && openImage && (
         <ImageLightbox
-          src={openCard.image}
+          src={openImage}
           alt={openCard.pokemonNames}
-          onClose={() => setOpenImage(null)}
+          onClose={() => setOpenId(null)}
           holo={openCard.artType === "Special Illustration Rare"}
           isFavorited
-          onToggleFavorite={() => handleRemove(openCard.image)}
+          onToggleFavorite={() => handleRemove(openCard.id)}
         />
       )}
     </Screen>

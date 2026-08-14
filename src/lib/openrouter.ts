@@ -1,6 +1,12 @@
+import sharp from "sharp";
 import { MAX_CARDS_PER_JUDGE } from "@/lib/battle/judgePlan";
 
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
+
+/** Wide enough to stay sharp on a 3x-density phone showing the card near full width. */
+const MAX_IMAGE_WIDTH = 1024;
+/** High enough that the compression is invisible on illustration art at this size. */
+const IMAGE_QUALITY = 86;
 
 export const TEXT_MODEL = "google/gemini-3.6-flash";
 export const IMAGE_MODEL = "google/gemini-3.1-flash-image";
@@ -59,6 +65,40 @@ export async function generateText(systemPrompt: string, userPrompt: string): Pr
   return content.trim();
 }
 
+/**
+ * Re-encodes a generated image as a JPEG before it ever leaves the server.
+ *
+ * The image model hands back a PNG data URL, and for a detailed 1024x1365 illustration that is
+ * routinely 3-4MB - about 4.8MB once it's base64. Every one of those crosses the network, then
+ * lives on as a JS string in the client (in battle, one per player per round) and again in
+ * IndexedDB for anything saved to the binder. PNG is simply the wrong format for this content:
+ * it's lossless, and card art is a photograph-like image with no flat color or transparency to
+ * preserve. The same picture as a quality-86 JPEG is roughly a tenth of the size with no
+ * visible difference, which is the difference between a phone browser coping and its renderer
+ * being killed mid-match.
+ *
+ * Deliberately fail-soft: if anything here throws, the original data URL is returned untouched.
+ * A heavier image is worth far more than a failed pull.
+ */
+async function toCompactJpeg(dataUrl: string): Promise<string> {
+  try {
+    const base64 = dataUrl.slice(dataUrl.indexOf(",") + 1);
+    const input = Buffer.from(base64, "base64");
+    const output = await sharp(input)
+      // `withoutEnlargement` so a model that ever returns something smaller is left alone
+      // rather than being upscaled into a bigger file for no extra detail.
+      .resize({ width: MAX_IMAGE_WIDTH, withoutEnlargement: true })
+      .jpeg({ quality: IMAGE_QUALITY, mozjpeg: true })
+      .toBuffer();
+    // Only take the re-encode if it actually helped - never ship a bigger image than we got.
+    if (output.length >= input.length) return dataUrl;
+    return `data:image/jpeg;base64,${output.toString("base64")}`;
+  } catch (err) {
+    console.error("toCompactJpeg: falling back to the original image", err);
+    return dataUrl;
+  }
+}
+
 export async function generateImage(prompt: string): Promise<string> {
   const data = await callOpenRouter({
     model: IMAGE_MODEL,
@@ -72,7 +112,7 @@ export async function generateImage(prompt: string): Promise<string> {
   if (!url || typeof url !== "string") {
     throw new Error("The image model did not return an image.");
   }
-  return url;
+  return toCompactJpeg(url);
 }
 
 export interface CardRatings {
