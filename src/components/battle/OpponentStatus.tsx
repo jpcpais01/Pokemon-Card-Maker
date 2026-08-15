@@ -1,9 +1,11 @@
-import type { RoundStatus } from "@/lib/battle/types";
+import { getPowerup, type PowerupId, type RoundStatus } from "@/lib/battle/types";
 
 export interface OpponentStatusPlayer {
   id: string;
   label: string;
   locked: boolean;
+  /** Power-up they played this round, if any - shown because it's a public declaration. */
+  powerup?: PowerupId;
 }
 
 interface Props {
@@ -36,6 +38,11 @@ export default function OpponentStatus({ roundStatus, players }: Props) {
               <span className="mx-1.5 text-slate-600">·</span>
               {statusMessage(roundStatus, p.locked)}
             </p>
+            {/* A played power-up is meant to be seen: half of what makes backing your own card
+                for double worth doing is everyone else knowing you did it. */}
+            {p.powerup && (
+              <span className="chip chip-sm! chip-gold ml-auto shrink-0">{getPowerup(p.powerup).label}</span>
+            )}
           </div>
         );
       })}

@@ -8,6 +8,7 @@ import BattlePickPanel from "@/components/battle/BattlePickPanel";
 import MatchResult from "@/components/battle/MatchResult";
 import NicknameField, { isNicknameUsable } from "@/components/battle/NicknameField";
 import OpponentStatus from "@/components/battle/OpponentStatus";
+import PowerupBar from "@/components/battle/PowerupBar";
 import RoundResult from "@/components/battle/RoundResult";
 import VotingPanel from "@/components/battle/VotingPanel";
 import WaitingRoom from "@/components/battle/WaitingRoom";
@@ -21,13 +22,15 @@ import {
   fetchVoteImage,
   joinRoom,
   lockPicks,
+  playPowerup,
   readyForNext,
   rerollCard,
 } from "@/lib/battle/api";
+import { availablePowerups } from "@/lib/battle/engine";
 import { computeMvp } from "@/lib/battle/mvp";
 import { getStoredPlayerId, storeNickname, storePlayerId } from "@/lib/battle/session";
 import { useNickname } from "@/lib/battle/useNickname";
-import type { BattleRoom, RoundStatus } from "@/lib/battle/types";
+import type { BattleRoom, PowerupId, RoundStatus } from "@/lib/battle/types";
 import type { CardKey } from "@/lib/cardFaces";
 
 const POLL_MS = 1500;
@@ -238,6 +241,19 @@ export default function BattleRoomPage() {
     }
   }
 
+  async function handlePlayPowerup(powerup: PowerupId) {
+    if (!playerId) return;
+    setActionBusy(true);
+    try {
+      const { room } = await playPowerup(code, playerId, powerup);
+      setRoom(room);
+    } catch {
+      // ignore - next poll resyncs
+    } finally {
+      setActionBusy(false);
+    }
+  }
+
   async function handleLock() {
     if (!playerId) return;
     setActionBusy(true);
@@ -422,16 +438,27 @@ export default function BattleRoomPage() {
 
         {round.status === "picking" && (
           <>
+            <PowerupBar
+              available={availablePowerups(room, playerId)}
+              active={round.powerups?.[playerId]}
+              locked={round.players[playerId]?.locked ?? false}
+              busy={actionBusy}
+              onPlay={handlePlayPowerup}
+            />
             <BattlePickPanel
               key={room.round}
               pick={round.players[playerId]}
               rerollsLeft={room.rerolls[playerId] ?? 0}
-              unlimitedRerolls={room.unlimitedRerolls}
+              unlimitedRerolls={room.unlimitedRerolls || round.powerups?.[playerId] === "deep-dive"}
               locked={round.players[playerId]?.locked ?? false}
               busy={actionBusy}
               onReroll={handleReroll}
               onLock={handleLock}
-              forcedKeys={forcedKeys}
+              forcedKeys={
+                round.powerups?.[playerId] === "top-tier" && !forcedKeys.includes("artType")
+                  ? [...forcedKeys, "artType"]
+                  : forcedKeys
+              }
             />
             <OpponentStatus
               roundStatus={round.status}
@@ -439,6 +466,7 @@ export default function BattleRoomPage() {
                 id: p.id,
                 label: p.label,
                 locked: round.players[p.id]?.locked ?? false,
+                powerup: round.powerups?.[p.id],
               }))}
             />
           </>

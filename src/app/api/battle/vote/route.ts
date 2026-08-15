@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { sanitizeRoomForPlayer } from "@/lib/battle/engine";
+import { awardRoundWin, sanitizeRoomForPlayer } from "@/lib/battle/engine";
 import { normalizeRoomCode } from "@/lib/battle/roomCode";
 import { getRoom, lockKey, saveRoom } from "@/lib/battle/rooms";
 import { acquireLock, releaseLock } from "@/lib/battle/store";
@@ -74,7 +74,7 @@ export async function POST(request: Request) {
         leaders.length > 1
           ? "A dead tie in the vote - the coin decided!"
           : `Voted the crowd favorite with ${maxCount} of ${room.players.length} votes!`;
-      room.scores[winnerId] = (room.scores[winnerId] ?? 0) + 1;
+      awardRoundWin(room, round, winnerId);
       round.status = "done";
     }
 

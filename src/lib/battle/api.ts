@@ -1,7 +1,7 @@
 import type { CardKey } from "@/lib/cardFaces";
 import type { EventTheme } from "@/lib/events";
 import type { PackMode } from "@/lib/types";
-import type { BattleRoom, JudgeMode } from "./types";
+import type { BattleRoom, JudgeMode, PowerupId } from "./types";
 
 async function postJson<T>(url: string, body: unknown): Promise<T> {
   const res = await fetch(url, {
@@ -55,6 +55,10 @@ export function fetchRoomState(code: string, playerId: string) {
 
 export function rerollCard(code: string, playerId: string, cardKey: CardKey) {
   return postJson<{ room: BattleRoom }>("/api/battle/reroll", { code, playerId, cardKey });
+}
+
+export function playPowerup(code: string, playerId: string, powerup: PowerupId) {
+  return postJson<{ room: BattleRoom }>("/api/battle/powerup", { code, playerId, powerup });
 }
 
 export function lockPicks(code: string, playerId: string) {

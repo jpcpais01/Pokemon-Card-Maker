@@ -35,6 +35,60 @@ export type JudgeMode = "ai" | "vote";
 /** Player-vote mode only makes sense with at least 2 candidates besides your own card. */
 export const MIN_VOTE_PLAYERS = 3;
 
+/**
+ * A one-shot advantage a player can spend during the picking phase.
+ *
+ * Each player holds exactly one of each for the whole match and may play at most one per round,
+ * so across five rounds three of them are worth spending and the choice is *when*. Playing one is
+ * final - it's a commitment made before anyone has seen a single card, which is the whole point
+ * of "double-down" in particular.
+ */
+export type PowerupId = "double-down" | "top-tier" | "deep-dive";
+
+export interface PowerupDef {
+  id: PowerupId;
+  label: string;
+  /** Two or three words on the button itself - three of these sit side by side on a phone, so
+   *  anything longer wraps to three lines and the row stops being scannable. */
+  short: string;
+  /** The full sentence, used for the accessible name and anywhere there's room for it. */
+  blurb: string;
+  /** Confirm-state wording, since playing one cannot be undone. */
+  confirm: string;
+}
+
+export const POWERUPS: PowerupDef[] = [
+  {
+    id: "double-down",
+    label: "Double Down",
+    short: "Win = 2 pts",
+    blurb: "Win this round and it scores 2 points instead of 1.",
+    confirm: "Back this card for double?",
+  },
+  {
+    id: "top-tier",
+    label: "Top Tier",
+    short: "Guaranteed SIR",
+    blurb: "Your card is a Special Illustration Rare this round.",
+    confirm: "Lock in the top rarity tier?",
+  },
+  {
+    id: "deep-dive",
+    label: "Deep Dive",
+    short: "Free rerolls",
+    blurb: "Unlimited rerolls for the rest of this round.",
+    confirm: "Open up the rerolls?",
+  },
+];
+
+export function getPowerup(id: PowerupId): PowerupDef {
+  return POWERUPS.find((p) => p.id === id)!;
+}
+
+export function isPowerupId(value: unknown): value is PowerupId {
+  return POWERUPS.some((p) => p.id === value);
+}
+
 export interface BattlePlayerPick {
   artType: WeightedOption<ArtType>;
   specialForm: WeightedOption<SpecialForm>;
@@ -81,6 +135,10 @@ export interface BattleRound {
   voteCounts?: Record<string, number>;
   /** Raw voting state - never sent to a client; see sanitizeRoomForPlayer. */
   vote?: BattleRoundVoteState;
+  /** playerId -> the power-up they played this round. Deliberately public: playing one is a
+   *  declaration, and knowing someone has doubled down is most of what makes it worth doing.
+   *  It gives nothing away about the card itself, which stays hidden until the reveal. */
+  powerups?: Record<string, PowerupId>;
   /** Client-facing voting status - populated only by sanitizeRoomForPlayer, only while voting. */
   voteStatus?: VoteStatusView;
 }
@@ -99,6 +157,9 @@ export interface BattleRoom {
   players: string[];
   scores: Record<string, number>;
   rerolls: Record<string, number>;
+  /** playerId -> the power-ups they have already spent, for the whole match. Absent entry means
+   *  none spent yet; each id may appear at most once. */
+  powerupsUsed?: Record<string, PowerupId[]>;
   /** 1-indexed; 0 before the match starts. */
   round: number;
   rounds: BattleRound[];

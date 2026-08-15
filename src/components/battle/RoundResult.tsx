@@ -10,21 +10,19 @@ import { MAJOR_TIER_MARKS, ratingsTier, ratingsTotal, tierForTotal } from "@/lib
 import type { BattleRound, BattleRoundPlayerState, CardRatings } from "@/lib/battle/types";
 import { useFavoriteToggle } from "@/lib/favorites";
 
-const COMPARE_MS = 15000;
-const BREAKDOWN_MS = 7000;
-/** Long enough for the art to finish playing (~1.4s) and the caption to be read after it. */
-const MOMENT_MS = 3000;
-const VICTORY_SPOTLIGHT_MS = 4000;
+/** Every beat of the reveal holds for the same three seconds, then moves itself along. */
+const PHASE_MS = 3000;
 
 /**
- * Every player gets their own spotlight beat before the bars, so the total is this times the
- * table size - at ten players a flat 3s meant half a minute of card-by-card before anything
- * was decided. Big tables get a quicker cut so the whole reveal stays roughly constant.
+ * How long to wait for artwork before starting the reveal anyway.
+ *
+ * The sequence used to refuse to advance until every player's image had arrived, which meant a
+ * single failed fetch - one in ten, at a full table - left the whole reveal frozen on the first
+ * card with no timer ever set and no way forward but a reload. Waiting is still the right default
+ * (the cards are the point), but it has to be a wait, not a precondition: past this the reveal
+ * runs regardless and anything still missing shows its loading state in place.
  */
-function cardSpotlightMs(playerCount: number): number {
-  if (playerCount <= 4) return 3000;
-  return playerCount <= 6 ? 2200 : 1500;
-}
+const IMAGE_WAIT_MS = 8000;
 
 export interface RoundResultPlayerInfo {
   id: string;
@@ -86,6 +84,13 @@ export default function RoundResult({
   const SUMMARY_PHASE = n + 4;
 
   const allImagesReady = players.every((p) => !!p.image);
+  const [waitedForImages, setWaitedForImages] = useState(false);
+  const canAdvance = allImagesReady || waitedForImages;
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setWaitedForImages(true), IMAGE_WAIT_MS);
+    return () => window.clearTimeout(timer);
+  }, []);
   // Only worth a dedicated bars-comparison beat when the judge actually produced ratings -
   // a coin-flip/default-win round has none, so it skips straight to the victory spotlight.
   const hasRatings = !!round.ratings;
@@ -108,30 +113,10 @@ export default function RoundResult({
   }, [n, hasRatings, moment, COMPARE_PHASE, BREAKDOWN_PHASE, MOMENT_PHASE, VICTORY_PHASE, SUMMARY_PHASE]);
 
   useEffect(() => {
-    if (phaseIndex === SUMMARY_PHASE || !allImagesReady) return;
-    const duration =
-      phaseIndex === VICTORY_PHASE
-        ? VICTORY_SPOTLIGHT_MS
-        : phaseIndex === COMPARE_PHASE
-          ? COMPARE_MS
-          : phaseIndex === BREAKDOWN_PHASE
-            ? BREAKDOWN_MS
-            : phaseIndex === MOMENT_PHASE
-              ? MOMENT_MS
-              : cardSpotlightMs(n);
-    const timer = window.setTimeout(advancePhase, duration);
+    if (phaseIndex === SUMMARY_PHASE || !canAdvance) return;
+    const timer = window.setTimeout(advancePhase, PHASE_MS);
     return () => window.clearTimeout(timer);
-  }, [
-    phaseIndex,
-    allImagesReady,
-    advancePhase,
-    n,
-    SUMMARY_PHASE,
-    VICTORY_PHASE,
-    COMPARE_PHASE,
-    BREAKDOWN_PHASE,
-    MOMENT_PHASE,
-  ]);
+  }, [phaseIndex, canAdvance, advancePhase, SUMMARY_PHASE]);
 
   if (phaseIndex === COMPARE_PHASE) {
     return <RatingsBattle players={players} onSkip={advancePhase} />;
@@ -159,7 +144,9 @@ export default function RoundResult({
         label={spotlightPlayer.isMe ? "You" : spotlightPlayer.label}
         pick={spotlightPlayer.pick}
         image={spotlightPlayer.image}
-        loading={!allImagesReady}
+        // Per-card, not table-wide: one player's artwork still being in flight is no reason to
+        // hide everyone else's, now that the sequence no longer waits for the whole set.
+        loading={!spotlightPlayer.image}
         verdict={round.verdict}
         ratings={isVictory ? spotlightPlayer.ratings : undefined}
         onSkip={advancePhase}
@@ -174,6 +161,14 @@ export default function RoundResult({
       <p className="text-center text-sm font-bold text-amber-300">
         {iWon ? "🏆 You won this round!" : `This round goes to ${winnerPlayer?.label ?? "someone else"}.`}
       </p>
+
+      {/* The scoreboard would jump by two with no explanation otherwise - the whole point of
+          backing yourself is that the payout is seen. */}
+      {winnerPlayer && round.powerups?.[winnerPlayer.id] === "double-down" && (
+        <p className="mt-1.5 text-center text-[12px] font-bold text-amber-200/80">
+          Double Down paid off — worth 2 points.
+        </p>
+      )}
 
       <div className={`mt-4 grid gap-3 ${players.length === 3 ? "grid-cols-3" : "grid-cols-2"}`}>
         {players.map((p) => (
@@ -307,9 +302,12 @@ function CardSpotlight({
 // bar shares this exact rate, so they rise together and whichever total is lower simply stops
 // first while the others keep climbing until they reach their own value.
 const MAX_RATINGS_TOTAL = 40;
-const BAR_GROW_MS = 13200;
+// Sized to finish inside the three seconds this beat is given, delay and post-settle pause
+// included. Raising this without raising PHASE_MS to match just means the phase timer cuts the
+// bars off mid-climb.
+const BAR_GROW_MS = 1900;
 const BAR_GROW_START_DELAY = 200;
-const POST_SETTLE_PAUSE_MS = 1000;
+const POST_SETTLE_PAUSE_MS = 700;
 
 interface BarAccent {
   grad: string;

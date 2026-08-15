@@ -2,7 +2,13 @@ import { ART_TYPES, SPECIAL_FORMS, VIBES, pickSpecialForm, pickWeighted, pokemon
 import type { CardKey } from "@/lib/cardFaces";
 import { pickRandomPokemon, toPokemonPick } from "@/lib/generations";
 import type { PackMode, PokemonPick, PokemonRef } from "@/lib/types";
-import type { BattlePlayerPick, BattleRoom, BattleRound, BattleRoundPlayerState } from "./types";
+import type {
+  BattlePlayerPick,
+  BattleRoom,
+  BattleRound,
+  BattleRoundPlayerState,
+  PowerupId,
+} from "./types";
 
 function rollPlayerPick(pool: PokemonRef[], packMode: PackMode): BattlePlayerPick {
   const artType =
@@ -89,6 +95,77 @@ export function rerollPlayerCard(
   const pokemons = [...state.pokemons];
   pokemons[key] = toPokemonPick(fresh);
   return { ...state, pokemons };
+}
+
+/*
+ * ---------------------------------------------------------------------------
+ * Power-ups
+ * ---------------------------------------------------------------------------
+ * Every rule below is enforced on the server, from the stored room. The client shows what is
+ * available and what is spent, but it is never the authority on either - a player holding one of
+ * each for the match, and one play per round, has to survive a hand-written request too.
+ */
+
+/** The power-ups this player has left to spend, in the order they're presented. */
+export function availablePowerups(room: BattleRoom, playerId: string): PowerupId[] {
+  const spent = room.powerupsUsed?.[playerId] ?? [];
+  return (["double-down", "top-tier", "deep-dive"] as PowerupId[]).filter((id) => !spent.includes(id));
+}
+
+/** The one this player played this round, if any. */
+export function activePowerup(round: BattleRound, playerId: string): PowerupId | undefined {
+  return round.powerups?.[playerId];
+}
+
+/**
+ * Records a power-up as played and applies whatever takes effect immediately.
+ *
+ * Only "top-tier" changes anything at play time - it rewrites the pick's art type on the spot, so
+ * the player sees the card they were promised rather than being told it will matter later. The
+ * other two are read where they actually bite: rerolls in the reroll route, doubling at scoring.
+ *
+ * Callers must check `canPlayPowerup` first; this assumes the play is legal.
+ */
+export function playPowerup(room: BattleRoom, round: BattleRound, playerId: string, id: PowerupId): void {
+  room.powerupsUsed ??= {};
+  room.powerupsUsed[playerId] = [...(room.powerupsUsed[playerId] ?? []), id];
+  round.powerups ??= {};
+  round.powerups[playerId] = id;
+
+  if (id === "top-tier") {
+    const state = round.players[playerId];
+    if (state) {
+      state.artType = ART_TYPES.find((a) => a.value === "special-illustration-rare")!;
+    }
+  }
+}
+
+/** Why this play is not allowed, or null if it is. */
+export function canPlayPowerup(
+  room: BattleRoom,
+  round: BattleRound,
+  playerId: string,
+  id: PowerupId
+): string | null {
+  if (round.status !== "picking") return "Power-ups can only be played while picking.";
+  const state = round.players[playerId];
+  if (!state) return "You are not in this round.";
+  if (state.locked) return "You've already locked in this round.";
+  if (activePowerup(round, playerId)) return "You've already played a power-up this round.";
+  if (!availablePowerups(room, playerId).includes(id)) return "You've already used that power-up.";
+  return null;
+}
+
+/**
+ * Credits the round win, doubled if that player backed themselves with Double Down.
+ *
+ * Shared by all three places a round can be decided - the AI judge, the judge's fallback path,
+ * and player voting - because a power-up that only paid out on some of them would be a bug the
+ * player pays for.
+ */
+export function awardRoundWin(room: BattleRoom, round: BattleRound, winnerId: string): void {
+  const points = activePowerup(round, winnerId) === "double-down" ? 2 : 1;
+  room.scores[winnerId] = (room.scores[winnerId] ?? 0) + points;
 }
 
 function shuffle<T>(items: T[]): T[] {

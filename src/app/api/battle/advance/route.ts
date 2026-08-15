@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { buildVoteOrders, sanitizeRoomForPlayer } from "@/lib/battle/engine";
+import { awardRoundWin, buildVoteOrders, sanitizeRoomForPlayer } from "@/lib/battle/engine";
 import { splitIntoJudgeBatches } from "@/lib/battle/judgePlan";
 import { normalizeRoomCode } from "@/lib/battle/roomCode";
 import { getImage, getRoom, lockKey, saveImage, saveRoom } from "@/lib/battle/rooms";
@@ -223,7 +223,7 @@ export async function POST(request: Request) {
               readyPids.length === 1
                 ? "Everyone else's artwork failed to generate - default win!"
                 : "Nobody's artwork could be generated this round - the coin decided!";
-            room.scores[winnerId] = (room.scores[winnerId] ?? 0) + 1;
+            awardRoundWin(room, currentRound, winnerId);
             currentRound.status = "done";
           } else {
             const order = buildVoteOrders(pids, readyPids);
@@ -285,7 +285,7 @@ export async function POST(request: Request) {
       currentRound.winnerId = winnerId;
       currentRound.verdict = verdict;
       currentRound.ratings = ratings;
-      room.scores[winnerId] = (room.scores[winnerId] ?? 0) + 1;
+      awardRoundWin(room, currentRound, winnerId);
       currentRound.status = "done";
     }
 

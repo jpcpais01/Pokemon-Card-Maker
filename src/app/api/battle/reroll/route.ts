@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import type { CardKey } from "@/lib/cardFaces";
-import { rerollPlayerCard, sanitizeRoomForPlayer } from "@/lib/battle/engine";
+import { activePowerup, rerollPlayerCard, sanitizeRoomForPlayer } from "@/lib/battle/engine";
 import { normalizeRoomCode } from "@/lib/battle/roomCode";
 import { getRoom, saveRoom } from "@/lib/battle/rooms";
 import { fetchPokemonForGenerations } from "@/lib/generations";
@@ -49,7 +49,14 @@ export async function POST(request: Request) {
   ) {
     return NextResponse.json({ error: "Special form is locked in for this match." }, { status: 409 });
   }
-  if (!room.unlimitedRerolls && (room.rerolls[playerId] ?? 0) <= 0) {
+  const powerup = activePowerup(round, playerId);
+  // Top Tier bought this player the top rarity tier for the round - rerolling art type would
+  // throw it away, so the slot is fixed for them exactly as a SIR pack mode fixes it for everyone.
+  if (powerup === "top-tier" && cardKey === "artType") {
+    return NextResponse.json({ error: "Top Tier is holding your art type this round." }, { status: 409 });
+  }
+  const freeRerolls = room.unlimitedRerolls || powerup === "deep-dive";
+  if (!freeRerolls && (room.rerolls[playerId] ?? 0) <= 0) {
     return NextResponse.json({ error: "No rerolls left." }, { status: 409 });
   }
   if (typeof cardKey === "number" && !playerState.pokemons[cardKey]) {
@@ -58,7 +65,7 @@ export async function POST(request: Request) {
 
   const pool = await fetchPokemonForGenerations(room.gens);
   round.players[playerId] = rerollPlayerCard(playerState, cardKey, pool);
-  if (!room.unlimitedRerolls) room.rerolls[playerId] -= 1;
+  if (!freeRerolls) room.rerolls[playerId] -= 1;
 
   await saveRoom(room);
   return NextResponse.json({ room: sanitizeRoomForPlayer(room, playerId) });
