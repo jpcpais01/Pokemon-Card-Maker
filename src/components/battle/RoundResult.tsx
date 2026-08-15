@@ -1,15 +1,19 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import ImageLightbox from "@/components/ImageLightbox";
+import RoundMomentScreen from "@/components/battle/RoundMoment";
 import TraitChip from "@/components/TraitChip";
 import Icon from "@/components/ui/Icon";
+import { pickRoundMoment } from "@/lib/battle/roundMoment";
 import { MAJOR_TIER_MARKS, ratingsTier, ratingsTotal, tierForTotal } from "@/lib/battle/tier";
 import type { BattleRound, BattleRoundPlayerState, CardRatings } from "@/lib/battle/types";
 import { useFavoriteToggle } from "@/lib/favorites";
 
 const COMPARE_MS = 15000;
 const BREAKDOWN_MS = 7000;
+/** Long enough for the art to finish playing (~1.4s) and the caption to be read after it. */
+const MOMENT_MS = 3000;
 const VICTORY_SPOTLIGHT_MS = 4000;
 
 /**
@@ -75,23 +79,33 @@ export default function RoundResult({
   // The bars answer "who won"; this one answers "on what". It sits between them and the
   // victory spotlight so the win is explained before it's celebrated.
   const BREAKDOWN_PHASE = n + 1;
-  const VICTORY_PHASE = n + 2;
-  const SUMMARY_PHASE = n + 3;
+  // ...and this one answers "what kind of win was it", landing the headline just before the
+  // winning card itself is shown.
+  const MOMENT_PHASE = n + 2;
+  const VICTORY_PHASE = n + 3;
+  const SUMMARY_PHASE = n + 4;
 
   const allImagesReady = players.every((p) => !!p.image);
   // Only worth a dedicated bars-comparison beat when the judge actually produced ratings -
   // a coin-flip/default-win round has none, so it skips straight to the victory spotlight.
   const hasRatings = !!round.ratings;
+  // Derived from the finished round alone, so every player's client independently arrives at the
+  // same one and the whole table sees the same card at the same point in the reveal.
+  const moment = useMemo(() => pickRoundMoment(round), [round]);
 
   const advancePhase = useCallback(() => {
     setPhaseIndex((p) => {
+      // A round with nothing to announce (no winner recorded) skips the beat entirely rather
+      // than showing an empty card.
+      const afterScores = moment ? MOMENT_PHASE : VICTORY_PHASE;
       if (p < n - 1) return p + 1;
-      if (p === n - 1) return hasRatings ? COMPARE_PHASE : VICTORY_PHASE;
+      if (p === n - 1) return hasRatings ? COMPARE_PHASE : afterScores;
       if (p === COMPARE_PHASE) return BREAKDOWN_PHASE;
-      if (p === BREAKDOWN_PHASE) return VICTORY_PHASE;
+      if (p === BREAKDOWN_PHASE) return afterScores;
+      if (p === MOMENT_PHASE) return VICTORY_PHASE;
       return SUMMARY_PHASE;
     });
-  }, [n, hasRatings, COMPARE_PHASE, BREAKDOWN_PHASE, VICTORY_PHASE, SUMMARY_PHASE]);
+  }, [n, hasRatings, moment, COMPARE_PHASE, BREAKDOWN_PHASE, MOMENT_PHASE, VICTORY_PHASE, SUMMARY_PHASE]);
 
   useEffect(() => {
     if (phaseIndex === SUMMARY_PHASE || !allImagesReady) return;
@@ -102,10 +116,22 @@ export default function RoundResult({
           ? COMPARE_MS
           : phaseIndex === BREAKDOWN_PHASE
             ? BREAKDOWN_MS
-            : cardSpotlightMs(n);
+            : phaseIndex === MOMENT_PHASE
+              ? MOMENT_MS
+              : cardSpotlightMs(n);
     const timer = window.setTimeout(advancePhase, duration);
     return () => window.clearTimeout(timer);
-  }, [phaseIndex, allImagesReady, advancePhase, n, SUMMARY_PHASE, VICTORY_PHASE, COMPARE_PHASE, BREAKDOWN_PHASE]);
+  }, [
+    phaseIndex,
+    allImagesReady,
+    advancePhase,
+    n,
+    SUMMARY_PHASE,
+    VICTORY_PHASE,
+    COMPARE_PHASE,
+    BREAKDOWN_PHASE,
+    MOMENT_PHASE,
+  ]);
 
   if (phaseIndex === COMPARE_PHASE) {
     return <RatingsBattle players={players} onSkip={advancePhase} />;
@@ -114,6 +140,10 @@ export default function RoundResult({
   // Must come before the spotlight branch below, which indexes players by phase.
   if (phaseIndex === BREAKDOWN_PHASE) {
     return <RatingsBreakdown players={players} onSkip={advancePhase} />;
+  }
+
+  if (phaseIndex === MOMENT_PHASE && moment) {
+    return <RoundMomentScreen moment={moment} onSkip={advancePhase} />;
   }
 
   const winnerPlayer = players.find((p) => p.id === round.winnerId);
