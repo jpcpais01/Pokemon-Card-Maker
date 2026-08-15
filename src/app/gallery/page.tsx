@@ -126,7 +126,6 @@ export default function GalleryPage() {
                         className="h-full w-full object-cover"
                       />
                     )}
-                    {isSir && <div className="holo-sheen opacity-40" />}
                     {isSir && (
                       <span className="absolute left-1.5 top-1.5 rounded-full bg-black/55 px-1.5 py-0.5 text-[8.5px] font-black uppercase tracking-wider text-amber-300 backdrop-blur-sm">
                         SIR
