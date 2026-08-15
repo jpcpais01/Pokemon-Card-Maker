@@ -8,7 +8,8 @@ import Icon from "@/components/ui/Icon";
 import { pickRoundMoment } from "@/lib/battle/roundMoment";
 import { MAJOR_TIER_MARKS, ratingsTier, ratingsTotal, tierForTotal } from "@/lib/battle/tier";
 import type { BattleRound, BattleRoundPlayerState, CardRatings } from "@/lib/battle/types";
-import { useFavoriteToggle } from "@/lib/favorites";
+import { removeFavoriteByImage, useFavoriteToggle } from "@/lib/favorites";
+import { cardSeed, cardValue, earnTokens } from "@/lib/tokens";
 
 /** Every beat of the reveal holds for the same three seconds, then moves itself along. */
 const PHASE_MS = 3000;
@@ -55,9 +56,15 @@ export default function RoundResult({
   onReady,
 }: Props) {
   const [phaseIndex, setPhaseIndex] = useState(0);
-  const [fullView, setFullView] = useState<{ src: string; prompt?: string; pick: BattleRoundPlayerState } | null>(
-    null
-  );
+  const [fullView, setFullView] = useState<{
+    src: string;
+    prompt?: string;
+    pick: BattleRoundPlayerState;
+    mine: boolean;
+    ratingTotal?: number;
+  } | null>(null);
+  /** Cards sold from this round's summary - keyed by player id, remounted with the round. */
+  const [sold, setSold] = useState<Record<string, number>>({});
   const favoriteCardInfo = fullView
     ? {
         prompt: fullView.prompt,
@@ -65,6 +72,8 @@ export default function RoundResult({
         artType: fullView.pick.artType.label,
         specialForm: fullView.pick.specialForm.value !== "none" ? fullView.pick.specialForm.label : undefined,
         vibe: fullView.pick.vibe.label,
+        mine: fullView.mine,
+        ratingTotal: fullView.ratingTotal,
       }
     : null;
   const { isFavorited, toggle: toggleFavorite, error: favoriteError } = useFavoriteToggle(
@@ -156,6 +165,20 @@ export default function RoundResult({
 
   const iWon = winnerPlayer?.isMe ?? false;
 
+  /**
+   * Sells this round's card straight from the summary, without it ever having to reach the binder.
+   *
+   * Also drops any binder copy of the same artwork: saving a card and then selling it here would
+   * otherwise pay out while leaving a second, still-sellable copy behind.
+   */
+  async function handleSell(p: RoundResultPlayerInfo) {
+    if (!p.isMe || !p.ratings || !p.image || sold[p.id] !== undefined) return;
+    const value = cardValue(ratingsTotal(p.ratings), cardSeed(p.image));
+    await removeFavoriteByImage(p.image);
+    earnTokens(value);
+    setSold((prev) => ({ ...prev, [p.id]: value }));
+  }
+
   return (
     <div>
       <p className="text-center text-sm font-bold text-amber-300">
@@ -179,7 +202,18 @@ export default function RoundResult({
             image={p.image}
             winner={p.id === round.winnerId}
             ratings={p.ratings}
-            onOpenFullView={(src, prompt) => setFullView({ src, prompt, pick: p.pick })}
+            onOpenFullView={(src, prompt) =>
+              setFullView({
+                src,
+                prompt,
+                pick: p.pick,
+                mine: p.isMe,
+                ratingTotal: p.ratings ? ratingsTotal(p.ratings) : undefined,
+              })
+            }
+            saleValue={p.isMe && p.ratings && p.image ? cardValue(ratingsTotal(p.ratings), cardSeed(p.image)) : null}
+            soldFor={sold[p.id]}
+            onSell={() => handleSell(p)}
           />
         ))}
       </div>
@@ -844,6 +878,9 @@ function ResultCard({
   winner,
   ratings,
   onOpenFullView,
+  saleValue,
+  soldFor,
+  onSell,
 }: {
   label: string;
   pick: BattleRoundPlayerState;
@@ -851,6 +888,11 @@ function ResultCard({
   winner: boolean;
   ratings?: CardRatings;
   onOpenFullView: (src: string, prompt?: string) => void;
+  /** What the shop will pay, or null if this card isn't the player's own to sell. */
+  saleValue: number | null;
+  /** Set once it has been sold this round, to what it fetched. */
+  soldFor?: number;
+  onSell: () => void;
 }) {
   const name = pick.pokemons.map((p) => p.displayName).join(" & ");
 
@@ -905,6 +947,19 @@ function ResultCard({
             <TierBadge tier={ratingsTier(ratings)} size="small" />
           </div>
         )}
+        {/* Only ever on your own card: an opponent's is theirs, not stock to be liquidated. */}
+        {saleValue !== null &&
+          (soldFor === undefined ? (
+            <button
+              type="button"
+              onClick={onSell}
+              className="mt-1.5 w-full rounded-lg border border-amber-300/40 bg-amber-300/10 py-1.5 text-[11px] font-black text-amber-200 transition-transform active:scale-[0.97]"
+            >
+              Sell · {saleValue}
+            </button>
+          ) : (
+            <p className="mt-1.5 py-1.5 text-[11px] font-black text-emerald-300">Sold for {soldFor}</p>
+          ))}
       </div>
     </div>
   );

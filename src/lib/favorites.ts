@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 
+import { cardSeed, cardValue, earnTokens } from "./tokens";
+
 const DB_NAME = "pcg-favorites";
 const DB_VERSION = 1;
 const STORE_NAME = "favorites";
@@ -12,6 +14,23 @@ const LEGACY_STORAGE_KEY = "pcg-favorites";
 export interface FavoriteCard {
   id: string;
   image: string;
+  /**
+   * Whether this was the player's own pull, rather than an opponent's card saved from a round
+   * result. Only your own cards can be sold - someone else's is a keepsake, not an asset.
+   *
+   * Undefined on entries saved before provenance was tracked; those are treated as the player's
+   * own, since until battle results were savable there was no other way for a card to get here.
+   */
+  mine?: boolean;
+  /**
+   * The judge's 0-40 total for this card, when it has one. Only battle cards are judged, so a
+   * solo pull has none - and no sale price, since the price is a function of the score.
+   */
+  ratingTotal?: number;
+  /** Price seed, captured at save time from the artwork - see `cardSeed`. Without it stored, a
+   *  card offered at the end of a round and the same card in the binder would be seeded off
+   *  different things and quoted different prices. */
+  saleSeed?: string;
   /** Small downscaled preview for the gallery grid - rendering this instead of the full-res
    *  `image` is what keeps a binder full of saved cards from having to decode and paint dozens of
    *  multi-megapixel images at once. Entries saved before this existed lack one until backfilled
@@ -158,6 +177,51 @@ export async function getFavoriteImage(id: string): Promise<string | null> {
   }
 }
 
+/**
+ * What the shop will pay for a saved card, or null if it isn't for sale.
+ *
+ * Two things make a card unsellable: it was someone else's pull, or nobody ever scored it. The
+ * price is seeded on the card's binder id, so the same card is always worth the same amount no
+ * matter how many times the binder is opened.
+ */
+export function favoriteSaleValue(
+  fav: Pick<FavoriteCard, "id" | "mine" | "ratingTotal" | "saleSeed">
+): number | null {
+  if (fav.mine === false || fav.ratingTotal === undefined) return null;
+  // Entries saved before the seed was stored fall back to their id, which is just as stable -
+  // it only means those quote a different (but equally fixed) price than the round did.
+  return cardValue(fav.ratingTotal, fav.saleSeed ?? fav.id);
+}
+
+/**
+ * Sells a card: credits the balance and takes it out of the binder, which is the trade - the
+ * artwork is gone once it's sold. Returns what it fetched, or null if it wasn't for sale.
+ */
+export async function sellFavorite(id: string): Promise<number | null> {
+  const fav = await getFavorite(id);
+  if (!fav) return null;
+  const value = favoriteSaleValue(fav);
+  if (value === null) return null;
+  await removeFavoriteById(id);
+  earnTokens(value);
+  return value;
+}
+
+/** One whole entry, image included. Used by the sale path, which needs the fields the grid drops. */
+async function getFavorite(id: string): Promise<FavoriteCard | null> {
+  if (typeof window === "undefined") return null;
+  try {
+    const db = await openDb();
+    return await new Promise<FavoriteCard | null>((resolve, reject) => {
+      const req = db.transaction(STORE_NAME, "readonly").objectStore(STORE_NAME).get(id);
+      req.onsuccess = () => resolve((req.result as FavoriteCard | undefined) ?? null);
+      req.onerror = () => reject(req.error);
+    });
+  } catch {
+    return null;
+  }
+}
+
 export async function removeFavoriteById(id: string): Promise<void> {
   try {
     const db = await openDb();
@@ -195,6 +259,7 @@ export async function addFavorite(card: Omit<FavoriteCard, "id" | "savedAt" | "t
     const entry: FavoriteCard = {
       ...card,
       thumbnail,
+      saleSeed: cardSeed(card.image),
       id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
       savedAt: Date.now(),
     };

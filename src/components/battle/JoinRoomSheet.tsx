@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Icon from "@/components/ui/Icon";
 import NicknameField, { isNicknameUsable } from "@/components/battle/NicknameField";
 import { joinRoom } from "@/lib/battle/api";
+import { matchCost, spendTokens } from "@/lib/tokens";
 import { ROOM_CODE_LENGTH } from "@/lib/battle/roomCode";
 import { storeNickname, storePlayerId } from "@/lib/battle/session";
 import { useNickname } from "@/lib/battle/useNickname";
@@ -31,7 +32,13 @@ export default function JoinRoomSheet({ onClose }: { onClose: () => void }) {
     setError(null);
     setJoining(true);
     try {
-      const { code: roomCode, playerId } = await joinRoom(code.trim().toUpperCase(), nickname);
+      const { code: roomCode, playerId, packMode, gens } = await joinRoom(code.trim().toUpperCase(), nickname);
+      // Joining means opening five packs too, at whatever the host set the room to - which is
+      // why the price can only be checked once the room has answered.
+      const cost = matchCost(packMode, gens);
+      if (!spendTokens(cost)) {
+        throw new Error(`This match costs ${cost} tokens to join.`);
+      }
       storePlayerId(roomCode, playerId);
       storeNickname(nickname);
       router.push(`/battle/${roomCode}`);

@@ -85,7 +85,9 @@ export async function POST(request: Request) {
     }
 
     await saveRoom(room);
-    return NextResponse.json({ code, playerId });
+    // The room's settings come back with the join so the client can charge this player for the
+    // five packs they just signed up to open - it can't know the price until it's in the room.
+    return NextResponse.json({ code, playerId, packMode: room.packMode ?? "classic", gens: room.gens });
   } finally {
     await releaseLock(lockKey(code));
   }

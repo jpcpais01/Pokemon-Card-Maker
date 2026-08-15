@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import Screen from "@/components/ui/Screen";
 import Icon from "@/components/ui/Icon";
 import { GENERATIONS } from "@/lib/generations";
+import { useTokens } from "@/lib/tokens";
 
 interface Props {
   selected: number[];
@@ -29,6 +30,11 @@ interface Props {
   /** Confirms which event this setup belongs to. Label only, deliberately: you arrive here
    *  straight from the event hub, which has just shown you the blurb in full. */
   eventBanner?: { label: string; gradient: string; image?: string };
+  /** What starting this costs in tokens. Shown under the CTA, and blocks it when the balance
+   *  won't cover it - the charge itself is the caller's to make, on start. */
+  cost?: number;
+  /** What the cost buys, for the line under the button - e.g. "5 packs". */
+  costLabel?: string;
 }
 
 /** Curated pools aren't real generations and get their own group. Real generations
@@ -56,7 +62,13 @@ export default function GenSelector({
   extraTop,
   startDisabled,
   eventBanner,
+  cost,
+  costLabel,
 }: Props) {
+  const balance = useTokens();
+  // Null until hydration, and an unaffordable price must never be decided from prerendered
+  // HTML built on some other device - so this stays false until the real balance is known.
+  const shortOnTokens = cost !== undefined && balance !== null && balance < cost;
   const allSelected = selected.length === GENERATIONS.length;
 
   function toggle(id: number) {
@@ -177,7 +189,7 @@ export default function GenSelector({
           <button
             type="button"
             onClick={onStart}
-            disabled={loading || selected.length === 0 || startDisabled}
+            disabled={loading || selected.length === 0 || startDisabled || shortOnTokens}
             className="btn-primary w-full disabled:pointer-events-none disabled:opacity-40"
           >
             {loading ? (
@@ -189,9 +201,21 @@ export default function GenSelector({
               </>
             )}
           </button>
-          {selected.length === 0 && (
+          {selected.length === 0 ? (
             <p className="mt-2 text-center text-[11px] text-slate-500">Select at least one pool to continue.</p>
-          )}
+          ) : cost !== undefined ? (
+            <p
+              className={`mt-2 text-center text-[11px] font-semibold ${
+                shortOnTokens ? "text-red-300" : "text-slate-500"
+              }`}
+            >
+              {shortOnTokens
+                ? `Costs ${cost} tokens — you have ${balance}.`
+                : `Costs ${cost} tokens${costLabel ? ` for ${costLabel}` : ""}${
+                    balance !== null ? ` · ${balance} left` : ""
+                  }`}
+            </p>
+          ) : null}
         </div>
       </div>
     </Screen>

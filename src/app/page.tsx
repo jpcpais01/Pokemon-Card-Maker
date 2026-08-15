@@ -3,6 +3,7 @@
 import { useEffect, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import Screen from "@/components/ui/Screen";
+import TokenBadge from "@/components/TokenBadge";
 import Icon from "@/components/ui/Icon";
 import { getServerMuted, isMuted, subscribe, toggleMuted } from "@/lib/audio";
 import JoinRoomSheet from "@/components/battle/JoinRoomSheet";
@@ -83,6 +84,7 @@ export default function Home() {
             </h1>
           </div>
           <div className="flex items-center gap-2">
+            <TokenBadge />
             <button
               type="button"
               onClick={() => toggleMuted()}

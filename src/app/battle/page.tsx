@@ -12,6 +12,7 @@ import { storeNickname, storePlayerId } from "@/lib/battle/session";
 import { useNickname } from "@/lib/battle/useNickname";
 import { getEvent, parseEventTheme } from "@/lib/events";
 import { GENERATIONS } from "@/lib/generations";
+import { matchCost, spendTokens } from "@/lib/tokens";
 import { MIN_VOTE_PLAYERS, type JudgeMode } from "@/lib/battle/types";
 import { PACK_MODES, type PackMode } from "@/lib/types";
 
@@ -46,6 +47,10 @@ function CreateRoom() {
     setCreating(true);
     try {
       const effectiveJudgeMode = maxPlayers >= MIN_VOTE_PLAYERS ? judgeMode : "ai";
+      // A match is five rounds and so five packs, charged up front.
+      if (!spendTokens(matchCost(packMode, gens))) {
+        throw new Error("Not enough tokens to start this match.");
+      }
       const { code, playerId } = await createRoom(
         gens,
         false,
@@ -76,6 +81,8 @@ function CreateRoom() {
       eyebrow={event ? event.label : "Battle a Friend"}
       title="Set the Rules"
       subtitle="Pick the pool everyone pulls from, then how the match plays out."
+      cost={matchCost(packMode, gens)}
+      costLabel="5 packs"
       buttonLabel="Create Room"
       loadingLabel="Creating room..."
       startDisabled={!isNicknameUsable(nickname)}

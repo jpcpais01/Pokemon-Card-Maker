@@ -11,6 +11,7 @@ import { createRoom } from "@/lib/battle/api";
 import { storePlayerId } from "@/lib/battle/session";
 import { getEvent, parseEventTheme } from "@/lib/events";
 import { GENERATIONS } from "@/lib/generations";
+import { matchCost, spendTokens } from "@/lib/tokens";
 import { MIN_VOTE_PLAYERS, type JudgeMode } from "@/lib/battle/types";
 import { PACK_MODES, type PackMode } from "@/lib/types";
 
@@ -38,6 +39,10 @@ function BotSetup() {
     setStarting(true);
     try {
       const effectiveJudgeMode = botPlayers >= MIN_VOTE_PLAYERS ? botJudgeMode : "ai";
+      // A match is five rounds and so five packs, charged up front.
+      if (!spendTokens(matchCost(botPackMode, gens))) {
+        throw new Error("Not enough tokens to start this match.");
+      }
       const { code, playerId } = await createRoom(
         gens,
         true,
@@ -66,6 +71,8 @@ function BotSetup() {
       eyebrow={event ? event.label : "Battle a Bot"}
       title="Set Up Your Match"
       subtitle="Pick the pool, how many players, and the match rules."
+      cost={matchCost(botPackMode, gens)}
+      costLabel="5 packs"
       buttonLabel="Start Match"
       loadingLabel="Starting match..."
       back={event ? `/event/${event.slug}` : "/play"}

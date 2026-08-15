@@ -27,6 +27,7 @@ import {
   rerollCard,
 } from "@/lib/battle/api";
 import { availablePowerups } from "@/lib/battle/engine";
+import { matchCost, spendTokens } from "@/lib/tokens";
 import { computeMvp } from "@/lib/battle/mvp";
 import { getStoredPlayerId, storeNickname, storePlayerId } from "@/lib/battle/session";
 import { useNickname } from "@/lib/battle/useNickname";
@@ -217,7 +218,11 @@ export default function BattleRoomPage() {
     setJoining(true);
     setJoinError(null);
     try {
-      const { playerId: newId } = await joinRoom(code, nickname);
+      const { playerId: newId, packMode, gens } = await joinRoom(code, nickname);
+      const cost = matchCost(packMode, gens);
+      if (!spendTokens(cost)) {
+        throw new Error(`This match costs ${cost} tokens to join.`);
+      }
       storePlayerId(code, newId);
       storeNickname(nickname);
       setPlayerId(newId);

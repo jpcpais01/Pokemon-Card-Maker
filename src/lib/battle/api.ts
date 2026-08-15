@@ -44,7 +44,10 @@ export function createRoom(
 }
 
 export function joinRoom(code: string, nickname?: string) {
-  return postJson<{ code: string; playerId: string }>("/api/battle/join", { code, nickname });
+  return postJson<{ code: string; playerId: string; packMode: PackMode; gens: number[] }>(
+    "/api/battle/join",
+    { code, nickname }
+  );
 }
 
 export function fetchRoomState(code: string, playerId: string) {

@@ -17,6 +17,7 @@ import {
 } from "@/lib/generations";
 import { setMenuMusic } from "@/lib/audio";
 import { getEvent, type EventTheme } from "@/lib/events";
+import { packCost, spendTokens } from "@/lib/tokens";
 import type { PackMode, PokemonPick, PokemonRef } from "@/lib/types";
 
 export type SoloMode = PackMode;
@@ -115,6 +116,12 @@ export default function SoloPackFlow({ initialMode, theme }: { initialMode: Solo
       }
       if (mode === "tripletagteamsir" && fetchedPool.length < 3) {
         throw new Error("Need at least 3 Pokemon in the selected generations for a Triple Tag Team.");
+      }
+
+      // Charged only once the pool is known good - a setup that was going to throw anyway
+      // should never take the tokens with it.
+      if (!spendTokens(packCost(mode, gens))) {
+        throw new Error("Not enough tokens to open this pack.");
       }
 
       const artType =
@@ -309,6 +316,8 @@ export default function SoloPackFlow({ initialMode, theme }: { initialMode: Solo
         back={event ? `/event/${event.slug}` : "/"}
         eventBanner={event ? { label: event.label, gradient: event.gradient, image: event.image } : undefined}
         extraTop={<PackModePicker value={mode} onChange={setMode} />}
+        cost={packCost(mode, gens)}
+        costLabel="this pack"
       />
     );
   }

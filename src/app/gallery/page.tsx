@@ -8,11 +8,14 @@ import Screen from "@/components/ui/Screen";
 import Icon from "@/components/ui/Icon";
 import {
   backfillThumbnail,
+  favoriteSaleValue,
   getFavoriteImage,
   getFavoriteSummaries,
   removeFavoriteById,
+  sellFavorite,
   type FavoriteSummary,
 } from "@/lib/favorites";
+import TokenBadge from "@/components/TokenBadge";
 
 export default function GalleryPage() {
   const [favorites, setFavorites] = useState<FavoriteSummary[]>([]);
@@ -21,6 +24,8 @@ export default function GalleryPage() {
   // The full-size artwork for whichever card is open, fetched on demand so the binder never
   // holds more than one of them at a time.
   const [openImage, setOpenImage] = useState<string | null>(null);
+  /** What the last sale fetched, for the confirmation line under the header. */
+  const [lastSale, setLastSale] = useState<number | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -65,6 +70,15 @@ export default function GalleryPage() {
     setOpenId((prev) => (prev === id ? null : prev));
   }
 
+  /** Selling is a trade, not a copy: the tokens arrive and the card leaves the binder. */
+  async function handleSell(id: string) {
+    const value = await sellFavorite(id);
+    if (value === null) return;
+    setFavorites((prev) => prev.filter((f) => f.id !== id));
+    setOpenId((prev) => (prev === id ? null : prev));
+    setLastSale(value);
+  }
+
   const openCard = favorites.find((f) => f.id === openId) ?? null;
   const sirCount = favorites.filter((f) => f.artType === "Special Illustration Rare").length;
 
@@ -72,9 +86,12 @@ export default function GalleryPage() {
     <Screen bare>
       <div className="screen-pad flex flex-1 flex-col pt-safe">
         <header className="enter-up py-3">
-          <h1 className="font-display text-[28px] font-extrabold leading-none tracking-tight text-white">
-            My Binder
-          </h1>
+          <div className="flex items-center justify-between">
+            <h1 className="font-display text-[28px] font-extrabold leading-none tracking-tight text-white">
+              My Binder
+            </h1>
+            <TokenBadge />
+          </div>
           <p className="mt-1.5 text-[13px] text-slate-400">
             {favorites.length > 0
               ? `${favorites.length} card${favorites.length === 1 ? "" : "s"} saved${
@@ -82,6 +99,9 @@ export default function GalleryPage() {
                 }`
               : "Cards you star show up here"}
           </p>
+          {lastSale !== null && (
+            <p className="mt-1.5 text-[12px] font-bold text-emerald-300">Sold for {lastSale} tokens.</p>
+          )}
         </header>
 
         {!loaded ? null : favorites.length === 0 ? (
@@ -102,17 +122,22 @@ export default function GalleryPage() {
           <div className="mt-2 grid grid-cols-2 gap-3">
             {favorites.map((f, i) => {
               const isSir = f.artType === "Special Illustration Rare";
+              const theirs = f.mine === false;
+              const saleValue = favoriteSaleValue(f);
               return (
-                <button
+                <div
                   key={f.id}
-                  type="button"
-                  onClick={() => setOpenId(f.id)}
                   style={{ "--d": `${Math.min(i, 10) * 45}ms` } as React.CSSProperties}
-                  className={`enter-up card overflow-hidden !rounded-2xl p-0 text-left transition-transform duration-150 active:scale-[0.97] ${
+                  className={`enter-up card overflow-hidden !rounded-2xl p-0 text-left ${
                     isSir ? "!border-amber-300/45" : ""
                   }`}
                 >
-                  <div className="relative aspect-[3/4] w-full bg-black/40">
+                  <button
+                    type="button"
+                    onClick={() => setOpenId(f.id)}
+                    aria-label={`View ${f.pokemonNames}`}
+                    className="relative block aspect-[3/4] w-full bg-black/40 transition-transform duration-150 active:scale-[0.97]"
+                  >
                     {/* Entries saved before thumbnails existed have none until the backfill above
                         lands, and the tile just stays dark for that moment - deliberately not
                         falling back to the full-size image, which is the whole cost being avoided. */}
@@ -131,7 +156,14 @@ export default function GalleryPage() {
                         SIR
                       </span>
                     )}
-                  </div>
+                    {/* Whose pull this was. Only ever shown for someone else's card - "yours" is
+                        the default and labelling every tile with it would just be noise. */}
+                    {theirs && (
+                      <span className="absolute right-1.5 top-1.5 rounded-full bg-black/60 px-1.5 py-0.5 text-[8.5px] font-black uppercase tracking-wider text-sky-300 backdrop-blur-sm">
+                        Theirs
+                      </span>
+                    )}
+                  </button>
                   <div className="px-2 py-2">
                     <p className="truncate text-center text-[12px] font-bold text-white">{f.pokemonNames}</p>
                     <div className="mt-1.5 flex flex-wrap justify-center gap-1">
@@ -144,8 +176,21 @@ export default function GalleryPage() {
                         {f.vibe}
                       </TraitChip>
                     </div>
+                    {saleValue !== null ? (
+                      <button
+                        type="button"
+                        onClick={() => handleSell(f.id)}
+                        className="mt-2 w-full rounded-lg border border-amber-300/40 bg-amber-300/10 py-1.5 text-[11px] font-black text-amber-200 transition-transform active:scale-[0.97]"
+                      >
+                        Sell · {saleValue}
+                      </button>
+                    ) : (
+                      <p className="mt-2 py-1.5 text-center text-[10px] font-semibold text-slate-600">
+                        {theirs ? "Not yours to sell" : "Unscored — no offer"}
+                      </p>
+                    )}
                   </div>
-                </button>
+                </div>
               );
             })}
           </div>

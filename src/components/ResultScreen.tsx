@@ -29,6 +29,9 @@ export default function ResultScreen({ image, prompt, data, onRegenerateImage, o
     artType: data.artType.label,
     specialForm: data.specialForm.value !== "none" ? data.specialForm.label : undefined,
     vibe: data.vibe.label,
+    // A solo pull is always your own, and never scored - nothing judges a pack you opened
+    // alone, so it has no sale price and lives in the binder purely as a keepsake.
+    mine: true,
   });
 
   function download() {
