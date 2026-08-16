@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import ImageLightbox from "@/components/ImageLightbox";
 import RoundMomentScreen from "@/components/battle/RoundMoment";
 import TraitChip from "@/components/TraitChip";
@@ -13,6 +13,15 @@ import { cardSeed, cardValue, earnTokens } from "@/lib/tokens";
 
 /** Every beat of the reveal holds for the same three seconds, then moves itself along. */
 const PHASE_MS = 3000;
+
+/**
+ * The one exception: the bars need longer than a card does.
+ *
+ * They are the only beat that is an animation rather than something to look at, and squeezing
+ * the climb into three seconds made it a blur. This is the beat plus enough room for the bars to
+ * fill and settle inside it - see BAR_GROW_MS, which has to stay under it.
+ */
+const COMPARE_MS = 6000;
 
 /**
  * How long to wait for artwork before starting the reveal anyway.
@@ -105,13 +114,19 @@ export default function RoundResult({
   const hasRatings = !!round.ratings;
   // Derived from the finished round alone, so every player's client independently arrives at the
   // same one and the whole table sees the same card at the same point in the reveal.
-  const moment = useMemo(() => pickRoundMoment(round), [round]);
+  const moment = pickRoundMoment(round);
+  // Only the *existence* of a moment steers the phase machine, and it is taken as a boolean on
+  // purpose. `round` is re-fetched by the poll every 1.5s and arrives as a fresh object every
+  // time, so anything object-shaped threaded through `advancePhase` gives it a new identity on
+  // each poll - which re-runs the effect below, which clears and restarts the timer before it
+  // has ever had 3 seconds to fire. That is exactly how the reveal ended up stuck.
+  const hasMoment = !!moment;
 
   const advancePhase = useCallback(() => {
     setPhaseIndex((p) => {
       // A round with nothing to announce (no winner recorded) skips the beat entirely rather
       // than showing an empty card.
-      const afterScores = moment ? MOMENT_PHASE : VICTORY_PHASE;
+      const afterScores = hasMoment ? MOMENT_PHASE : VICTORY_PHASE;
       if (p < n - 1) return p + 1;
       if (p === n - 1) return hasRatings ? COMPARE_PHASE : afterScores;
       if (p === COMPARE_PHASE) return BREAKDOWN_PHASE;
@@ -119,13 +134,14 @@ export default function RoundResult({
       if (p === MOMENT_PHASE) return VICTORY_PHASE;
       return SUMMARY_PHASE;
     });
-  }, [n, hasRatings, moment, COMPARE_PHASE, BREAKDOWN_PHASE, MOMENT_PHASE, VICTORY_PHASE, SUMMARY_PHASE]);
+  }, [n, hasRatings, hasMoment, COMPARE_PHASE, BREAKDOWN_PHASE, MOMENT_PHASE, VICTORY_PHASE, SUMMARY_PHASE]);
 
+  // Every dependency here has to be a primitive for the same reason - see `hasMoment` above.
   useEffect(() => {
     if (phaseIndex === SUMMARY_PHASE || !canAdvance) return;
-    const timer = window.setTimeout(advancePhase, PHASE_MS);
+    const timer = window.setTimeout(advancePhase, phaseIndex === COMPARE_PHASE ? COMPARE_MS : PHASE_MS);
     return () => window.clearTimeout(timer);
-  }, [phaseIndex, canAdvance, advancePhase, SUMMARY_PHASE]);
+  }, [phaseIndex, canAdvance, advancePhase, SUMMARY_PHASE, COMPARE_PHASE]);
 
   if (phaseIndex === COMPARE_PHASE) {
     return <RatingsBattle players={players} onSkip={advancePhase} />;
@@ -336,12 +352,12 @@ function CardSpotlight({
 // bar shares this exact rate, so they rise together and whichever total is lower simply stops
 // first while the others keep climbing until they reach their own value.
 const MAX_RATINGS_TOTAL = 40;
-// Sized to finish inside the three seconds this beat is given, delay and post-settle pause
-// included. Raising this without raising PHASE_MS to match just means the phase timer cuts the
-// bars off mid-climb.
-const BAR_GROW_MS = 1900;
+// Sized to finish inside COMPARE_MS, delay and post-settle pause included (200 + 4400 + 800 =
+// 5.4s of the 6s beat). Raising this without raising COMPARE_MS to match just means the phase
+// timer cuts the bars off mid-climb.
+const BAR_GROW_MS = 4400;
 const BAR_GROW_START_DELAY = 200;
-const POST_SETTLE_PAUSE_MS = 700;
+const POST_SETTLE_PAUSE_MS = 800;
 
 interface BarAccent {
   grad: string;

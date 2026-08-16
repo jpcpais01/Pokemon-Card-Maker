@@ -75,9 +75,9 @@ export const POWERUPS: PowerupDef[] = [
   {
     id: "deep-dive",
     label: "Deep Dive",
-    short: "Free rerolls",
-    blurb: "Unlimited rerolls for the rest of this round.",
-    confirm: "Open up the rerolls?",
+    short: "60s, no limit",
+    blurb: "Unlimited rerolls for 60 seconds - then you're locked in, ready or not.",
+    confirm: "Start the clock?",
   },
 ];
 
@@ -135,6 +135,10 @@ export interface BattleRound {
   voteCounts?: Record<string, number>;
   /** Raw voting state - never sent to a client; see sanitizeRoomForPlayer. */
   vote?: BattleRoundVoteState;
+  /** playerId -> when their Deep Dive clock runs out, as epoch ms. Past this the rerolls stop
+   *  and the pick locks itself. Stored on the round rather than held in the client so every
+   *  client agrees on the deadline, and reloading the page cannot restart it. */
+  deepDiveUntil?: Record<string, number>;
   /** playerId -> the power-up they played this round. Deliberately public: playing one is a
    *  declaration, and knowing someone has doubled down is most of what makes it worth doing.
    *  It gives nothing away about the card itself, which stays hidden until the reveal. */

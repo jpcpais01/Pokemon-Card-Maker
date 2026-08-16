@@ -7,6 +7,8 @@ import { POWERUPS, type PowerupId } from "@/lib/battle/types";
 interface Props {
   /** Not yet spent this match. */
   available: PowerupId[];
+  /** When a running Deep Dive expires, as epoch ms. Absent when none is running. */
+  deepDiveUntil?: number;
   /** Played this round, if any - at most one. */
   active?: PowerupId;
   /** No more plays once the pick is in. */
@@ -19,6 +21,27 @@ interface Props {
 const CONFIRM_MS = 4000;
 
 /**
+ * Whole seconds left on a deadline, or null when there isn't one (or it has passed).
+ *
+ * Ticks on a one-second interval rather than an animation frame: this is a number being read,
+ * not an animation, and a phone in a ten-player match has better things to do sixty times a
+ * second. The deadline itself comes from the server, so this only ever renders it.
+ */
+function useCountdown(until?: number): number | null {
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    if (until === undefined) return;
+    const id = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(id);
+  }, [until]);
+
+  if (until === undefined) return null;
+  const left = Math.ceil((until - now) / 1000);
+  return left > 0 ? left : null;
+}
+
+/**
  * The three one-shot power-ups, shown above the pick panel while picking.
  *
  * Every button is always on screen whatever its state - available, spent, or the one in play -
@@ -26,7 +49,8 @@ const CONFIRM_MS = 4000;
  * and there are only three in a whole match, so a tap arms the button and a second tap inside a
  * few seconds commits it; nobody spends a Double Down on a misplaced thumb.
  */
-export default function PowerupBar({ available, active, locked, busy, onPlay }: Props) {
+export default function PowerupBar({ available, deepDiveUntil, active, locked, busy, onPlay }: Props) {
+  const secondsLeft = useCountdown(deepDiveUntil);
   const [armed, setArmed] = useState<PowerupId | null>(null);
   const playedThisRound = !!active;
   // Derived rather than cleared in an effect: once a play has landed or the pick is locked, there
@@ -81,13 +105,31 @@ export default function PowerupBar({ available, active, locked, busy, onPlay }: 
               >
                 {p.label}
               </span>
-              <span className="text-[9px] font-semibold leading-tight text-slate-500">
-                {isActive ? "In play" : isSpent ? "Used" : isPending ? "Tap to confirm" : p.short}
+              <span
+                className={`text-[9px] font-semibold leading-tight tabular-nums ${
+                  isActive && secondsLeft !== null ? "text-amber-300" : "text-slate-500"
+                }`}
+              >
+                {isActive
+                  ? secondsLeft !== null
+                    ? `${secondsLeft}s left`
+                    : "In play"
+                  : isSpent
+                    ? "Used"
+                    : isPending
+                      ? "Tap to confirm"
+                      : p.short}
               </span>
             </button>
           );
         })}
       </div>
+
+      {active === "deep-dive" && secondsLeft !== null && (
+        <p className="mt-2 text-center text-[11px] font-bold text-amber-300/90">
+          Reroll freely — you lock in automatically in {secondsLeft}s.
+        </p>
+      )}
 
       {pending && (
         <p className="mt-2 text-center text-[11px] font-semibold text-amber-300/90">

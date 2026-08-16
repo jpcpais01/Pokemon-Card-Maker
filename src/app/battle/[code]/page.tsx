@@ -246,6 +246,32 @@ export default function BattleRoomPage() {
     }
   }
 
+  // A Deep Dive locks the pick when its minute is up, ready or not - that's the deal it made.
+  // Driven from the client because nothing runs server-side between requests; the reroll route
+  // stops honouring rerolls at the same deadline either way, so a client that misses this can
+  // stall its own pick but can never buy itself extra rolls.
+  useEffect(() => {
+    if (!playerId || !room) return;
+    const round = room.rounds[room.rounds.length - 1];
+    if (!round || round.status !== "picking") return;
+    if (round.players[playerId]?.locked) return;
+    const until = round.deepDiveUntil?.[playerId];
+    if (until === undefined) return;
+
+    const fire = () => {
+      lockPicks(code, playerId)
+        .then(({ room }) => setRoom(room))
+        .catch(() => {});
+    };
+    const delay = until - Date.now();
+    if (delay <= 0) {
+      fire();
+      return;
+    }
+    const timer = window.setTimeout(fire, delay);
+    return () => window.clearTimeout(timer);
+  }, [code, playerId, room]);
+
   async function handlePlayPowerup(powerup: PowerupId) {
     if (!playerId) return;
     setActionBusy(true);
@@ -445,6 +471,7 @@ export default function BattleRoomPage() {
           <>
             <PowerupBar
               available={availablePowerups(room, playerId)}
+              deepDiveUntil={round.deepDiveUntil?.[playerId]}
               active={round.powerups?.[playerId]}
               locked={round.players[playerId]?.locked ?? false}
               busy={actionBusy}

@@ -106,6 +106,9 @@ export function rerollPlayerCard(
  * each for the match, and one play per round, has to survive a hand-written request too.
  */
 
+/** How long a Deep Dive lasts once it's started. */
+export const DEEP_DIVE_MS = 60_000;
+
 /** The power-ups this player has left to spend, in the order they're presented. */
 export function availablePowerups(room: BattleRoom, playerId: string): PowerupId[] {
   const spent = room.powerupsUsed?.[playerId] ?? [];
@@ -138,6 +141,17 @@ export function playPowerup(room: BattleRoom, round: BattleRound, playerId: stri
       state.artType = ART_TYPES.find((a) => a.value === "special-illustration-rare")!;
     }
   }
+
+  if (id === "deep-dive") {
+    round.deepDiveUntil ??= {};
+    round.deepDiveUntil[playerId] = Date.now() + DEEP_DIVE_MS;
+  }
+}
+
+/** True once this player's Deep Dive clock has run out. False if they never started one. */
+export function deepDiveExpired(round: BattleRound, playerId: string, now = Date.now()): boolean {
+  const until = round.deepDiveUntil?.[playerId];
+  return until !== undefined && now >= until;
 }
 
 /** Why this play is not allowed, or null if it is. */
