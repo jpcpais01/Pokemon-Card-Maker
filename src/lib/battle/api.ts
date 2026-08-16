@@ -43,6 +43,13 @@ export function createRoom(
   });
 }
 
+/** What joining this room would cost, asked before committing to a seat in it. */
+export function quoteRoom(code: string) {
+  return getJson<{ packMode: PackMode; gens: number[] }>(
+    `/api/battle/quote?code=${encodeURIComponent(code)}`
+  );
+}
+
 export function joinRoom(code: string, nickname?: string) {
   return postJson<{ code: string; playerId: string; packMode: PackMode; gens: number[] }>(
     "/api/battle/join",

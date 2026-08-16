@@ -68,6 +68,38 @@ export function earnTokens(amount: number): void {
   write(read() + amount);
 }
 
+/** Refunds already paid out, so a reload can't collect the same one twice. */
+const REFUNDS_KEY = "pcg-refunds";
+/** Only the most recent are worth remembering - a match is five rounds and rooms don't come back. */
+const REFUND_LEDGER_LIMIT = 60;
+
+function readRefunds(): string[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const parsed = JSON.parse(window.localStorage.getItem(REFUNDS_KEY) ?? "[]");
+    return Array.isArray(parsed) ? parsed.filter((k): k is string => typeof k === "string") : [];
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Credits a one-off refund, at most once per `key`.
+ *
+ * Rounds are refunded by the client that sees them fail, and the round result screen is
+ * re-rendered on every poll and rebuilt from scratch on a reload - so without a record of what
+ * has already been paid, a player could collect the same failed round indefinitely by refreshing.
+ * Returns true only on the call that actually paid.
+ */
+export function claimRefund(key: string, amount: number): boolean {
+  if (typeof window === "undefined") return false;
+  const claimed = readRefunds();
+  if (claimed.includes(key)) return false;
+  window.localStorage.setItem(REFUNDS_KEY, JSON.stringify([...claimed, key].slice(-REFUND_LEDGER_LIMIT)));
+  earnTokens(amount);
+  return true;
+}
+
 function subscribe(listener: () => void): () => void {
   listeners.add(listener);
   // Another tab spending or earning should not leave this one showing a stale balance.

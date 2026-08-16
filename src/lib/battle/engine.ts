@@ -7,6 +7,7 @@ import type {
   BattleRoom,
   BattleRound,
   BattleRoundPlayerState,
+  JudgeMode,
   PowerupId,
 } from "./types";
 
@@ -168,6 +169,20 @@ export function canPlayPowerup(
   if (activePowerup(round, playerId)) return "You've already played a power-up this round.";
   if (!availablePowerups(room, playerId).includes(id)) return "You've already used that power-up.";
   return null;
+}
+
+/**
+ * True when a finished round didn't deliver what the players paid for.
+ *
+ * Every failure path in the advance route - the judge throwing, some artwork never generating,
+ * no artwork at all - ends the round without a verdict anyone can read: no ratings under the AI
+ * judge, no tally under player voting. Those are exactly the rounds worth a refund, and checking
+ * for the missing result rather than pattern-matching the fallback verdict text means a new
+ * failure path is covered the moment it's added.
+ */
+export function roundFailed(round: BattleRound, judgeMode: JudgeMode | undefined): boolean {
+  if (round.status !== "done") return false;
+  return judgeMode === "vote" ? !round.voteCounts : !round.ratings;
 }
 
 /**

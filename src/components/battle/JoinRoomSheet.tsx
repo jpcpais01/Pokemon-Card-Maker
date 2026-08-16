@@ -4,8 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Icon from "@/components/ui/Icon";
 import NicknameField, { isNicknameUsable } from "@/components/battle/NicknameField";
-import { joinRoom } from "@/lib/battle/api";
-import { matchCost, spendTokens } from "@/lib/tokens";
+import { joinRoom, quoteRoom } from "@/lib/battle/api";
+import { getTokens, matchCost, spendTokens } from "@/lib/tokens";
 import { ROOM_CODE_LENGTH } from "@/lib/battle/roomCode";
 import { storeNickname, storePlayerId } from "@/lib/battle/session";
 import { useNickname } from "@/lib/battle/useNickname";
@@ -32,13 +32,17 @@ export default function JoinRoomSheet({ onClose }: { onClose: () => void }) {
     setError(null);
     setJoining(true);
     try {
-      const { code: roomCode, playerId, packMode, gens } = await joinRoom(code.trim().toUpperCase(), nickname);
-      // Joining means opening five packs too, at whatever the host set the room to - which is
-      // why the price can only be checked once the room has answered.
-      const cost = matchCost(packMode, gens);
-      if (!spendTokens(cost)) {
-        throw new Error(`This match costs ${cost} tokens to join.`);
+      // Priced before joining, not after: joining takes a seat, and a player who can't cover
+      // the room shouldn't be occupying one to find that out.
+      const wanted = code.trim().toUpperCase();
+      const quote = await quoteRoom(wanted);
+      const cost = matchCost(quote.packMode, quote.gens);
+      if (getTokens() < cost) {
+        throw new Error(`This match costs ${cost} tokens to join — you have ${getTokens()}.`);
       }
+
+      const { code: roomCode, playerId } = await joinRoom(wanted, nickname);
+      spendTokens(cost);
       storePlayerId(roomCode, playerId);
       storeNickname(nickname);
       router.push(`/battle/${roomCode}`);

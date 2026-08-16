@@ -23,14 +23,15 @@ import {
   joinRoom,
   lockPicks,
   playPowerup,
+  quoteRoom,
   readyForNext,
   rerollCard,
 } from "@/lib/battle/api";
-import { availablePowerups } from "@/lib/battle/engine";
-import { matchCost, spendTokens } from "@/lib/tokens";
+import { availablePowerups, roundFailed } from "@/lib/battle/engine";
 import { computeMvp } from "@/lib/battle/mvp";
 import { getStoredPlayerId, storeNickname, storePlayerId } from "@/lib/battle/session";
 import { useNickname } from "@/lib/battle/useNickname";
+import { claimRefund, getTokens, matchCost, packCost, spendTokens } from "@/lib/tokens";
 import type { BattleRoom, PowerupId, RoundStatus } from "@/lib/battle/types";
 import type { CardKey } from "@/lib/cardFaces";
 
@@ -100,6 +101,8 @@ export default function BattleRoomPage() {
   const [voteImages, setVoteImages] = useState<Record<string, string>>({});
   const [mvpImage, setMvpImage] = useState<string | null>(null);
   const [isStuck, setIsStuck] = useState(false);
+  /** Round number -> tokens refunded for it, so the result screen can say so. */
+  const [refunds, setRefunds] = useState<Record<number, number>>({});
   const advancingRef = useRef(false);
 
   useEffect(() => {
@@ -218,11 +221,14 @@ export default function BattleRoomPage() {
     setJoining(true);
     setJoinError(null);
     try {
-      const { playerId: newId, packMode, gens } = await joinRoom(code, nickname);
-      const cost = matchCost(packMode, gens);
-      if (!spendTokens(cost)) {
-        throw new Error(`This match costs ${cost} tokens to join.`);
+      const quote = await quoteRoom(code);
+      const cost = matchCost(quote.packMode, quote.gens);
+      if (getTokens() < cost) {
+        throw new Error(`This match costs ${cost} tokens to join — you have ${getTokens()}.`);
       }
+
+      const { playerId: newId } = await joinRoom(code, nickname);
+      spendTokens(cost);
       storePlayerId(code, newId);
       storeNickname(nickname);
       setPlayerId(newId);
@@ -245,6 +251,32 @@ export default function BattleRoomPage() {
       setActionBusy(false);
     }
   }
+
+  /**
+   * Refunds a round that failed to produce a result.
+   *
+   * A match is paid for up front as five packs, so a round the game couldn't deliver - artwork
+   * that never generated, or a judge that fell over - owes that pack back. Every player refunds
+   * themselves, because the balance lives on the device and the server has no way to credit it;
+   * `claimRefund` keys on the room and round so polls and reloads can't collect it twice.
+   */
+  useEffect(() => {
+    if (!playerId || !room) return;
+    const roundNumber = room.rounds.length;
+    const round = room.rounds[roundNumber - 1];
+    if (!round || !roundFailed(round, room.judgeMode)) return;
+
+    const amount = packCost(room.packMode ?? "classic", room.gens);
+    // Deferred into a callback for the same reason the player-id read above is: the claim is a
+    // synchronous localStorage write, and paying out plus re-rendering inside the effect body is
+    // the cascading-render pattern React asks you not to write.
+    const timeout = window.setTimeout(() => {
+      if (claimRefund(`${room.code}:${roundNumber}`, amount)) {
+        setRefunds((prev) => ({ ...prev, [roundNumber]: amount }));
+      }
+    }, 0);
+    return () => window.clearTimeout(timeout);
+  }, [playerId, room]);
 
   // A Deep Dive locks the pick when its minute is up, ready or not - that's the deal it made.
   // Driven from the client because nothing runs server-side between requests; the reroll route
@@ -551,6 +583,7 @@ export default function BattleRoomPage() {
             allOthersReady={otherPlayers.every((p) => round.players[p.id]?.readyForNext ?? false)}
             readyBusy={actionBusy}
             onReady={handleReady}
+            refundedTokens={refunds[room.round]}
           />
         )}
       </div>

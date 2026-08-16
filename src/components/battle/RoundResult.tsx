@@ -53,6 +53,8 @@ interface Props {
   allOthersReady: boolean;
   readyBusy: boolean;
   onReady: () => void;
+  /** Set when this round couldn't produce a result and its pack cost was handed back. */
+  refundedTokens?: number;
 }
 
 export default function RoundResult({
@@ -63,6 +65,7 @@ export default function RoundResult({
   allOthersReady,
   readyBusy,
   onReady,
+  refundedTokens,
 }: Props) {
   const [phaseIndex, setPhaseIndex] = useState(0);
   const [fullView, setFullView] = useState<{
@@ -200,6 +203,14 @@ export default function RoundResult({
       <p className="text-center text-sm font-bold text-amber-300">
         {iWon ? "🏆 You won this round!" : `This round goes to ${winnerPlayer?.label ?? "someone else"}.`}
       </p>
+
+      {/* A round nobody could be scored on is a pack the game took and didn't deliver, so it
+          says plainly that the money came back rather than leaving it to be noticed. */}
+      {refundedTokens !== undefined && (
+        <p className="mt-1.5 text-center text-[12px] font-bold text-sky-300">
+          Round couldn&apos;t be scored — {refundedTokens} tokens refunded.
+        </p>
+      )}
 
       {/* The scoreboard would jump by two with no explanation otherwise - the whole point of
           backing yourself is that the payout is seen. */}
