@@ -27,6 +27,15 @@ export interface FavoriteCard {
    * solo pull has none - and no sale price, since the price is a function of the score.
    */
   ratingTotal?: number;
+  /**
+   * Whether this card has already been cashed in at the end of its round.
+   *
+   * Selling from the round summary and saving to the binder are not exclusive - the artwork is
+   * still there to be kept after it's been sold. But it can only be sold once, and a binder entry
+   * made afterwards would otherwise carry a full price tag and pay out a second time for the same
+   * card. Sold cards stay in the binder as keepsakes with no offer on them.
+   */
+  sold?: boolean;
   /** Price seed, captured at save time from the artwork - see `cardSeed`. Without it stored, a
    *  card offered at the end of a round and the same card in the binder would be seeded off
    *  different things and quoted different prices. */
@@ -185,9 +194,9 @@ export async function getFavoriteImage(id: string): Promise<string | null> {
  * matter how many times the binder is opened.
  */
 export function favoriteSaleValue(
-  fav: Pick<FavoriteCard, "id" | "mine" | "ratingTotal" | "saleSeed">
+  fav: Pick<FavoriteCard, "id" | "mine" | "ratingTotal" | "saleSeed" | "sold">
 ): number | null {
-  if (fav.mine === false || fav.ratingTotal === undefined) return null;
+  if (fav.sold || fav.mine === false || fav.ratingTotal === undefined) return null;
   // Entries saved before the seed was stored fall back to their id, which is just as stable -
   // it only means those quote a different (but equally fixed) price than the round did.
   return cardValue(fav.ratingTotal, fav.saleSeed ?? fav.id);

@@ -71,6 +71,8 @@ export default function RoundResult({
   const [fullView, setFullView] = useState<{
     src: string;
     prompt?: string;
+    /** Whose card this is, so its sold state can be read live rather than snapshotted on open. */
+    playerId: string;
     pick: BattleRoundPlayerState;
     mine: boolean;
     ratingTotal?: number;
@@ -86,6 +88,10 @@ export default function RoundResult({
         vibe: fullView.pick.vibe.label,
         mine: fullView.mine,
         ratingTotal: fullView.ratingTotal,
+        // Selling and keeping aren't exclusive - the artwork is still worth saving after it's
+        // been cashed in. Marking it here is what stops the binder quoting a second price for a
+        // card that has already paid out once.
+        sold: sold[fullView.playerId] !== undefined,
       }
     : null;
   const { isFavorited, toggle: toggleFavorite, error: favoriteError } = useFavoriteToggle(
@@ -233,6 +239,7 @@ export default function RoundResult({
               setFullView({
                 src,
                 prompt,
+                playerId: p.id,
                 pick: p.pick,
                 mine: p.isMe,
                 ratingTotal: p.ratings ? ratingsTotal(p.ratings) : undefined,

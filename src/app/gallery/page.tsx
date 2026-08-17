@@ -186,7 +186,7 @@ export default function GalleryPage() {
                       </button>
                     ) : (
                       <p className="mt-2 py-1.5 text-center text-[10px] font-semibold text-slate-600">
-                        {theirs ? "Not yours to sell" : "Unscored — no offer"}
+                        {f.sold ? "Already sold" : theirs ? "Not yours to sell" : "Unscored — no offer"}
                       </p>
                     )}
                   </div>
