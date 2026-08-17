@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import DeepDiveCountdown from "@/components/battle/DeepDiveCountdown";
 import Icon from "@/components/ui/Icon";
 import { POWERUPS, type PowerupId } from "@/lib/battle/types";
 
@@ -65,6 +66,9 @@ export default function PowerupBar({ available, deepDiveUntil, active, locked, b
 
   return (
     <div className="mb-4">
+      {/* Rendered from here because this is where the clock is already known. It draws nothing
+          into the flow - the takeover is fixed, full-screen and pointer-transparent. */}
+      {deepDiveUntil !== undefined && <DeepDiveCountdown until={deepDiveUntil} />}
       <div className="mb-2 flex items-baseline justify-between">
         <p className="section-label">Power-ups</p>
         <p className="text-[10px] font-semibold text-slate-500">One of each, per match</p>
