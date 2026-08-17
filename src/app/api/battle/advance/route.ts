@@ -28,21 +28,38 @@ export const maxDuration = 60;
  * theme ever did was tell the judge what the cards were reaching for.
  */
 async function judgeGroup(letters: string[], cards: JudgeCardInput[], theme: EventTheme | undefined) {
-  if (theme) {
-    try {
-      return await judgeMultiBattle(buildJudgeSystemPrompt(letters, theme), cards);
-    } catch (err) {
-      console.error(`battle/advance: judging failed for the "${theme}" event, retrying unthemed`, err);
-    }
-  }
   try {
-    return await judgeMultiBattle(buildJudgeSystemPrompt(letters), cards);
+    return await judgeMultiBattle(buildJudgeSystemPrompt(letters, theme), cards);
   } catch (err) {
-    // Splitting a round across several calls multiplies the chance that at least one of them
-    // fails, and one failed group costs every player in the round their ratings - not just the
-    // two in it. One more attempt is cheap next to losing the whole reveal.
-    console.error("battle/advance: judging a group failed, retrying once", err);
+    console.error(
+      theme
+        ? `battle/advance: judging failed for the "${theme}" event, retrying unthemed`
+        : "battle/advance: judging a group failed, retrying once",
+      err
+    );
+    // Deliberately two attempts and no more. `judgeMultiBattle` already walks its own ladder of
+    // progressively less constrained requests inside each one, and this route has a 60s ceiling
+    // it shares with every other group - a deeper chain here mostly buys the chance of being
+    // killed mid-flight, which costs the round far more than one group giving up does.
     return judgeMultiBattle(buildJudgeSystemPrompt(letters), cards);
+  }
+}
+
+/**
+ * Runs `attempt` again once if it fails.
+ *
+ * Prompt drafting and image generation had no retry at all, so a single transient hiccup from
+ * the provider - a rate limit, a 5xx, one refusal - permanently marked that player's card as
+ * failed for the round. That is expensive out of proportion to the cause: a card with no artwork
+ * can't be judged, so at a full table one blip used to cost the entire round its scores. Two
+ * attempts turn most of those back into a normal round.
+ */
+async function twice<T>(label: string, attempt: () => Promise<T>): Promise<T> {
+  try {
+    return await attempt();
+  } catch (err) {
+    console.error(`battle/advance: ${label} failed, retrying once`, err);
+    return attempt();
   }
 }
 
@@ -74,7 +91,17 @@ async function judgeRoundInGroups(entries: JudgeEntry[], theme: EventTheme | und
   }
 
   const groups = splitIntoJudgeBatches(shuffled);
-  const judged = await Promise.all(
+  /*
+   * `allSettled`, not `all`.
+   *
+   * A ten-player table is judged as five independent calls, and with `all` a single one of them
+   * failing rejected the whole thing - so every player in the round lost their ratings because
+   * two of them happened to share a group with a bad response. That turns any per-call failure
+   * rate into a much larger per-round one: five groups at a 10% failure rate lose the round 41%
+   * of the time. The groups have nothing to do with each other, so a failure in one is now just
+   * that group's problem.
+   */
+  const settled = await Promise.allSettled(
     groups.map(async (group) => {
       const letters = group.map((_, i) => LETTERS[i]);
       const cards: JudgeCardInput[] = group.map((entry, i) => ({
@@ -91,7 +118,12 @@ async function judgeRoundInGroups(entries: JudgeEntry[], theme: EventTheme | und
     })
   );
 
-  const scored = judged.flat();
+  const scored = settled.flatMap((outcome, i) => {
+    if (outcome.status === "fulfilled") return outcome.value;
+    console.error(`battle/advance: judging group ${i + 1}/${groups.length} failed after retries`, outcome.reason);
+    return [];
+  });
+  if (scored.length === 0) throw new Error("Every judging group failed.");
   const best = scored.reduce((top, card) =>
     ratingsTotal(card.ratings) > ratingsTotal(top.ratings) ? card : top
   );
@@ -174,7 +206,7 @@ export async function POST(request: Request) {
               pokemons: state.pokemons.map((p) => ({ name: p.displayName })),
               theme,
             });
-            const drafted = await generateText(SYSTEM_PROMPT, userPrompt);
+            const drafted = await twice("prompt drafting", () => generateText(SYSTEM_PROMPT, userPrompt));
             state.prompt = `${drafted}${buildStyleSuffix(state.pokemons.map((p) => p.displayName), state.specialForm.value, theme)}`;
             state.promptStatus = "ready";
           } catch (err) {
@@ -197,7 +229,7 @@ export async function POST(request: Request) {
           }
           if (state.imageStatus !== "pending" || !state.prompt) return;
           try {
-            const image = await generateImage(state.prompt);
+            const image = await twice("image generation", () => generateImage(state.prompt!));
             await saveImage(room.code, room.round, pid, image);
             state.imageStatus = "ready";
           } catch (err) {
@@ -251,18 +283,25 @@ export async function POST(request: Request) {
       let verdict: string;
       let ratings: BattleRound["ratings"];
 
-      if (readyPids.length === pids.length) {
-        const images = await Promise.all(pids.map((pid) => getImage(room.code, room.round, pid)));
+      // Judge whoever actually has artwork, rather than demanding the whole table.
+      //
+      // This used to require every single image, so one card failing to generate - out of ten,
+      // with no retry behind it - threw away the judging for everyone and dropped the round to a
+      // default win with no scores at all. The rubric grades each card on its own merits, so a
+      // missing card costs that player their rating and nothing more.
+      if (readyPids.length >= 2) {
+        const readyStates = readyPids.map((pid) => currentRound.players[pid]);
+        const images = await Promise.all(readyPids.map((pid) => getImage(room.code, room.round, pid)));
         try {
-          if (images.some((img) => !img)) throw new Error("Missing stored image.");
-          const judged = await judgeRoundInGroups(
-            pids.map((pid, i) => ({
+          const entries = readyPids
+            .map((pid, i) => ({
               playerId: pid,
-              image: images[i]!,
-              names: states[i].pokemons.map((p) => p.displayName).join(" & "),
-            })),
-            theme
-          );
+              image: images[i],
+              names: readyStates[i].pokemons.map((p) => p.displayName).join(" & "),
+            }))
+            .filter((e): e is { playerId: string; image: string; names: string } => !!e.image);
+          if (entries.length < 2) throw new Error("Not enough stored images to judge.");
+          const judged = await judgeRoundInGroups(entries, theme);
           winnerId = judged.winnerId;
           verdict = judged.reason;
           ratings = judged.ratings;

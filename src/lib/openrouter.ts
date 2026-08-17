@@ -237,20 +237,28 @@ const RATING_SCHEMA = {
 
 const ratingsKey = (letter: string) => `card${letter}Ratings`;
 
-/** Builds a schema requiring exactly one ratings object per card in the group (2 or 3). */
+/**
+ * Builds a schema requiring exactly one ratings object per card in the group (2 or 3).
+ *
+ * The ratings come FIRST and the prose last, deliberately. Models emitting a strict schema
+ * follow the property order they were given, and the one thing a truncated response must not
+ * lose is the numbers - they're what the whole round is scored on, while "reasoning" is flavour
+ * with a perfectly good default. Ordered the other way round (as this was), a response cut off
+ * early kept the flavour text and dropped every score.
+ */
 function buildJudgeResponseFormat(letters: string[]) {
-  const properties: Record<string, unknown> = {
-    reasoning: {
-      type: "string",
-      description: "A punchy, card-specific final-battle phrase, max 10 words. Never a generic stock line.",
-    },
-    winner: { type: "string", enum: letters, description: "Whichever card's ratings add up highest." },
-  };
-  const required = ["reasoning", "winner"];
+  const properties: Record<string, unknown> = {};
+  const required: string[] = [];
   for (const letter of letters) {
     properties[ratingsKey(letter)] = RATING_SCHEMA;
     required.push(ratingsKey(letter));
   }
+  properties.winner = { type: "string", enum: letters, description: "Whichever card's ratings add up highest." };
+  properties.reasoning = {
+    type: "string",
+    description: "A punchy, card-specific final-battle phrase, max 10 words. Never a generic stock line.",
+  };
+  required.push("winner", "reasoning");
 
   return {
     type: "json_schema",
@@ -301,34 +309,60 @@ export async function judgeMultiBattle(systemPrompt: string, cards: JudgeCardInp
     model: TEXT_MODEL,
     messages,
     temperature: 0.6,
-    // Generous headroom above what the compact JSON payload itself needs - some models spend a
-    // chunk of the budget on hidden reasoning before writing the actual answer, and a tight cap
-    // here was silently truncating the JSON mid-object, which made every round fall back to the
-    // generic response below. Scales with card count since more cards means more ratings fields.
-    max_tokens: 500 + cards.length * 250,
-    // The same model id can be served by several backing providers on OpenRouter, and only some
-    // of them actually enforce every parameter in the request - one that silently ignores
-    // response_format is indistinguishable from a working one until the response comes back
-    // malformed. This pins routing to providers that honor every parameter we send (including
-    // response_format), instead of letting a non-conforming provider intermittently slip through.
-    provider: { require_parameters: true },
+    /*
+     * This has to cover hidden reasoning as well as the answer, and the judge does *more*
+     * thinking than anything else here because it is also looking at two or three images.
+     *
+     * It used to be 500 + 250/card - roughly 1000 tokens - which is less than half of what plain
+     * prompt drafting needed (see generateText, whose comment records the same lesson). A judge
+     * that spends its whole budget thinking emits nothing at all, and an empty response is thrown
+     * as a failure, which is a good part of why judging failed as often as it did.
+     */
+    max_tokens: 2000 + cards.length * 500,
   };
 
-  const responseFormat = buildJudgeResponseFormat(letters);
+  /*
+   * `require_parameters` pins routing to providers that honour every parameter we send, so a
+   * provider that silently ignores response_format can't quietly serve a malformed answer. It is
+   * only worth that on the strict attempt: paired with a json_schema request and image input it
+   * narrows the eligible providers a long way, and if the narrowing is itself what failed, a
+   * retry that keeps it fails in exactly the same way. Each attempt below therefore relaxes one
+   * more constraint rather than repeating the same request.
+   */
+  const attempts: Record<string, unknown>[] = [
+    { ...baseBody, response_format: buildJudgeResponseFormat(letters), provider: { require_parameters: true } },
+    { ...baseBody, response_format: { type: "json_object" } },
+    // Last resort: no response_format at all. The system prompt already specifies the exact
+    // object down to the key names, and `extractJson` copes with fences and stray prose.
+    baseBody,
+  ];
 
   let data: unknown;
-  try {
-    // Strict structured output: the model is constrained to this exact schema, so it can't
-    // silently omit a rating field the way loose "return JSON" prompting sometimes does.
-    data = await callOpenRouter({ ...baseBody, response_format: responseFormat });
-  } catch (err) {
-    console.error("judgeMultiBattle: structured-output request failed, retrying without a schema", err);
-    data = await callOpenRouter({ ...baseBody, response_format: { type: "json_object" } });
+  let lastError: unknown;
+  for (const [i, body] of attempts.entries()) {
+    try {
+      data = await callOpenRouter(body);
+      lastError = undefined;
+      break;
+    } catch (err) {
+      lastError = err;
+      console.error(`judgeMultiBattle: request attempt ${i + 1}/${attempts.length} failed`, err);
+    }
   }
+  if (lastError) throw lastError;
 
-  const content = (data as { choices?: { message?: { content?: unknown } }[] })?.choices?.[0]?.message?.content;
+  const choice = (
+    data as { choices?: { message?: { content?: unknown }; finish_reason?: string }[] }
+  )?.choices?.[0];
+  const content = choice?.message?.content;
   if (!content || typeof content !== "string") {
     throw new Error("The judge model returned an empty response.");
+  }
+  // Surfaced rather than parsed around: a response cut off at the token limit is missing ratings,
+  // and the recovery below would at best rescue some of them. Raising max_tokens is the fix; this
+  // makes it say so in the log instead of looking like a malformed-JSON problem.
+  if (choice?.finish_reason === "length") {
+    console.error("judgeMultiBattle: response hit the token limit before finishing", content.slice(0, 400));
   }
 
   try {
@@ -370,17 +404,20 @@ export async function judgeMultiBattle(systemPrompt: string, cards: JudgeCardInp
       return { winnerLetter, reason, ratings: recovered };
     }
 
-    // Should be rare now that the response is schema-constrained, but keep a safety net so one
-    // truly broken response can't crash the round - and log the raw content so a recurring
-    // failure is actually diagnosable instead of silently masked by a fake-looking flat fallback.
+    /*
+     * Throw rather than inventing ratings.
+     *
+     * This used to return a flat 5/5/5/5 for every card so that "one broken response can't crash
+     * the round" - but returning meant the call had *succeeded*, so the caller's retry chain
+     * (themed -> unthemed -> one more go, in battle/advance) never ran for the single most common
+     * failure there is. A malformed response was answered once, quietly, with fabricated numbers
+     * that scored every card in the group identically and read on screen as a real judgement.
+     *
+     * Failing loudly instead lets those retries do their job, and the caller decides what a group
+     * that exhausted them is worth - which it can do far better from out there, where it knows
+     * about the other groups.
+     */
     console.error("judgeMultiBattle: failed to parse judge response", err, content);
-    const fallback: CardRatings = { art: 5, fame: 5, chase: 5, rarity: 5 };
-    const fallbackRatings: Record<string, CardRatings> = {};
-    for (const letter of letters) fallbackRatings[letter] = fallback;
-    return {
-      winnerLetter: letters[Math.floor(Math.random() * letters.length)],
-      reason: "The judge's notes got lost in the shuffle - too close to call!",
-      ratings: fallbackRatings,
-    };
+    throw new Error("The judge's response could not be read.");
   }
 }

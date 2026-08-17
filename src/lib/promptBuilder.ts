@@ -118,13 +118,15 @@ Rate each card independently and honestly on four aspects, each a strict integer
 
 Respond with ONLY one single-line JSON object and absolutely nothing else: no markdown code fences, no backticks, no "json" label, no preamble like "Here is my evaluation", no explanation before or after, no trailing commentary. The response body must start with "{" and end with "}" and contain nothing outside those braces.
 
-The object must contain EXACTLY these ${n + 2} top-level keys, no more and no fewer: "reasoning", "winner", ${ratingsKeyList}.
-- "reasoning": a punchy final-battle phrase describing how THIS specific round went, max 10 words. Mention something concrete you actually noticed (a pose, a color, a background detail, a vibe) - never a generic stock line like "a closely fought round."
-- "winner": exactly one of these strings: ${letters.map((l) => `"${l}"`).join(", ")} - nothing else.
+The object must contain EXACTLY these ${n + 2} top-level keys, no more and no fewer, and in this order: ${ratingsKeyList}, "winner", "reasoning".
 ${letters.map((l) => `- "card${l}Ratings": an object for Card ${l} with EXACTLY these four keys, every single one required and never null, missing, or blank: "art", "fame", "chase", "rarity" - each value a plain integer from 1 to 10.`).join("\n")}
+- "winner": exactly one of these strings: ${letters.map((l) => `"${l}"`).join(", ")} - nothing else.
+- "reasoning": a punchy final-battle phrase describing how THIS specific round went, max 10 words. Mention something concrete you actually noticed (a pose, a color, a background detail, a vibe) - never a generic stock line like "a closely fought round."
+
+Write the ratings first and the "reasoning" line last, exactly as ordered above.
 
 Example of the exact shape required (values are illustrative only, not a default to copy):
-{"reasoning": "Charizard's dynamic flame pose outshines the rest.", "winner": "${letters[0]}", ${exampleRatingsList}}
+{${exampleRatingsList}, "winner": "${letters[0]}", "reasoning": "Charizard's dynamic flame pose outshines the rest."}
 
 Never omit a key, never leave a rating blank/null/0, and never wrap the object in another object or array. "winner" must be consistent with whichever card's four ratings add up to the highest total among all ${n} cards - be fair and just, let the ratings drive the decision rather than a gut feeling.`;
 }
