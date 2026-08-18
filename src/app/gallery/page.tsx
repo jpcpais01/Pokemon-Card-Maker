@@ -8,6 +8,7 @@ import Screen from "@/components/ui/Screen";
 import Icon from "@/components/ui/Icon";
 import {
   backfillThumbnail,
+  dedupeFavorites,
   favoriteSaleValue,
   getFavoriteImage,
   getFavoriteSummaries,
@@ -29,22 +30,27 @@ export default function GalleryPage() {
 
   useEffect(() => {
     let cancelled = false;
-    getFavoriteSummaries().then((favs) => {
-      if (cancelled) return;
-      setFavorites(favs);
-      setLoaded(true);
+    // Repairs anything left behind by the old racing save before the grid reads it, so a binder
+    // that already picked up duplicates heals itself the next time it's opened rather than
+    // showing the same card twice forever.
+    dedupeFavorites()
+      .then(() => getFavoriteSummaries())
+      .then((favs) => {
+        if (cancelled) return;
+        setFavorites(favs);
+        setLoaded(true);
 
-      // Self-heal older entries saved before thumbnails existed - runs after the initial paint,
-      // one at a time, and just swaps each tile over to its thumbnail once ready. Doesn't block or
-      // change anything on screen right now, but the binder gets lighter to open every time after.
-      for (const fav of favs) {
-        if (fav.thumbnail) continue;
-        backfillThumbnail(fav.id).then((thumbnail) => {
-          if (cancelled || !thumbnail) return;
-          setFavorites((prev) => prev.map((f) => (f.id === fav.id ? { ...f, thumbnail } : f)));
-        });
-      }
-    });
+        // Self-heal older entries saved before thumbnails existed - runs after the initial paint,
+        // one at a time, and just swaps each tile over to its thumbnail once ready. Doesn't block or
+        // change anything on screen right now, but the binder gets lighter to open every time after.
+        for (const fav of favs) {
+          if (fav.thumbnail) continue;
+          backfillThumbnail(fav.id).then((thumbnail) => {
+            if (cancelled || !thumbnail) return;
+            setFavorites((prev) => prev.map((f) => (f.id === fav.id ? { ...f, thumbnail } : f)));
+          });
+        }
+      });
     return () => {
       cancelled = true;
     };

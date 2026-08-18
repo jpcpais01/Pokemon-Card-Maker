@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { cardSeed, cardValue, earnTokens } from "./tokens";
 
@@ -153,6 +153,66 @@ export async function getFavoriteSummaries(): Promise<FavoriteSummary[]> {
 }
 
 /**
+ * Collapses any duplicate copies of the same artwork down to one, and reports how many it removed.
+ *
+ * Repairs binders that were filled while `addFavorite` could still race with itself. New saves
+ * can no longer produce a duplicate, but the ones already sitting in people's binders won't
+ * remove themselves, and there is nowhere else to notice them - the grid has no idea two tiles
+ * are the same card.
+ *
+ * Cards are matched on their artwork fingerprint rather than the whole image, so this holds a few
+ * dozen short strings instead of every full-size data URL at once - the same reason the grid
+ * reads summaries. The earliest save wins, since that's the one whose `savedAt` reflects when the
+ * card was actually pulled; if any of the copies being dropped had already been sold, the
+ * survivor inherits that, so tidying up can never hand back a second payout.
+ */
+export async function dedupeFavorites(): Promise<number> {
+  if (typeof window === "undefined") return 0;
+  try {
+    const db = await openDb();
+    return await new Promise<number>((resolve, reject) => {
+      const seen = new Map<string, { id: string; sold: boolean }>();
+      let removed = 0;
+
+      const tx = db.transaction(STORE_NAME, "readwrite");
+      const store = tx.objectStore(STORE_NAME);
+      // Oldest first, so the entry that survives is the original save.
+      const req = store.openCursor();
+
+      req.onsuccess = () => {
+        const cursor = req.result;
+        if (!cursor) return;
+        const value = cursor.value as FavoriteCard;
+        const key = value.saleSeed ?? cardSeed(value.image);
+        const keeper = seen.get(key);
+
+        if (!keeper) {
+          seen.set(key, { id: value.id, sold: !!value.sold });
+        } else {
+          removed += 1;
+          // A sold copy must not be silently dropped in favour of a sellable one.
+          if (value.sold && !keeper.sold) {
+            keeper.sold = true;
+            const get = store.get(keeper.id);
+            get.onsuccess = () => {
+              const survivor = get.result as FavoriteCard | undefined;
+              if (survivor) store.put({ ...survivor, sold: true });
+            };
+          }
+          cursor.delete();
+        }
+        cursor.continue();
+      };
+
+      tx.oncomplete = () => resolve(removed);
+      tx.onerror = () => reject(tx.error);
+    });
+  } catch {
+    return 0;
+  }
+}
+
+/**
  * How many cards are in the binder. Uses IndexedDB's own count, which reads no record bodies at
  * all - the home screen only wants the number on the binder tab, and loading a shelf of
  * multi-megabyte images to call `.length` on it was the most expensive thing that screen did.
@@ -259,11 +319,21 @@ export async function isImageFavorited(image: string): Promise<boolean> {
   }
 }
 
+/**
+ * Saves a card to the binder, at most once per artwork.
+ *
+ * The duplicate check runs *inside* the same transaction as the write, which is the whole point.
+ * It used to check first and write afterwards, with thumbnail generation in between - and that
+ * gap is enormous, because building a thumbnail decodes a multi-megapixel image and re-encodes
+ * it through a canvas. Two quick taps on the star both cleared the check before either had
+ * written, and both then wrote, under different random ids: one card, two binder entries.
+ * IndexedDB runs overlapping readwrite transactions over the same store one at a time, so
+ * folding the lookup in with the put makes the pair atomic and the second tap a no-op.
+ */
 export async function addFavorite(card: Omit<FavoriteCard, "id" | "savedAt" | "thumbnail">): Promise<boolean> {
   try {
-    if (await isImageFavorited(card.image)) return true;
-    // A missing thumbnail just means this entry falls back to the full image in the grid until
-    // backfilled - not worth failing the whole save over.
+    // Built before the transaction opens, never inside it: IndexedDB commits a transaction as
+    // soon as it goes idle, and awaiting an image decode would let it close underneath us.
     const thumbnail = await generateThumbnail(card.image).catch(() => undefined);
     const entry: FavoriteCard = {
       ...card,
@@ -275,7 +345,11 @@ export async function addFavorite(card: Omit<FavoriteCard, "id" | "savedAt" | "t
     const db = await openDb();
     await new Promise<void>((resolve, reject) => {
       const tx = db.transaction(STORE_NAME, "readwrite");
-      tx.objectStore(STORE_NAME).put(entry);
+      const store = tx.objectStore(STORE_NAME);
+      const existing = store.index("byImage").getKey(card.image);
+      existing.onsuccess = () => {
+        if (existing.result === undefined) store.put(entry);
+      };
       tx.oncomplete = () => resolve();
       tx.onerror = () => reject(tx.error);
     });
@@ -338,6 +412,7 @@ export async function removeFavoriteByImage(image: string): Promise<void> {
 export function useFavoriteToggle(image: string | null, cardInfo: Omit<FavoriteCard, "id" | "savedAt" | "image"> | null) {
   const [isFavorited, setIsFavorited] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const busyRef = useRef(false);
 
   useEffect(() => {
     if (!image) return;
@@ -352,17 +427,28 @@ export function useFavoriteToggle(image: string | null, cardInfo: Omit<FavoriteC
 
   const toggle = useCallback(async () => {
     if (!image || !cardInfo) return;
+    // Taps while a toggle is still in flight are dropped rather than queued. Every step here is
+    // asynchronous, so without this a fast double-tap starts a second toggle that reads the
+    // binder before the first has finished writing to it, and the two disagree about what state
+    // the card is even in. A ref, not state, because the guard has to close the door on the tap
+    // that is happening right now - a re-render is far too late.
+    if (busyRef.current) return;
+    busyRef.current = true;
     setError(null);
-    if (await isImageFavorited(image)) {
-      await removeFavoriteByImage(image);
-      setIsFavorited(false);
-      return;
-    }
-    const ok = await addFavorite({ image, ...cardInfo });
-    if (ok) {
-      setIsFavorited(true);
-    } else {
-      setError("Couldn't save - storage is full. Remove a favorite to free up space.");
+    try {
+      if (await isImageFavorited(image)) {
+        await removeFavoriteByImage(image);
+        setIsFavorited(false);
+        return;
+      }
+      const ok = await addFavorite({ image, ...cardInfo });
+      if (ok) {
+        setIsFavorited(true);
+      } else {
+        setError("Couldn't save - storage is full. Remove a favorite to free up space.");
+      }
+    } finally {
+      busyRef.current = false;
     }
   }, [image, cardInfo]);
 
