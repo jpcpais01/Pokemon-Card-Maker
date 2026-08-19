@@ -8,7 +8,7 @@ import Icon from "@/components/ui/Icon";
 import { pickRoundMoment } from "@/lib/battle/roundMoment";
 import { MAJOR_TIER_MARKS, ratingsTier, ratingsTotal, tierForTotal } from "@/lib/battle/tier";
 import type { BattleRound, BattleRoundPlayerState, CardRatings } from "@/lib/battle/types";
-import { removeFavoriteByImage, useFavoriteToggle } from "@/lib/favorites";
+import { isImageFavorited, removeFavoriteByImage, useFavoriteToggle } from "@/lib/favorites";
 import { cardSeed, cardValue, earnTokens } from "@/lib/tokens";
 
 /** Every beat of the reveal holds for the same three seconds, then moves itself along. */
@@ -79,6 +79,9 @@ export default function RoundResult({
   } | null>(null);
   /** Cards sold from this round's summary - keyed by player id, remounted with the round. */
   const [sold, setSold] = useState<Record<string, number>>({});
+  /** Set while the "you're about to lose this card" sheet is up, holding what it's worth. */
+  const [partingOffer, setPartingOffer] = useState<number | null>(null);
+  const [checkingCard, setCheckingCard] = useState(false);
   const favoriteCardInfo = fullView
     ? {
         prompt: fullView.prompt,
@@ -204,6 +207,48 @@ export default function RoundResult({
     setSold((prev) => ({ ...prev, [p.id]: value }));
   }
 
+  const myCard = players.find((p) => p.isMe);
+  /** What my own card is worth, or null if there's nothing here to sell. */
+  const myCardValue =
+    myCard?.ratings && myCard.image && sold[myCard.id] === undefined
+      ? cardValue(ratingsTotal(myCard.ratings), cardSeed(myCard.image))
+      : null;
+
+  /**
+   * Continuing, but not past a card that's about to be thrown away.
+   *
+   * A card that is neither kept nor sold when the round ends is simply gone - the next round
+   * overwrites it and there is no way back to it. That is a fine thing to choose and a miserable
+   * thing to do by accident, so if it's still unclaimed the button asks once instead of moving on.
+   *
+   * The binder is checked here rather than tracked as state because it can change from the
+   * lightbox at any point in this screen; reading it at the moment the button is pressed is the
+   * only answer guaranteed to be current.
+   */
+  async function handleContinue() {
+    if (myReady || readyBusy || checkingCard) return;
+    if (myCardValue === null || !myCard?.image) {
+      onReady();
+      return;
+    }
+    setCheckingCard(true);
+    try {
+      if (await isImageFavorited(myCard.image)) {
+        onReady();
+        return;
+      }
+      setPartingOffer(myCardValue);
+    } finally {
+      setCheckingCard(false);
+    }
+  }
+
+  async function sellThenContinue() {
+    if (myCard) await handleSell(myCard);
+    setPartingOffer(null);
+    onReady();
+  }
+
   return (
     <div>
       <p className="text-center text-sm font-bold text-amber-300">
@@ -260,8 +305,8 @@ export default function RoundResult({
 
       <button
         type="button"
-        onClick={onReady}
-        disabled={myReady || readyBusy}
+        onClick={handleContinue}
+        disabled={myReady || readyBusy || checkingCard}
         className="btn-primary mt-6 w-full disabled:opacity-50"
       >
         {myReady
@@ -272,6 +317,19 @@ export default function RoundResult({
             ? "See Final Results"
             : "Next Round"}
       </button>
+
+      {partingOffer !== null && (
+        <UnclaimedCardSheet
+          value={partingOffer}
+          isLastRound={isLastRound}
+          onSell={sellThenContinue}
+          onSkip={() => {
+            setPartingOffer(null);
+            onReady();
+          }}
+          onClose={() => setPartingOffer(null)}
+        />
+      )}
 
       {fullView && (
         <ImageLightbox
@@ -284,6 +342,59 @@ export default function RoundResult({
           favoriteError={favoriteError}
         />
       )}
+    </div>
+  );
+}
+
+/**
+ * The last call on a card nobody claimed.
+ *
+ * Shown once, only when the round's own card was neither starred nor sold, because after this
+ * screen it is gone for good. Two ways out and both continue - this is a prompt, not a gate, and
+ * the sheet exists to make the choice deliberate rather than to argue for either answer.
+ */
+function UnclaimedCardSheet({
+  value,
+  isLastRound,
+  onSell,
+  onSkip,
+  onClose,
+}: {
+  value: number;
+  isLastRound: boolean;
+  onSell: () => void;
+  onSkip: () => void;
+  onClose: () => void;
+}) {
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="card-raised sheet-in w-full max-w-md rounded-b-none rounded-t-[1.75rem] p-6"
+        style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 1.5rem)" }}
+      >
+        <p className="section-label text-amber-300/80">Before you go</p>
+        <h2 className="font-display mt-1 text-[1.5rem] font-extrabold leading-tight tracking-tight text-white">
+          Your card is unclaimed
+        </h2>
+        <p className="mt-2 text-[13px] leading-relaxed text-slate-400">
+          You haven&apos;t saved it to your binder or sold it.{" "}
+          {isLastRound
+            ? "Once the match ends it's gone for good."
+            : "Once the next round starts it's gone for good."}
+        </p>
+
+        <button type="button" onClick={onSell} className="btn-primary mt-5 w-full">
+          <Icon name="sparkles" size={16} />
+          Sell for {value}
+        </button>
+        <button type="button" onClick={onSkip} className="btn-quiet mt-2.5 w-full">
+          Let it go
+        </button>
+      </div>
     </div>
   );
 }
