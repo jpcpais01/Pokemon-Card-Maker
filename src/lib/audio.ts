@@ -12,11 +12,14 @@
 
 const MUSIC_SRC = "/audio/menu-music.mp3";
 const CLICK_SRC = "/audio/click.mp3";
+const ALARM_SRC = "/audio/alarm.mp3";
 
 const MUSIC_VOLUME = 0.32;
 /** Kept well under the music. The click fires on every tap, so it wants to sit under the bed
  *  as feedback you barely notice - at its old 0.45 it was louder than the music itself. */
 const CLICK_VOLUME = 0.16;
+/** Louder than the click - it is a warning, and it is meant to be the thing you notice. */
+const ALARM_VOLUME = 0.5;
 const FADE_OUT_MS = 700;
 const FADE_IN_MS = 400;
 /** Enough that a fast run of taps overlaps instead of cutting itself off. */
@@ -25,6 +28,7 @@ const SFX_VOICES = 4;
 const MUTE_KEY = "pokegen:muted";
 
 let music: HTMLAudioElement | null = null;
+let alarm: HTMLAudioElement | null = null;
 let voices: HTMLAudioElement[] = [];
 let voiceIndex = 0;
 let fadeFrame: number | null = null;
@@ -53,6 +57,11 @@ function ensureElements() {
     music.preload = "auto";
     music.volume = MUSIC_VOLUME;
     music.muted = muted;
+  }
+  if (!alarm) {
+    alarm = new Audio(ALARM_SRC);
+    alarm.preload = "auto";
+    alarm.volume = ALARM_VOLUME;
   }
   if (voices.length === 0) {
     voices = Array.from({ length: SFX_VOICES }, () => {
@@ -160,6 +169,20 @@ export function setMenuMusic(on: boolean) {
       if (!wantsMusic && music) music.pause();
     });
   }
+}
+
+/**
+ * The Deep Dive countdown alarm, one hit per milestone.
+ *
+ * Restarted from the top on every call rather than layered like the click voices - the
+ * milestones are a second apart and two alarms ringing over each other is noise, not urgency.
+ */
+export function playAlarm() {
+  if (typeof window === "undefined" || muted) return;
+  ensureElements();
+  if (!alarm) return;
+  alarm.currentTime = 0;
+  alarm.play().catch(() => {});
 }
 
 /** The UI click. No-ops while muted, and silently ignores a blocked `play()`. */

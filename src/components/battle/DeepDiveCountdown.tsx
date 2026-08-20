@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { playAlarm } from "@/lib/audio";
 
 /**
  * The Deep Dive clock, as something you feel rather than read.
@@ -58,6 +59,7 @@ export default function DeepDiveCountdown({ until }: { until: number }) {
 
       if (MILESTONES.includes(next) && !firedRef.current.has(next)) {
         firedRef.current.add(next);
+        playAlarm();
         setFlash(next);
         window.setTimeout(() => setFlash((current) => (current === next ? null : current)), FLASH_MS);
       }
